@@ -1,39 +1,23 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-
 /**
- * MITM Proxy page — moved to AgentBridge (plan 11 §12).
- * Shows a "page moved" banner for 2.5 s then redirects.
+ * AGENT.md v2.0 Law 5 Case B: MITM-proxy отсутствует в Rust-ядре AISIX.
+ * Локальный MITM-перехват (node-pty, сертификаты, DNS-правки) вырезан чисто —
+ * шлюз работает как прямой proxy на :3000, состояние — :9090/status/models.
  */
-export default function MitmProxyMovedPage() {
-  const router = useRouter();
-  const t = useTranslations("agentBridge.pageMoved");
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      router.replace("/dashboard/tools/agent-bridge");
-    }, 2500);
-    return () => clearTimeout(timer);
-  }, [router]);
-
+export default function MitmProxyPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-8">
+    <div className="flex min-h-[40vh] items-center justify-center p-8">
       <div className="rounded-xl border border-amber-500/40 bg-amber-900/20 p-8 text-center max-w-md w-full space-y-4">
-        <div className="flex items-center justify-center gap-2">
-          <span className="material-symbols-outlined text-amber-400 text-[28px]">info</span>
-          <h1 className="text-lg font-semibold text-amber-200">{t("title")}</h1>
-        </div>
-        <p className="text-sm text-amber-300/80">{t("message")}</p>
-        <button
-          type="button"
-          onClick={() => router.replace("/dashboard/tools/agent-bridge")}
+        <h1 className="text-lg font-semibold text-amber-200">MITM-proxy недоступен в AISIX</h1>
+        <p className="text-sm text-amber-300/80">
+          Локальный перехват трафика вырезан (Law 5 Case B): в нативном бинаре нет Node MITM-стека.
+          Используйте прямой Data Plane :3000 и Cooldown-статус :9090/status/models.
+        </p>
+        <a
+          href="/dashboard/activity"
           className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/20 text-amber-200 px-4 py-2 text-sm font-medium hover:bg-amber-500/30 transition-colors"
         >
-          {t("goNow")}
-        </button>
+          Открыть Активность
+        </a>
       </div>
     </div>
   );

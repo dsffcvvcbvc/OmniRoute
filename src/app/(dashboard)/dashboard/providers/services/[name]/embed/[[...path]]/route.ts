@@ -19,7 +19,7 @@
 
 import { proxyRequest } from "@/lib/services/reverseProxy";
 
-export const dynamic = "force-dynamic";
+// AGENT.md §3.3: SPA static export — embed reverse-proxy excluded from export.
 
 // Optional catch-all: `path` is `undefined` for the segment-less `/embed/` root.
 type RouteParams = { name: string; path?: string[] };

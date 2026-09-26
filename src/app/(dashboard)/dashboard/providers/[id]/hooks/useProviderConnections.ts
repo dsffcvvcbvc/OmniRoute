@@ -30,6 +30,7 @@ import {
   connectionBelongsToProviderPage,
   getProviderConnectionsRequestUrl,
 } from "../../providerPageUtils";
+import { aisixAdminModelsUrl, resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
 import { normalizeCodexLimitPolicy, providerText } from "../providerPageHelpers";
 import { useProviderQuotaVisibility } from "./useProviderQuotaVisibility";
 import { useReorderByAvailability } from "./useReorderByAvailability";
@@ -62,7 +63,7 @@ async function loadProviderConnectionsData(
     const connectionsUrl = getProviderConnectionsRequestUrl(providerId);
     const [connectionsRes, nodesRes] = await Promise.all([
       fetch(connectionsUrl, { cache: "no-store" }),
-      fetch("/api/provider-nodes", { cache: "no-store" }),
+      fetch(aisixAdminModelsUrl(), { cache: "no-store" }),
     ]);
     const connectionsData = await connectionsRes.json();
     const nodesData = await nodesRes.json();
@@ -81,7 +82,7 @@ async function loadProviderConnectionsData(
       if (!node && isCompatible) {
         for (let attempt = 0; attempt < 3; attempt += 1) {
           await new Promise((resolve) => setTimeout(resolve, 150));
-          const retryRes = await fetch("/api/provider-nodes", { cache: "no-store" });
+          const retryRes = await fetch(aisixAdminModelsUrl(), { cache: "no-store" });
           if (!retryRes.ok) continue;
           const retryData = await retryRes.json();
           node = (retryData.nodes || []).find((entry: any) => entry.id === providerId) || null;
@@ -98,7 +99,7 @@ async function loadProviderConnectionsData(
 
 async function loadProxyConfigData(): Promise<{ config: any } | null> {
   try {
-    const res = await fetch("/api/settings/proxy", { cache: "no-store" });
+    const res = await fetch(resolveAisixRequestUrl("/api/settings/proxy"), { cache: "no-store" });
     if (res.ok) return { config: await res.json() };
     return { config: null };
   } catch {
@@ -115,7 +116,10 @@ async function resolveConnectionProxies(
       conns
         .filter((c) => c.id)
         .map((c) =>
-          fetch(`/api/settings/proxy?resolve=${encodeURIComponent(c.id!)}`, { cache: "no-store" })
+          fetch(
+            resolveAisixRequestUrl(`/api/settings/proxy?resolve=${encodeURIComponent(c.id!)}`),
+            { cache: "no-store" }
+          )
             .then((r) => (r.ok ? r.json() : null))
             .then((data) => [c.id!, data] as [string, any])
             .catch(() => [c.id!, null] as [string, any])
@@ -863,7 +867,7 @@ export function useProviderConnections(
     setBatchDeleteConfirmOpen(false);
     setBatchDeleting(true);
     try {
-      const res = await fetch("/api/providers", {
+      const res = await fetch(resolveAisixRequestUrl("/api/providers"), {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids: Array.from(selectedIds) }),
@@ -896,7 +900,7 @@ export function useProviderConnections(
       let notFound = 0;
       for (let i = 0; i < ids.length; i += MAX_BULK_IDS) {
         const chunk = ids.slice(i, i + MAX_BULK_IDS);
-        const res = await fetch("/api/providers", {
+        const res = await fetch(resolveAisixRequestUrl("/api/providers"), {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ids: chunk, isActive }),
@@ -1021,7 +1025,7 @@ export function useProviderConnections(
     if ((targetConnections as any[]).length === 0) return;
     setDistributingProxies(true);
     try {
-      const proxiesRes = await fetch("/api/settings/proxies");
+      const proxiesRes = await fetch(resolveAisixRequestUrl("/api/settings/proxies"));
       if (!proxiesRes.ok) throw new Error("Failed to fetch proxies");
       const proxiesData = await proxiesRes.json();
       const savedProxies = (proxiesData?.items || []).filter((p: any) => p.status === "active");
@@ -1046,7 +1050,7 @@ export function useProviderConnections(
         const proxy = savedProxies[i % savedProxies.length];
 
         try {
-          await fetch("/api/settings/proxies/assignments", {
+          await fetch(resolveAisixRequestUrl("/api/settings/proxies/assignments"), {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ scope: "account", scopeId: conn.id, proxyId: null }),
@@ -1066,7 +1070,7 @@ export function useProviderConnections(
           continue;
         }
 
-        const assignRes = await fetch("/api/settings/proxies/assignments", {
+        const assignRes = await fetch(resolveAisixRequestUrl("/api/settings/proxies/assignments"), {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ scope: "account", scopeId: conn.id, proxyId: proxy.id }),

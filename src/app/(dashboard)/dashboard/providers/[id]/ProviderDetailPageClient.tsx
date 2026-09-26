@@ -36,7 +36,7 @@ import {
   resolveProviderHeaderLink,
   resolveProviderOAuthBackendId,
 } from "../providerPageUtils";
-import { findDefaultReferral } from "@/lib/radar/referrals";
+// AGENT.md §3.2: AISIX SPA fetches catalog from native Admin API, never @/lib/radar (SQLite/Node-only).
 import { type ConnectionRowConnection } from "./components/ConnectionRow";
 import { useProviderConnections } from "./hooks/useProviderConnections";
 import { useProviderSettings } from "./hooks/useProviderSettings";
@@ -232,26 +232,17 @@ export default function ProviderDetailPageClient() {
     },
   });
 
-  // D28 — Radar default referral link ("Pegue seus créditos grátis"). Fetched
-  // from the LOCAL /api/radar/referrals route only (never talks to the
-  // private feed server directly) — same client-fetch pattern the Radar
-  // dashboard page already uses for its own data. This keeps the providers
-  // page decoupled from @/lib/radar (DB-touching, Node-only): a 404 (flag
-  // off) or 401/network failure just leaves `referralUrl` null, and
-  // `resolveProviderHeaderLink` below then falls back to the static catalog
-  // website — byte-identical to before this feature existed.
+  // D28 — AISIX SPA: referral links do not exist in Rust core (Law 5 Case B).
+  // Best-effort probe of the native catalog; static website stays the fallback.
   const [referralUrl, setReferralUrl] = useState<string | null>(null);
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/radar/referrals");
+        const res = await fetch("/admin/v1/models");
         if (!res.ok) return;
-        const data = await res.json();
         if (cancelled) return;
-        const fixed = Array.isArray(data?.fixed) ? data.fixed : [];
-        const match = findDefaultReferral(fixed, providerId);
-        setReferralUrl(match?.url ?? null);
+        setReferralUrl(null);
       } catch {
         // Best-effort only — never blocks rendering of the provider page.
       }

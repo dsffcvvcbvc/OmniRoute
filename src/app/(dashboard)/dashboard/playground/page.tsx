@@ -4,8 +4,7 @@
 import { Suspense } from "react";
 import { PlaygroundStudio } from "./PlaygroundStudio";
 
-export const dynamic = "force-dynamic";
-
+// AGENT.md §3.3: SPA static export — no force-dynamic.
 export default function PlaygroundPage() {
   return (
     <Suspense fallback={null}>

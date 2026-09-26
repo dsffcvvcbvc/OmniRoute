@@ -7,6 +7,7 @@ import Badge from "@/shared/components/Badge";
 import { Card } from "@/shared/components";
 import { getProviderDisplayName } from "@/lib/display/names";
 import { cn } from "@/shared/utils/cn";
+import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
 
 type HealthState = "healthy" | "degraded" | "down";
 type ModelStatus = "healthy" | "degraded" | "error" | "locked" | "idle";
@@ -284,9 +285,12 @@ export default function ProviderHealthMatrixCard() {
         includeHealthy: onlyIssues ? "false" : "true",
       });
       if (providerFilter.trim()) params.set("provider", providerFilter.trim());
-      const response = await fetch(`/api/providers/health-matrix?${params.toString()}`, {
-        cache: "no-store",
-      });
+      const response = await fetch(
+        resolveAisixRequestUrl(`/api/providers/health-matrix?${params.toString()}`),
+        {
+          cache: "no-store",
+        }
+      );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const next = (await response.json()) as HealthMatrixResponse;
       setData(next);

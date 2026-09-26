@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Card } from "@/shared/components";
 import { getProviderDisplayName } from "@/lib/display/names";
 import { useProviderNodeMap, resolveProviderName } from "@/lib/display/useProviderNodeMap";
+import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
 
 type AutopilotAction = {
   type: string;
@@ -235,9 +236,12 @@ export default function ProviderHealthAutopilotCard() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/providers/health-autopilot?includeHealthy=false", {
-        cache: "no-store",
-      });
+      const res = await fetch(
+        resolveAisixRequestUrl("/api/providers/health-autopilot?includeHealthy=false"),
+        {
+          cache: "no-store",
+        }
+      );
       const json = await res.json();
       if (!res.ok) throw new Error(getErrorMessage(json, `HTTP ${res.status}`));
       setReport(json);

@@ -1,22 +1,22 @@
-import { getSettings } from "@/lib/db/settings";
-
 export type HomeSettings = { setupComplete?: unknown };
 
 /**
- * Settings read for the Home Server Component (#14060).
- *
- * A corrupted `key_value` table makes getSettings() throw, which used to crash the
- * whole Home render with a 500. The degradation lives HERE, in the display-only
- * consumer — never inside getSettings() itself: auth/authz callers such as
- * isAuthRequired() rely on getSettings() rejecting so they fail CLOSED. Swallowing
- * the error at the DB layer would hand them password-less defaults and disable
- * auth for loopback requests.
+ * AGENT.md v2.0 §3.2 + Law 5 Case A: Home settings read from native AISIX
+ * Admin API instead of SQLite (`@/lib/db/settings` is Node-only and cannot
+ * bundle into the static SPA). Best-effort: any failure degrades to defaults.
  */
-export async function loadHomeSettings(
-  load: () => Promise<HomeSettings> = getSettings
-): Promise<HomeSettings> {
+export async function loadHomeSettings(): Promise<HomeSettings> {
   try {
-    return await load();
+    const res = await fetch("/admin/v1/resources", { cache: "no-store" });
+    if (!res.ok) return { setupComplete: false };
+    const data = await res.json().catch(() => null);
+    const setupComplete =
+      typeof data?.setupComplete === "boolean"
+        ? data.setupComplete
+        : Array.isArray(data)
+          ? true
+          : false;
+    return { setupComplete };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.warn(`[Home] Failed to load settings; rendering with defaults: ${message}`);

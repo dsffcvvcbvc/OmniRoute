@@ -19,6 +19,7 @@ import {
   type ComboControlCenterTargetHealth,
 } from "@/lib/combos/controlCenter";
 import { getProviderDisplayName } from "@/lib/display/names";
+import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
 
 type TimeRange = "1h" | "24h" | "7d" | "30d";
 
@@ -253,10 +254,14 @@ export default function ComboControlCenterClient({ comboId }: { comboId: string 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const comboData = await fetchJson<ComboControlCenterCombo>(`/api/combos/${comboId}`);
+      const comboData = await fetchJson<ComboControlCenterCombo>(
+        resolveAisixRequestUrl(`/api/combos/${comboId}`)
+      );
       const [metricsData, healthData, logsData] = await Promise.all([
         fetchJson<ComboMetricsResponse>(
-          `/api/combos/metrics?combo=${encodeURIComponent(comboData.name || "")}`
+          resolveAisixRequestUrl(
+            `/api/combos/metrics?combo=${encodeURIComponent(comboData.name || "")}`
+          )
         ).catch(() => ({ metrics: null })),
         fetchJson<ComboHealthResponse>(`/api/usage/combo-health?range=${range}&comboId=${comboId}`)
           .then((data) => data.combos?.[0] || null)

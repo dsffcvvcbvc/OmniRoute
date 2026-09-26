@@ -18,11 +18,14 @@ import { Card } from "@/shared/components";
 import { AI_PROVIDERS } from "@/shared/constants/providers";
 import { getProviderDisplayName } from "@/lib/display/names";
 import { useProviderNodeMap, resolveProviderName } from "@/lib/display/useProviderNodeMap";
+import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
 import { compareTr } from "@/shared/utils/turkishText";
 import { useLocale, useTranslations } from "next-intl";
 import TelemetryCard from "./TelemetryCard";
 import ProviderHealthAutopilotCard from "./ProviderHealthAutopilotCard";
 import ProviderHealthMatrixCard from "./ProviderHealthMatrixCard";
+import CooldownStatusCard from "./CooldownStatusCard";
+import HotReloadIndicator from "./HotReloadIndicator";
 
 function formatUptime(seconds) {
   const d = Math.floor(seconds / 86400);
@@ -79,7 +82,7 @@ export default function HealthPage() {
 
   const fetchHealth = useCallback(async () => {
     try {
-      const res = await fetch("/api/monitoring/health");
+      const res = await fetch(resolveAisixRequestUrl("/api/monitoring/health"));
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setData(json);
@@ -137,7 +140,9 @@ export default function HealthPage() {
     if (!confirm(t("resetConfirm"))) return;
     setResetting(true);
     try {
-      const res = await fetch("/api/monitoring/health", { method: "DELETE" });
+      const res = await fetch(resolveAisixRequestUrl("/api/monitoring/health"), {
+        method: "DELETE",
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       // Refresh health data immediately
       await fetchHealth();
@@ -271,13 +276,11 @@ export default function HealthPage() {
       {/* Verdict Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">
-          {
-            data.status === "healthy"
-              ? t("healthVerdictReady")
-              : data.status === "cooling"
-                ? t("healthVerdictCoolingDown")
-                : t("healthVerdictActionRequired")
-          }
+          {data.status === "healthy"
+            ? t("healthVerdictReady")
+            : data.status === "cooling"
+              ? t("healthVerdictCoolingDown")
+              : t("healthVerdictActionRequired")}
         </h1>
         <p className="text-text-muted text-lg">{t("healthSubtitle")}</p>
       </div>
@@ -300,9 +303,7 @@ export default function HealthPage() {
           {data.status === "healthy" ? "check_circle" : "error"}
         </span>
         <span className={data.status === "healthy" ? "text-green-400" : "text-red-400"}>
-          {data.status === "healthy"
-            ? t("allOperational")
-            : t("issuesDetected")}
+          {data.status === "healthy" ? t("allOperational") : t("issuesDetected")}
         </span>
       </div>
 
@@ -321,6 +322,10 @@ export default function HealthPage() {
           <TelemetryCard />
           <ProviderHealthAutopilotCard />
           <ProviderHealthMatrixCard />
+          <div className="mt-4 grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <CooldownStatusCard />
+            <HotReloadIndicator />
+          </div>
         </div>
       </div>
 

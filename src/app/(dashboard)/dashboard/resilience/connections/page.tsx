@@ -1,8 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import ResilienceConnectionsClient from "./components/ResilienceConnectionsClient";
 
-export const dynamic = "force-dynamic";
-
+// AGENT.md §3.3: SPA static export — no force-dynamic.
 export default async function ResilienceConnectionsPage() {
   const t = await getTranslations("resilienceConnections");
   return (

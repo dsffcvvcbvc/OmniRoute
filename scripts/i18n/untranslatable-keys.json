@@ -68,6 +68,8 @@
     "header.a2a",
     "header.mcp",
     "health.cpu",
+    "health.cooldownColProvider",
+    "health.hotReloadOk",
     "health.latencyP50",
     "health.latencyP95",
     "health.latencyP99",

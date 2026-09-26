@@ -1,7 +1,6 @@
 import RuntimePageClient from "./RuntimePageClient";
 
-export const dynamic = "force-dynamic";
-
+// AGENT.md §3.3: SPA static export — no force-dynamic.
 export default function RuntimePage() {
   return <RuntimePageClient />;
 }

@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "locale": "ru",
+  "description": "Закон 6 AGENT.md v2.0: 15 защищённых терминов (Model, Provider, Token, API Key, Cooldown, TTFT, Failover, SSE, Streaming, Round-Robin, Latency, Prompt, Bearer, Endpoint, Request ID) остаются дословно на английском в любых локализованных строках. Короткие метки (значения, целиком состоящие из термина) приведены к EN-оригиналу один в один (проверяется паритетом src/i18n/messages/ru.json с en.json). Русская проза в длинных предложениях сохраняется (проф. RU). Concepts whose `synonyms` array is empty are seeded for documentation only — enforcement is deferred to a follow-up normalization pass, mirroring the ko glossary policy. Every mistranslation below was verified to have zero occurrences in the real src ru catalog before being added (collision policy mirrors the KNOWN_MISTRANSLATIONS note in the checker script — e.g. generic «восстановление» (restore/backup) or «подсказка» (hint) are deliberately NOT enforced because they are legitimate Russian words outside the protected-term meaning).",
+  "terms": {
+    "model": {
+      "canonical": "Model",
+      "synonyms": []
+    },
+    "provider": {
+      "canonical": "Provider",
+      "synonyms": []
+    },
+    "token": {
+      "canonical": "Token",
+      "synonyms": []
+    },
+    "api key": {
+      "canonical": "API Key",
+      "synonyms": []
+    },
+    "cooldown": {
+      "canonical": "Cooldown",
+      "synonyms": []
+    },
+    "ttft": {
+      "canonical": "TTFT",
+      "synonyms": []
+    },
+    "failover": {
+      "canonical": "Failover",
+      "synonyms": []
+    },
+    "sse": {
+      "canonical": "SSE",
+      "synonyms": []
+    },
+    "streaming": {
+      "canonical": "Streaming",
+      "synonyms": []
+    },
+    "round-robin": {
+      "canonical": "Round Robin",
+      "synonyms": []
+    },
+    "latency": {
+      "canonical": "Latency",
+      "synonyms": []
+    },
+    "prompt": {
+      "canonical": "Prompt",
+      "synonyms": []
+    },
+    "bearer": {
+      "canonical": "Bearer",
+      "synonyms": []
+    },
+    "endpoint": {
+      "canonical": "Endpoint",
+      "synonyms": []
+    },
+    "request id": {
+      "canonical": "Request ID",
+      "synonyms": []
+    }
+  },
+  "protectedTermMistranslations": {
+    "Cooldown": [
+      "Перезарядка",
+      "Временное восстановление",
+      "Время восстановления лимита скорости",
+      "Базовая задержка",
+      "Модели в кулдауне"
+    ],
+    "Failover": ["Аварийное переключение", "аварийное переключение"],
+    "Streaming": ["Потоковое вещание", "Потоковая передача"],
+    "Round-Robin": ["Круговая система", "Циклическое распределение", "По кругу"],
+    "Latency": ["Тенденция задержки"],
+    "Prompt": ["Кэш промптов", "Системная подсказка"],
+    "Bearer": ["Авторизация Bearer"],
+    "Request ID": ["Идентификатор запроса"]
+  }
+}

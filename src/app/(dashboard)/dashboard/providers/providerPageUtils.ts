@@ -18,6 +18,13 @@ import { providerHasServiceKind } from "@/lib/providers/serviceKindIndex";
 import { compareTr, matchesAnyToken, matchesSearch } from "@/shared/utils/turkishText";
 import { fetchWithTimeout } from "@/shared/utils/fetchTimeout";
 import {
+  aisixAdminModelsUrl,
+  aisixMetricsUrl,
+  aisixProviderKeysUrl,
+  aisixResourcesUrl,
+  aisixStatusModelsUrl,
+} from "@/shared/utils/aisixEndpoints";
+import {
   parseProviderDisplayModePreference,
   type ProviderDisplayMode,
 } from "./providerPageStorage";
@@ -207,9 +214,11 @@ const OAUTH_CARD_API_KEY_CONNECTION_PROVIDER_IDS = new Set(["kiro", "amazon-q", 
 
 export function getProviderConnectionsRequestUrl(providerId: string): string {
   const hasAliases = getProviderConnectionFamilyIds(providerId).length > 1;
+  // Native transport (§3.2): provider keys live on the admin plane (:3001).
+  // Shape preserved — `?provider=` filter semantics unchanged.
   return hasAliases
-    ? "/api/providers"
-    : `/api/providers?provider=${encodeURIComponent(providerId)}`;
+    ? aisixProviderKeysUrl()
+    : aisixProviderKeysUrl(`?provider=${encodeURIComponent(providerId)}`);
 }
 
 export function connectionBelongsToProviderPage(
@@ -500,9 +509,7 @@ export function filterConfiguredProviderEntries<TProvider>(
       return connections.some(
         (conn) =>
           connectionBelongsToProviderPage(conn.provider, entry.providerId) &&
-          connectionSearchHaystacks(conn).some((haystack) =>
-            matchesAnyToken(haystack, searchQuery)
-          )
+          connectionSearchHaystacks(conn).some((haystack) => matchesAnyToken(haystack, searchQuery))
       );
     });
   }
@@ -674,7 +681,7 @@ const PROVIDER_PAGE_FETCH_TIMEOUT_MS = 20_000;
  * shows indefinitely. A `try/catch` cannot rescue a promise that never settles;
  * only a timeout/abort can. Here every request is time-bounded and failures
  * degrade to a default, so the loader always resolves within the timeout and the
- * page paints from whatever data arrived (matching the fast `/api/providers`).
+ * page paints from whatever data arrived (matching the fast provider_keys read).
  */
 export async function loadProviderPageData(
   fetchImpl: typeof fetch = globalThis.fetch as typeof fetch,
@@ -693,24 +700,29 @@ export async function loadProviderPageData(
 
   const [connectionsData, nodesData, expirationsData, settingsData, openRouterStatsData] =
     await Promise.all([
-      safeJson("/api/providers"),
-      safeJson("/api/provider-nodes"),
-      safeJson("/api/providers/expiration"),
-      safeJson("/api/settings", { cache: "no-store" }),
-      safeJson("/api/providers/openrouter-stats"),
+      // Native transport (§3.2) via fetchWithTimeout — same degrade-to-default shape.
+      safeJson(aisixProviderKeysUrl()),
+      safeJson(aisixAdminModelsUrl()),
+      safeJson(aisixStatusModelsUrl()),
+      safeJson(aisixResourcesUrl("/settings"), { cache: "no-store" }),
+      safeJson(aisixMetricsUrl()),
     ]);
 
+  const connectionsRaw =
+    connectionsData?.connections ?? connectionsData?.data ?? connectionsData?.keys ?? [];
+  const nodesRaw = nodesData?.nodes ?? nodesData?.data ?? nodesData?.models ?? [];
+  const openRouterStatsRaw =
+    openRouterStatsData?.data ?? openRouterStatsData?.metrics ?? openRouterStatsData ?? [];
+
   return {
-    connections: Array.isArray(connectionsData?.connections) ? connectionsData.connections : [],
-    providerNodes: Array.isArray(nodesData?.nodes) ? nodesData.nodes : [],
+    connections: Array.isArray(connectionsRaw) ? connectionsRaw : [],
+    providerNodes: Array.isArray(nodesRaw) ? nodesRaw : [],
     ccCompatibleProviderEnabled: nodesData?.ccCompatibleProviderEnabled === true,
     expirations: expirationsData ?? null,
     blockedProviders: Array.isArray(settingsData?.blockedProviders)
       ? settingsData.blockedProviders
       : null,
     settings: settingsData ?? null,
-    openRouterProviderStats: Array.isArray(openRouterStatsData?.data)
-      ? openRouterStatsData.data
-      : [],
+    openRouterProviderStats: Array.isArray(openRouterStatsRaw) ? openRouterStatsRaw : [],
   };
 }

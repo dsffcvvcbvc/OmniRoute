@@ -10,15 +10,16 @@
 // instead of the chat.completions messages/SSE shape.
 
 import { endpointToPath, type PlaygroundEndpoint } from "@/lib/playground/codeExport";
+import { getAisixDataBase } from "@/shared/utils/aisixEndpoints";
 
 /** Chat-shaped endpoints keep the existing messages[] + SSE-delta request/response flow. */
 export function isChatCompletionsEndpoint(endpoint: PlaygroundEndpoint | undefined): boolean {
   return !endpoint || endpoint === "chat.completions";
 }
 
-/** Resolves the fetch path (mounted under `/api`) for the selected Playground endpoint. */
+/** Resolves the absolute fetch URL (data plane `:3000`) for the selected Playground endpoint. */
 export function resolveChatTabRequestPath(endpoint: PlaygroundEndpoint | undefined): string {
-  return `/api${endpointToPath(endpoint ?? "chat.completions")}`;
+  return `${getAisixDataBase()}${endpointToPath(endpoint ?? "chat.completions")}`;
 }
 
 /**
@@ -49,9 +50,7 @@ export function formatNonChatResponse(rawText: string): string {
 }
 
 /** Finds the most recent user-authored message content to use as a non-chat query. */
-export function lastUserContent(
-  chatMessages: Array<{ role: string; content: string }>
-): string {
+export function lastUserContent(chatMessages: Array<{ role: string; content: string }>): string {
   for (let i = chatMessages.length - 1; i >= 0; i--) {
     if (chatMessages[i].role === "user") return chatMessages[i].content;
   }

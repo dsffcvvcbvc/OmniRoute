@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import type { StreamMetrics } from "@/shared/schemas/playground";
+import { getAisixDataBase } from "@/shared/utils/aisixEndpoints";
 import StudioTopBar, { type StudioTab } from "./components/StudioTopBar";
 import StudioConfigPane, { type ConfigState } from "./components/StudioConfigPane";
 import { DEFAULT_PARAMS } from "./components/ParamSliders";
@@ -27,7 +28,8 @@ const INITIAL_METRICS: StreamMetrics = {
 
 const INITIAL_CONFIG: ConfigState = {
   endpoint: "chat.completions",
-  baseUrl: typeof window !== "undefined" ? window.location.origin : "http://localhost:20128",
+  // Native data-plane default (§3.2): absolute `:3000`, not window.location.origin.
+  baseUrl: getAisixDataBase(),
   model: "",
   systemPrompt: "You are a helpful assistant.",
   params: DEFAULT_PARAMS,

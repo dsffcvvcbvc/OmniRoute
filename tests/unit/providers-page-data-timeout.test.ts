@@ -7,9 +7,8 @@ import assert from "node:assert/strict";
 // under the RSC prefetch storm, or a stalled connection) left `loading` true
 // forever. loadProviderPageData bounds each request with an AbortSignal timeout
 // so the loader ALWAYS resolves (degrading to defaults) and the page paints.
-const { loadProviderPageData } = await import(
-  "@/app/(dashboard)/dashboard/providers/providerPageUtils"
-);
+const { loadProviderPageData } =
+  await import("@/app/(dashboard)/dashboard/providers/providerPageUtils");
 
 // A fetch mock that honors AbortSignal the way the real fetch does: it never
 // resolves on its own, but rejects with an AbortError once the signal fires.
@@ -22,11 +21,9 @@ function hangingFetch(): typeof fetch {
           reject(new DOMException("Aborted", "AbortError"));
           return;
         }
-        signal.addEventListener(
-          "abort",
-          () => reject(new DOMException("Aborted", "AbortError")),
-          { once: true }
-        );
+        signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), {
+          once: true,
+        });
       }
     })) as unknown as typeof fetch;
 }
@@ -62,10 +59,13 @@ describe("loadProviderPageData — never freezes the dashboard skeleton", () => 
   test("returns parsed data when every endpoint resolves", async () => {
     const data = await loadProviderPageData(
       jsonFetch({
-        "/api/providers": { connections: [{ id: "c1" }] },
-        "/api/provider-nodes": { nodes: [{ id: "n1" }], ccCompatibleProviderEnabled: true },
-        "/api/providers/expiration": { openai: "2030-01-01" },
-        "/api/settings": { blockedProviders: ["openai"] },
+        "http://127.0.0.1:3001/admin/v1/provider_keys": { connections: [{ id: "c1" }] },
+        "http://127.0.0.1:3001/admin/v1/models": {
+          nodes: [{ id: "n1" }],
+          ccCompatibleProviderEnabled: true,
+        },
+        "http://127.0.0.1:9090/status/models": { openai: "2030-01-01" },
+        "http://127.0.0.1:3001/admin/v1/resources/settings": { blockedProviders: ["openai"] },
       }),
       1000
     );
@@ -78,7 +78,8 @@ describe("loadProviderPageData — never freezes the dashboard skeleton", () => 
   });
 
   test("a rejecting fetch degrades to defaults instead of throwing", async () => {
-    const rejectFetch = (() => Promise.reject(new Error("network down"))) as unknown as typeof fetch;
+    const rejectFetch = (() =>
+      Promise.reject(new Error("network down"))) as unknown as typeof fetch;
     const data = await loadProviderPageData(rejectFetch, 1000);
     assert.deepEqual(data.connections, []);
     assert.equal(data.settings, null);

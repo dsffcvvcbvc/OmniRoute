@@ -89,6 +89,7 @@ import { DEAD_COMBO_CONFIG_KEYS } from "@/lib/combos/deadConfigKeys";
 import { modelFamily } from "@/lib/combos/invariants";
 import { resolveProviderAlias } from "@omniroute/open-sse/services/providerAlias.ts";
 import { resolveServerErrorMessage } from "@/lib/api/serverErrorMessage";
+import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
 import { useTranslations } from "next-intl";
 
 const ModelSelectModal = dynamic(() => import("@/shared/components/ModelSelectModal"), {
@@ -705,7 +706,6 @@ function computeAllowedRestrictionSync(
   return result;
 }
 
-
 function getModelString(entry) {
   if (typeof entry === "string") return entry;
   if (entry?.kind === "combo-ref") return entry.comboName;
@@ -909,10 +909,10 @@ function CombosPageContent() {
   const fetchData = async () => {
     try {
       const [combosRes, providersRes, metricsRes, nodesRes] = await Promise.all([
-        fetch("/api/combos"),
-        fetch("/api/providers"),
-        fetch("/api/combos/metrics"),
-        fetch("/api/provider-nodes"),
+        fetch(resolveAisixRequestUrl("/api/combos")),
+        fetch(resolveAisixRequestUrl("/api/providers")),
+        fetch(resolveAisixRequestUrl("/api/combos/metrics")),
+        fetch(resolveAisixRequestUrl("/api/provider-nodes")),
       ]);
       const combosData = await combosRes.json();
       const providersData = await providersRes.json();
@@ -940,7 +940,7 @@ function CombosPageContent() {
     void (async () => {
       await fetchData();
     })();
-    fetch("/api/settings")
+    fetch(resolveAisixRequestUrl("/api/settings"))
       .then((r) => (r.ok ? r.json() : null))
       .then((settings) => {
         if (!settings) return;
@@ -948,11 +948,11 @@ function CombosPageContent() {
         setRoutingSettings(settings);
       })
       .catch(() => setComboConfigMode("guided"));
-    fetch("/api/settings/compression")
+    fetch(resolveAisixRequestUrl("/api/settings/compression"))
       .then((r) => (r.ok ? r.json() : null))
       .then((settings) => setPromptCompressionEnabled(settings?.enabled === true))
       .catch(() => setPromptCompressionEnabled(false));
-    fetch("/api/settings/proxy")
+    fetch(resolveAisixRequestUrl("/api/settings/proxy"))
       .then((r) => (r.ok ? r.json() : null))
       .then((c) => setProxyConfig(c))
       .catch(() => {});
@@ -960,7 +960,7 @@ function CombosPageContent() {
 
   const handleCreate = async (data) => {
     try {
-      const res = await fetch("/api/combos", {
+      const res = await fetch(resolveAisixRequestUrl("/api/combos"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -981,7 +981,7 @@ function CombosPageContent() {
 
   const handleUpdate = async (id, data) => {
     try {
-      const res = await fetch(`/api/combos/${id}`, {
+      const res = await fetch(resolveAisixRequestUrl(`/api/combos/${id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -1011,7 +1011,7 @@ function CombosPageContent() {
   const handleDelete = async (id) => {
     if (!confirm(t("deleteConfirm"))) return;
     try {
-      const res = await fetch(`/api/combos/${id}`, { method: "DELETE" });
+      const res = await fetch(resolveAisixRequestUrl(`/api/combos/${id}`), { method: "DELETE" });
       if (res.ok) {
         setCombos(combos.filter((c) => c.id !== id));
         notify.success(t("comboDeleted"));
@@ -1060,7 +1060,7 @@ function CombosPageContent() {
     setTestingCombo(combo.name);
     setTestResults(null);
     try {
-      const res = await fetch("/api/combos/test", {
+      const res = await fetch(resolveAisixRequestUrl("/api/combos/test"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ comboName: combo.name }),
@@ -1079,7 +1079,7 @@ function CombosPageContent() {
     // Optimistic update
     setCombos((prev) => prev.map((c) => (c.id === combo.id ? { ...c, isActive: newActive } : c)));
     try {
-      const res = await fetch(`/api/combos/${combo.id}`, {
+      const res = await fetch(resolveAisixRequestUrl(`/api/combos/${combo.id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: newActive }),
@@ -1186,7 +1186,7 @@ function CombosPageContent() {
     setSavingComboOrder(true);
 
     try {
-      const res = await fetch("/api/combos/reorder", {
+      const res = await fetch(resolveAisixRequestUrl("/api/combos/reorder"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ comboIds: nextCombos.map((combo) => combo.id) }),
@@ -2097,7 +2097,15 @@ function TestResultsView({ results }) {
   );
 }
 
-function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, comboConfigMode, routingSettings }) {
+function ComboFormModal({
+  isOpen,
+  combo,
+  onClose,
+  onSave,
+  activeProviders,
+  comboConfigMode,
+  routingSettings,
+}) {
   type CreateDraftSnapshot = {
     name: string;
     models: unknown[];
@@ -2487,9 +2495,9 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, combo
     try {
       const [aliasesRes, nodesRes, pricingRes, builderRes] = await Promise.all([
         fetch("/api/models/alias"),
-        fetch("/api/provider-nodes"),
+        fetch(resolveAisixRequestUrl("/api/provider-nodes")),
         fetch("/api/pricing"),
-        fetch("/api/combos/builder/options"),
+        fetch(resolveAisixRequestUrl("/api/combos/builder/options")),
       ]);
 
       if (!aliasesRes.ok || !nodesRes.ok) {
@@ -2557,7 +2565,7 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, combo
 
     const loadDefaults = async () => {
       try {
-        const response = await fetch("/api/settings/combo-defaults");
+        const response = await fetch(resolveAisixRequestUrl("/api/settings/combo-defaults"));
         const data = response.ok ? await response.json() : {};
         const draft = createDraftStateRef.current;
         const isPristineDraft =

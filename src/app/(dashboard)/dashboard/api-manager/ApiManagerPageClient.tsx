@@ -41,6 +41,7 @@ import ProviderConnectionPermissionList, {
 } from "./components/ProviderConnectionPermissionList";
 import RoutingEntryLink from "@/shared/components/routing/RoutingEntryLink";
 import { ALL_COMBOS_ACCESS_RULE } from "@/shared/constants/comboAccess";
+import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
 
 // Constants for validation
 const MAX_KEY_NAME_LENGTH = 200;
@@ -336,7 +337,7 @@ export default function ApiManagerPageClient() {
   const fetchModels = async () => {
     setModelsLoaded(false);
     try {
-      const res = await fetch("/v1/models");
+      const res = await fetch(resolveAisixRequestUrl("/v1/models"));
       if (res.ok) {
         const data = await res.json();
         setAllModels(Array.isArray(data.data) ? data.data : []);
@@ -349,8 +350,8 @@ export default function ApiManagerPageClient() {
       // lists active combos as owned_by="combo", while /api/models?all=true only
       // returns the static provider model inventory.
       const [fallbackRes, combosRes] = await Promise.all([
-        fetch("/api/models?all=true"),
-        fetch("/api/combos"),
+        fetch(resolveAisixRequestUrl("/api/models?all=true")),
+        fetch(resolveAisixRequestUrl("/api/combos")),
       ]);
       if (fallbackRes.ok) {
         const [fallbackData, combosData] = await Promise.all([
@@ -399,7 +400,7 @@ export default function ApiManagerPageClient() {
 
   const fetchCombos = async () => {
     try {
-      const res = await fetch("/api/combos");
+      const res = await fetch(resolveAisixRequestUrl("/api/combos"));
       if (res.ok) {
         const data = await res.json();
         const combos = Array.isArray(data.combos) ? data.combos : [];
@@ -414,7 +415,7 @@ export default function ApiManagerPageClient() {
 
   const fetchConnections = async () => {
     try {
-      const res = await fetch("/api/providers");
+      const res = await fetch(resolveAisixRequestUrl("/api/providers"));
       if (res.ok) {
         const data = await res.json();
         setAllConnections(data.connections || []);
@@ -509,7 +510,9 @@ export default function ApiManagerPageClient() {
       const results = await Promise.all(
         apiKeys.map(async (key) => {
           try {
-            const res = await fetch(`/api/keys/${encodeURIComponent(key.id)}/devices`);
+            const res = await fetch(
+              resolveAisixRequestUrl(`/api/keys/${encodeURIComponent(key.id)}/devices`)
+            );
             if (!res.ok) return [key.id, 0] as const;
             const data = await res.json();
             const count =
@@ -530,7 +533,7 @@ export default function ApiManagerPageClient() {
   // calls are not TDZ reads (react-hooks/immutability).
   const fetchData = async () => {
     try {
-      const res = await fetch("/api/keys");
+      const res = await fetch(resolveAisixRequestUrl("/api/keys"));
       if (res.ok) {
         const data = await res.json();
         setKeys(data.keys || []);
@@ -636,7 +639,7 @@ export default function ApiManagerPageClient() {
     setCreateError(null);
 
     try {
-      const res = await fetch("/api/keys", {
+      const res = await fetch(resolveAisixRequestUrl("/api/keys"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -683,7 +686,9 @@ export default function ApiManagerPageClient() {
     clearPageError();
 
     try {
-      const res = await fetch(`/api/keys/${encodeURIComponent(id)}`, { method: "DELETE" });
+      const res = await fetch(resolveAisixRequestUrl(`/api/keys/${encodeURIComponent(id)}`), {
+        method: "DELETE",
+      });
       if (res.ok) {
         setKeys((prev) => prev.filter((k) => k.id !== id));
         // Clean up any cached reveal/visibility state for this key.
@@ -714,7 +719,10 @@ export default function ApiManagerPageClient() {
     clearPageError();
 
     try {
-      const res = await fetch(`/api/keys/${encodeURIComponent(id)}/regenerate`, { method: "POST" });
+      const res = await fetch(
+        resolveAisixRequestUrl(`/api/keys/${encodeURIComponent(id)}/regenerate`),
+        { method: "POST" }
+      );
       const data = await res.json();
       if (res.ok) {
         setCreatedKey(data.key);
@@ -740,7 +748,9 @@ export default function ApiManagerPageClient() {
     if (!keyId) return;
 
     try {
-      const res = await fetch(`/api/keys/${encodeURIComponent(keyId)}/reveal`);
+      const res = await fetch(
+        resolveAisixRequestUrl(`/api/keys/${encodeURIComponent(keyId)}/reveal`)
+      );
       if (!res.ok) {
         console.log("Error revealing key:", await res.text());
         return;
@@ -773,7 +783,9 @@ export default function ApiManagerPageClient() {
 
     if (!isCurrentlyVisible && !revealedKeys.has(keyId)) {
       try {
-        const res = await fetch(`/api/keys/${encodeURIComponent(keyId)}/reveal`);
+        const res = await fetch(
+          resolveAisixRequestUrl(`/api/keys/${encodeURIComponent(keyId)}/reveal`)
+        );
         if (!res.ok) {
           console.log("Error revealing key:", await res.text());
           return;
@@ -867,40 +879,43 @@ export default function ApiManagerPageClient() {
     clearPageError();
 
     try {
-      const res = await fetch(`/api/keys/${encodeURIComponent(editingKey.id)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: sanitizedName,
-          modelAccessMode,
-          connectionAccessMode,
-          allowedModels: validModels,
-          blockedModels: validBlockedModels,
-          allowedCombos: validCombos,
-          allowedConnections: validConnections,
-          noLog,
-          autoResolve,
-          isActive,
-          throttleDelayMs: normalizedThrottleDelayMs,
-          isBanned,
-          expiresAt,
-          maxSessions: normalizedMaxSessions,
-          accessSchedule,
-          rateLimits,
-          scopes,
-          allowedEndpoints,
-          streamDefaultMode,
-          compressionEnabled,
-          allowAutoCombos,
-          catalogScope,
-          disableNonPublicModels,
-          allowUsageCommand,
-          usageLimitEnabled,
-          dailyUsageLimitUsd,
-          weeklyUsageLimitUsd,
-          chaosModeEnabled,
-        }),
-      });
+      const res = await fetch(
+        resolveAisixRequestUrl(`/api/keys/${encodeURIComponent(editingKey.id)}`),
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: sanitizedName,
+            modelAccessMode,
+            connectionAccessMode,
+            allowedModels: validModels,
+            blockedModels: validBlockedModels,
+            allowedCombos: validCombos,
+            allowedConnections: validConnections,
+            noLog,
+            autoResolve,
+            isActive,
+            throttleDelayMs: normalizedThrottleDelayMs,
+            isBanned,
+            expiresAt,
+            maxSessions: normalizedMaxSessions,
+            accessSchedule,
+            rateLimits,
+            scopes,
+            allowedEndpoints,
+            streamDefaultMode,
+            compressionEnabled,
+            allowAutoCombos,
+            catalogScope,
+            disableNonPublicModels,
+            allowUsageCommand,
+            usageLimitEnabled,
+            dailyUsageLimitUsd,
+            weeklyUsageLimitUsd,
+            chaosModeEnabled,
+          }),
+        }
+      );
 
       if (res.ok) {
         await fetchData();

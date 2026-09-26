@@ -8,8 +8,7 @@ import VscodeCopilotBanner from "../dashboard/VscodeCopilotBanner";
 import NewsBanner from "../dashboard/NewsBanner";
 import FirstRunReadinessCard from "../dashboard/FirstRunReadinessCard";
 
-export const dynamic = "force-dynamic";
-
+// AGENT.md §3.3: SPA static export — no force-dynamic (prerenderable, data via /admin/v1/* fetch with defaults fallback).
 export default async function HomePage() {
   // Settings failures degrade to defaults here (display-only) — see loadHomeSettings (#14060).
   const [settings, machineId] = await Promise.all([loadHomeSettings(), getMachineId()]);

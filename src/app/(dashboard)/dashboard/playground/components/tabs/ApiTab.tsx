@@ -12,6 +12,7 @@ import { ALIAS_TO_ID } from "@/shared/constants/providers";
 import { pickDisplayValue } from "@/shared/utils/maskEmail";
 import useEmailPrivacyStore from "@/store/emailPrivacyStore";
 import dynamic from "next/dynamic";
+import { aisixDataPlaneUrl, aisixProviderKeysUrl } from "@/shared/utils/aisixEndpoints";
 
 // Monaco editor lazy-loaded (ssr: false) to avoid SSR issues (F10 requirement)
 const Editor = dynamic(() => import("@/shared/components/MonacoEditor"), { ssr: false });
@@ -251,7 +252,8 @@ export default function ApiTab(_props: ApiTabProps) {
   });
 
   useEffect(() => {
-    fetch("/v1/models")
+    // Native transport (§3.2): catalog reads hit the data/admin planes directly.
+    fetch(aisixDataPlaneUrl("/v1/models"))
       .then((res) => res.json())
       .then((data: { data?: ModelInfo[] }) => {
         const modelList = (data?.data || []) as ModelInfo[];
@@ -275,11 +277,15 @@ export default function ApiTab(_props: ApiTabProps) {
         console.error("[ApiTab] Failed to load models:", err);
       });
 
-    fetch("/api/providers/client")
+    fetch(aisixProviderKeysUrl())
       .then((res) => res.json())
       .then((data: { connections?: ConnectionOption[] }) => {
         const conns: ConnectionOption[] = [];
-        for (const conn of data?.connections || []) {
+        const rows =
+          (data as { connections?: ConnectionOption[]; data?: ConnectionOption[] })?.connections ??
+          (data as { data?: ConnectionOption[] })?.data ??
+          [];
+        for (const conn of rows) {
           conns.push({
             id: conn.id,
             name: conn.name || conn.id,
@@ -414,7 +420,7 @@ export default function ApiTab(_props: ApiTabProps) {
         if (selectedConnection) {
           fetchHeaders["X-OmniRoute-Connection"] = selectedConnection;
         }
-        res = await fetch(`/api${path}`, {
+        res = await fetch(aisixDataPlaneUrl(path), {
           method: "POST",
           headers: fetchHeaders,
           body: form,
@@ -429,7 +435,7 @@ export default function ApiTab(_props: ApiTabProps) {
         if (selectedConnection) {
           fetchHeaders["X-OmniRoute-Connection"] = selectedConnection;
         }
-        res = await fetch(`/api${path}`, {
+        res = await fetch(aisixDataPlaneUrl(path), {
           method: "POST",
           headers: fetchHeaders,
           body: JSON.stringify(parsed),

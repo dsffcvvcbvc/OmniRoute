@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Card } from "@/shared/components";
+import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
 
 type TelemetryPayload = {
   count?: number;
@@ -136,7 +137,7 @@ export default function TelemetryCard() {
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           return response.json() as Promise<TelemetryPayload>;
         }),
-        fetch("/api/monitoring/health").then((response) => {
+        fetch(resolveAisixRequestUrl("/api/monitoring/health")).then((response) => {
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           return response.json() as Promise<HealthPayload>;
         }),

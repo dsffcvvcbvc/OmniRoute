@@ -13,7 +13,10 @@ import {
 import { shouldBuildStandalone } from "./scripts/build/backendOnlyPages.mjs";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
-const distDir = process.env.NEXT_DIST_DIR || ".build/next";
+// AGENT.md §3.3 Stage 3: static SPA export for AISIX binary (`npm run build:export`
+// sets OMNIROUTE_EXPORT=1). Export build writes self-contained `out/` with zero Node.js.
+const isExportBuild = process.env.OMNIROUTE_EXPORT === "1";
+const distDir = isExportBuild ? "out" : process.env.NEXT_DIST_DIR || ".build/next";
 const projectRoot = dirname(fileURLToPath(import.meta.url));
 const scriptSrc =
   process.env.NODE_ENV === "development"
@@ -169,13 +172,10 @@ const nextConfig = {
   turbopack: {
     root: projectRoot,
     resolveAlias: {
-      // @/mitm/manager → stub ONLY where the runtime can't run the MITM stack
-      // (Docker sets OMNIROUTE_MITM_STUB=1 — #3390 graceful degradation). The
-      // alias used to be unconditional, which was fine while Docker was the
-      // only Turbopack consumer — but the v3.8.45 bundler-default flip shipped
-      // the stub to every npm/Electron/VPS artifact and broke Agent Bridge
-      // start for all non-Docker users (#6344). See scripts/build/mitm-stub-flag.mjs.
-      ...mitmManagerAliasFor(process.env),
+      // AGENT.md §3.3: export build must not alias SelfHost natives to stubs —
+      // SPA has no Node runtime, stubs would bake 500s into static chunks.
+      // Gate both aliases off when OMNIROUTE_EXPORT=1.
+      ...(isExportBuild ? {} : mitmManagerAliasFor(process.env)),
       // better-sqlite3 → build-time stub ONLY where the build worker actually
       // aborts while tracing the native addon (SIGABRT at worker teardown,
       // #10060); opt in with OMNIROUTE_BETTER_SQLITE3_STUB=1. The alias used to
@@ -183,7 +183,7 @@ const nextConfig = {
       // at runtime — it does not: resolveAlias rewrites the request before the
       // externals check, so the stub was bundled and EVERY route answered 500
       // (#11343). See scripts/build/better-sqlite3-stub-flag.mjs.
-      ...betterSqlite3AliasFor(process.env),
+      ...(isExportBuild ? {} : betterSqlite3AliasFor(process.env)),
       ...minimalBuildAliases,
     },
     // src/lib/agentSkills/generator.ts builds its fs base path from a runtime
@@ -219,7 +219,12 @@ const nextConfig = {
       },
     ],
   },
-  ...(shouldBuildStandalone(process.env) ? { output: "standalone" } : {}),
+  // AGENT.md §3.3: SPA static export (OMNIROUTE_EXPORT=1) wins over standalone.
+  ...(isExportBuild
+    ? { output: "export" }
+    : shouldBuildStandalone(process.env)
+      ? { output: "standalone" }
+      : {}),
   compress: true,
   productionBrowserSourceMaps: false,
   // Issue #67: enable React Compiler — automates memoization, removes manual useCallback/useMemo debt.
