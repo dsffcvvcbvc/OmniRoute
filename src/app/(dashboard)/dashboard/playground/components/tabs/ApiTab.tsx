@@ -13,6 +13,7 @@ import { pickDisplayValue } from "@/shared/utils/maskEmail";
 import useEmailPrivacyStore from "@/store/emailPrivacyStore";
 import dynamic from "next/dynamic";
 import { aisixDataPlaneUrl, aisixProviderKeysUrl } from "@/shared/utils/aisixEndpoints";
+import { coreUnreachableMessage, isCoreUnreachableError } from "./chatTabEndpointRequest";
 
 // Monaco editor lazy-loaded (ssr: false) to avoid SSR issues (F10 requirement)
 const Editor = dynamic(() => import("@/shared/components/MonacoEditor"), { ssr: false });
@@ -425,12 +426,15 @@ export default function ApiTab(_props: ApiTabProps) {
         // layer, so a browser `Authorization: Bearer` is only forwarded when the
         // operator actually pasted a key into the request body. Nothing is
         // injected implicitly — an empty header would make the core answer 401
-        // instead of proxying the request.
+        // instead of proxying the request. `credentials: "omit"` is explicit
+        // (same-origin is gone — the dashboard and the core are different
+        // origins now, so cookies could not ride along anyway).
         res = await fetch(aisixDataPlaneUrl(path), {
           method: "POST",
           headers: fetchHeaders,
           body: form,
           signal: controller.signal,
+          credentials: "omit",
         });
       } else {
         let parsed = JSON.parse(requestBody) as Record<string, unknown>;
@@ -450,6 +454,7 @@ export default function ApiTab(_props: ApiTabProps) {
           headers: fetchHeaders,
           body: JSON.stringify(parsed),
           signal: controller.signal,
+          credentials: "omit",
         });
       }
 
@@ -490,6 +495,12 @@ export default function ApiTab(_props: ApiTabProps) {
       const e = err as { name?: string; message?: string };
       if (e.name === "AbortError") {
         setResponseBody(JSON.stringify({ cancelled: true }, null, 2));
+      } else if (isCoreUnreachableError(err)) {
+        // Rejected CORS preflight / dead core: say so explicitly instead of a
+        // generic "Failed to fetch".
+        setResponseBody(
+          JSON.stringify({ error: coreUnreachableMessage(aisixDataPlaneUrl(path)) }, null, 2)
+        );
       } else {
         setResponseBody(JSON.stringify({ error: e.message }, null, 2));
       }

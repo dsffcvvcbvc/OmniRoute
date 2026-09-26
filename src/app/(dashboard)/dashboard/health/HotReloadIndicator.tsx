@@ -5,7 +5,11 @@ import { useTranslations } from "next-intl";
 
 import { Card } from "@/shared/components";
 import { aisixAdminModelsUrl } from "@/shared/utils/aisixEndpoints";
-import { fetchWithTimeout } from "@/shared/utils/fetchTimeout";
+import {
+  backoffPollDelayMs,
+  fetchWithTimeout,
+  isDocumentHidden,
+} from "@/shared/utils/fetchTimeout";
 
 type ResourcesStatus = {
   version: string | null;
@@ -66,6 +70,9 @@ export default function HotReloadIndicator() {
   // StrictMode mounts effects twice; without this guard the first (immediately
   // superseded) interval keeps polling and can setState after unmount.
   const cancelledRef = useRef(false);
+  // Consecutive failures — unreachable core backs off exponentially (LOW 14).
+  // `reachable: false` is the card's honest empty state, not an error.
+  const failuresRef = useRef(0);
 
   const loadStatus = useCallback(async () => {
     // READ ONLY. The native admin plane exposes `POST /admin/v1/resources` as its
@@ -83,8 +90,10 @@ export default function HotReloadIndicator() {
       const parsed = parseStatus(payload);
       if (cancelledRef.current) return;
       setStatus({ ...parsed, reachable: true });
+      failuresRef.current = 0;
     } catch {
       if (cancelledRef.current) return;
+      failuresRef.current += 1;
       setStatus((prev) => ({ ...prev, reachable: false }));
     } finally {
       if (!cancelledRef.current) setLoading(false);
@@ -93,13 +102,20 @@ export default function HotReloadIndicator() {
 
   useEffect(() => {
     cancelledRef.current = false;
-    void (async () => {
-      await loadStatus();
-    })();
-    const id = setInterval(() => void loadStatus(), REFRESH_MS);
+    failuresRef.current = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const tick = async () => {
+      if (cancelledRef.current) return;
+      if (!isDocumentHidden()) {
+        await loadStatus();
+      }
+      if (cancelledRef.current) return;
+      timer = setTimeout(tick, backoffPollDelayMs(REFRESH_MS, failuresRef.current));
+    };
+    void tick();
     return () => {
       cancelledRef.current = true;
-      clearInterval(id);
+      if (timer) clearTimeout(timer);
     };
   }, [loadStatus]);
 

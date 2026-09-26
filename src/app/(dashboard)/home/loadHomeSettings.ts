@@ -1,6 +1,18 @@
 import { aisixAdminModelsUrl } from "@/shared/utils/aisixEndpoints";
 
-export type HomeSettings = { setupComplete: unknown };
+/**
+ * Tri-state home readiness:
+ *   - `true` / `false` — the settings payload said so explicitly, or a readable
+ *     admin catalog implies a provisioned operator (`true`).
+ *   - `"unknown"` — the native admin plane is UNREACHABLE. This is deliberately
+ *     distinct from `true`: `true` means "setup is complete", `unknown` means
+ *     "no evidence either way". Collapsing them was a product change smuggled
+ *     as a default — callers must decide explicitly (Home hides the first-run
+ *     nag for `unknown` without claiming the setup is complete).
+ */
+export type HomeSetupState = boolean | "unknown";
+
+export type HomeSettings = { setupComplete: HomeSetupState };
 
 type SettingsPayload = { setupComplete?: unknown } | null;
 
@@ -19,7 +31,8 @@ type SettingsPayload = { setupComplete?: unknown } | null;
  *    complete", the first-run readiness card would nag every operator forever,
  *    including those who can never complete a Next/SQLite onboarding wizard in
  *    the Rust core at all. An unreachable plane is therefore reported as
- *    *complete*: no evidence of an unfinished setup, so no nag.
+ *    `"unknown"`: no evidence of an unfinished setup, so no nag — and no false
+ *    claim of completion either.
  *
  * The loader is injectable so the corrupt-DB regression (#14060) can be
  * exercised without a network round-trip.
@@ -39,12 +52,16 @@ export async function loadHomeSettings(
     if (typeof data?.setupComplete === "boolean") {
       return { setupComplete: data.setupComplete };
     }
+    // Unreachable admin plane: unknown, not "complete".
+    if (data === null || data === undefined) {
+      return { setupComplete: "unknown" };
+    }
     // Otherwise the native contract applies: a readable admin catalog means the
     // operator already provisioned providers.
-    return { setupComplete: data !== null && data !== undefined };
+    return { setupComplete: true };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.warn(`[Home] Failed to load settings; rendering with defaults: ${message}`);
-    return { setupComplete: true };
+    console.warn(`[Home] Failed to load settings; core state unknown: ${message}`);
+    return { setupComplete: "unknown" };
   }
 }

@@ -66,6 +66,31 @@ async function fetchJson<T>(url: string): Promise<T> {
   return json as T;
 }
 
+/**
+ * Tolerant metrics read: `/api/combos/metrics` resolves to `:9090/metrics`,
+ * which answers Prometheus `text/plain` — a blind `.json()` on it rejects.
+ * Non-JSON (or failed) responses degrade to `{ metrics: null }` so the cards
+ * render their empty states instead of failing the whole load.
+ */
+async function fetchMetricsSnapshot(comboName: string): Promise<ComboMetricsResponse> {
+  try {
+    const res = await fetch(
+      resolveAisixRequestUrl(`/api/combos/metrics?combo=${encodeURIComponent(comboName)}`),
+      { cache: "no-store" }
+    );
+    if (!res.ok) return { metrics: null };
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("application/json") && !contentType.includes("+json")) {
+      return { metrics: null };
+    }
+    const json = (await res.json().catch(() => null)) as ComboMetricsResponse | null;
+    if (!json || typeof json !== "object") return { metrics: null };
+    return { metrics: json.metrics ?? null };
+  } catch {
+    return { metrics: null };
+  }
+}
+
 function fmtPercent(value: number | null | undefined): string {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—";
   return `${Math.round(value)}%`;
@@ -254,13 +279,10 @@ export default function ComboControlCenterClient({ comboId }: { comboId: string 
       // They used to be `.catch`-ed into a silent `null`/`[]`, so the card reported
       // "no health data" and "no calls" as if that were a real reading. Both are now
       // left explicitly empty, which the summary/empty-state branches below render.
-      const [metricsData] = await Promise.all([
-        fetchJson<ComboMetricsResponse>(
-          resolveAisixRequestUrl(
-            `/api/combos/metrics?combo=${encodeURIComponent(comboData.name || "")}`
-          )
-        ).catch(() => ({ metrics: null })),
-      ]);
+      // `range` is a display-window label only (the core reports a live snapshot,
+      // not history), but it stays in the deps so switching windows re-probes.
+      void range;
+      const metricsData = await fetchMetricsSnapshot(comboData.name || "");
 
       setCombo(comboData);
       setMetrics(metricsData.metrics || null);
@@ -272,7 +294,7 @@ export default function ComboControlCenterClient({ comboId }: { comboId: string 
     } finally {
       setLoading(false);
     }
-  }, [comboId, t]);
+  }, [comboId, range, t]);
 
   useEffect(() => {
     // Async continuation — see react-hooks/set-state-in-effect.
@@ -376,21 +398,26 @@ export default function ComboControlCenterClient({ comboId }: { comboId: string 
             <h2 className="text-lg font-semibold text-text-main">{t("overview")}</h2>
             <p className="mt-1 text-sm text-text-muted">{t("overviewDescription")}</p>
           </div>
-          <div className="flex flex-wrap gap-1 rounded-xl border border-border bg-bg-subtle p-1">
-            {TIME_RANGES.map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setRange(item)}
-                className={`rounded-lg px-3 py-1.5 text-xs transition-colors ${
-                  range === item
-                    ? "bg-primary/10 text-primary"
-                    : "text-text-muted hover:bg-surface hover:text-text-main"
-                }`}
-              >
-                {item}
-              </button>
-            ))}
+          <div className="flex flex-col items-start gap-1 lg:items-end">
+            <div className="flex flex-wrap gap-1 rounded-xl border border-border bg-bg-subtle p-1">
+              {TIME_RANGES.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => setRange(item)}
+                  className={`rounded-lg px-3 py-1.5 text-xs transition-colors ${
+                    range === item
+                      ? "bg-primary/10 text-primary"
+                      : "text-text-muted hover:bg-surface hover:text-text-main"
+                  }`}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+            {/* Literal (not a catalog key): the core reports a live snapshot, so the
+                range buttons only relabel the window — never imply history. */}
+            <p className="text-xs text-text-muted">Live snapshot</p>
           </div>
         </div>
 

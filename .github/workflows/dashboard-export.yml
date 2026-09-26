@@ -45,6 +45,22 @@ jobs:
           ls -la out/ | head -20
           test -f out/index.html
 
+      # next.config.mjs `headers()` is INERT under `output: "export"` — the SPA
+      # ships with NO server response headers (no CSP, no frame-ancestors). The
+      # operator serving `out/` owns them. This assert pins that contract: the
+      # artifact must not smuggle in a replacement policy that would silently
+      # change behavior — neither a hosting `_headers` file nor a
+      # `<meta http-equiv="Content-Security-Policy">` (a meta CSP drops
+      # frame-ancestors/report-uri/sandbox and would brick the SPA with no
+      # server-side fallback to diagnose it).
+      - name: Assert export carries no response headers
+        run: |
+          test ! -e out/_headers
+          test ! -e out/_redirects
+          test ! -e out/vercel.json
+          test ! -e out/netlify.toml
+          ! grep -rIl 'http-equiv="Content-Security-Policy"' out/ | grep -q .
+
       - name: Upload export artifact
         uses: actions/upload-artifact@v4
         with:

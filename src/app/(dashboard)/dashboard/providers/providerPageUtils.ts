@@ -21,7 +21,6 @@ import {
   aisixAdminModelsUrl,
   aisixMetricsUrl,
   aisixProviderKeysUrl,
-  aisixStatusModelsUrl,
 } from "@/shared/utils/aisixEndpoints";
 import {
   parseProviderDisplayModePreference,
@@ -635,11 +634,25 @@ export interface ProviderPageData {
   connections: any[];
   providerNodes: any[];
   ccCompatibleProviderEnabled: boolean;
-  expirations: any | null;
+  /**
+   * Credential-expiration tracking is a Next/SQLite domain (`getAllExpirations`
+   * reads the in-memory/domain store behind `/api/providers/expiration`). The
+   * native `:9090/status/models` snapshot carries provider/model *states*, not
+   * expiry dates — synthesizing `{summary,list}` from down/degraded states
+   * would mislabel a cooling key as an expired credential. Always `null`
+   * natively: the page hides the expiration banner instead of rendering one
+   * from invented data (same contract as `blockedProviders` below).
+   */
+  expirations: null;
   blockedProviders: string[] | null;
   settings: any | null;
-  /** OpenRouter-sourced popularity/identity enrichment, keyed by provider slug. Empty if the sync hasn't run yet or the fetch failed. */
-  openRouterProviderStats: OpenRouterProviderStatsEntry[];
+  /**
+   * OpenRouter-sourced popularity/identity enrichment. `null` = not reported
+   * natively (`:9090/metrics` is Prometheus text, never the `{data:[…]}`
+   * enrichment shape) — distinct from `[]` ("reported, zero providers"), so
+   * cards render no chip instead of a "loaded, nothing known" state.
+   */
+  openRouterProviderStats: OpenRouterProviderStatsEntry[] | null;
 }
 
 /** Mirrors ProviderPopularityEntry from src/lib/catalog/openrouterProviderStats.ts (kept local to avoid a server-only import from a client component). */
@@ -702,31 +715,41 @@ export async function loadProviderPageData(
     }
   };
 
-  const [connectionsData, nodesData, expirationsData, openRouterStatsData] = await Promise.all([
+  const [connectionsData, nodesData, openRouterStatsData] = await Promise.all([
     // Native transport (§3.2) via fetchWithTimeout — same degrade-to-default shape.
     safeJson(aisixProviderKeysUrl()),
     safeJson(aisixAdminModelsUrl()),
-    safeJson(aisixStatusModelsUrl()),
     safeJson(aisixMetricsUrl()),
   ]);
 
   const connectionsRaw =
     connectionsData?.connections ?? connectionsData?.data ?? connectionsData?.keys ?? [];
   const nodesRaw = nodesData?.nodes ?? nodesData?.data ?? nodesData?.models ?? [];
-  const openRouterStatsRaw =
-    openRouterStatsData?.data ?? openRouterStatsData?.metrics ?? openRouterStatsData ?? [];
+  // Only the enrichment `{object:"list", data:[…]}` shape counts. Anything else
+  // (Prometheus text is already filtered by safeJson's content-type check;
+  // a stray status object is not enrichment) is "not reported", not "empty".
+  const statsList = openRouterStatsData?.data ?? openRouterStatsData?.metrics ?? null;
+  const openRouterStats: OpenRouterProviderStatsEntry[] | null =
+    Array.isArray(statsList) &&
+    statsList.every((entry) => entry && typeof (entry as { slug?: unknown }).slug === "string")
+      ? (statsList as OpenRouterProviderStatsEntry[])
+      : null;
 
   return {
     connections: Array.isArray(connectionsRaw) ? connectionsRaw : [],
     providerNodes: Array.isArray(nodesRaw) ? nodesRaw : [],
     ccCompatibleProviderEnabled: nodesData?.ccCompatibleProviderEnabled === true,
-    expirations: expirationsData ?? null,
+    // No native expiration or settings collection (the Rust core only accepts
+    // `POST /admin/v1/resources`), so there is nothing to report here.
+    // `null` = "not reported natively"; the page keeps its banner hidden
+    // instead of rendering one from a raw status payload.
+    expirations: null,
     // No native settings collection (the Rust core only accepts
     // `POST /admin/v1/resources`), so there is nothing to block/unblock here.
     // `null` = "not reported natively"; the page keeps its last known list
     // instead of wiping it with an invented empty one.
     blockedProviders: null,
     settings: null,
-    openRouterProviderStats: Array.isArray(openRouterStatsRaw) ? openRouterStatsRaw : [],
+    openRouterProviderStats: openRouterStats,
   };
 }

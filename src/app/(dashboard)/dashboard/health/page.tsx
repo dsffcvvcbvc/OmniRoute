@@ -20,9 +20,14 @@ import { getProviderDisplayName } from "@/lib/display/names";
 import { useProviderNodeMap, resolveProviderName } from "@/lib/display/useProviderNodeMap";
 import { aisixStatusModelsUrl } from "@/shared/utils/aisixEndpoints";
 import { normalizeAisixHealthSnapshot } from "@/shared/utils/aisixHealth";
-import { fetchWithTimeout } from "@/shared/utils/fetchTimeout";
+import {
+  backoffPollDelayMs,
+  fetchWithTimeout,
+  isDocumentHidden,
+} from "@/shared/utils/fetchTimeout";
 import { compareTr } from "@/shared/utils/turkishText";
 import { useLocale, useTranslations } from "next-intl";
+import { useNotificationStore } from "@/store/notificationStore";
 import TelemetryCard from "./TelemetryCard";
 import ProviderHealthAutopilotCard from "./ProviderHealthAutopilotCard";
 import ProviderHealthMatrixCard from "./ProviderHealthMatrixCard";
@@ -66,6 +71,7 @@ export default function HealthPage() {
   const t = useTranslations("health");
   const tc = useTranslations("common");
   const tp = useTranslations("providers");
+  const notify = useNotificationStore();
   const nodeMap = useProviderNodeMap();
   // Native snapshot (see normalizeAisixHealthSnapshot): every field the Rust core
   // cannot report stays null, so the page renders explicit "n/a" / empty states
@@ -79,6 +85,9 @@ export default function HealthPage() {
   // StrictMode mounts effects twice; without this guard the first (immediately
   // superseded) interval keeps polling and can setState after unmount.
   const cancelledRef = useRef(false);
+  // Consecutive failed polls — drives the exponential backoff below so an
+  // unreachable core is re-probed on a slowing schedule, not every 15s forever.
+  const failuresRef = useRef(0);
 
   const fetchHealth = useCallback(async () => {
     try {
@@ -92,24 +101,31 @@ export default function HealthPage() {
       setData(normalizeAisixHealthSnapshot(json));
       setError(null);
       setLastRefresh(new Date());
+      failuresRef.current = 0;
     } catch (err) {
       if (cancelledRef.current) return;
+      failuresRef.current += 1;
       setError(err.message);
     }
   }, []);
 
   useEffect(() => {
     cancelledRef.current = false;
-    const initialFetch = setTimeout(() => {
-      void fetchHealth();
-    }, 0);
-    const interval = setInterval(() => {
-      void fetchHealth();
-    }, REFRESH_MS);
+    failuresRef.current = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const tick = async () => {
+      if (cancelledRef.current) return;
+      // Backgrounded tab: skip the probe (the refresh happens on return).
+      if (!isDocumentHidden()) {
+        await fetchHealth();
+      }
+      if (cancelledRef.current) return;
+      timer = setTimeout(tick, backoffPollDelayMs(REFRESH_MS, failuresRef.current));
+    };
+    void tick();
     return () => {
       cancelledRef.current = true;
-      clearTimeout(initialFetch);
-      clearInterval(interval);
+      if (timer) clearTimeout(timer);
     };
   }, [fetchHealth]);
 
@@ -118,7 +134,17 @@ export default function HealthPage() {
   // `DELETE /api/monitoring/health` would 404. The reset action is therefore
   // gone; the individual per-model unblock below is equally native-less and
   // kept only for the rows the snapshot reports.
+  // Both unblock actions target the Next-only `/api/resilience/model-cooldowns`
+  // route: without a snapshot (core unreachable) there is nothing to unblock,
+  // so the buttons render disabled, and every failure surfaces as a toast —
+  // never a silent console.error. Messages are literals on purpose: the health
+  // catalog has no keys for them and the completeness gate forbids adding
+  // en-only keys.
   const handleUnblockAll = async () => {
+    if (!data) {
+      notify.error("Core unreachable — nothing to unblock.");
+      return;
+    }
     setUnblocking(true);
     try {
       const res = await fetch("/api/resilience/model-cooldowns", {
@@ -126,16 +152,29 @@ export default function HealthPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ all: true }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        notify.error(
+          detail
+            ? `Failed to unblock models: ${detail.slice(0, 200)}`
+            : `Failed to unblock models (HTTP ${res.status}).`
+        );
+        return;
+      }
       await fetchHealth();
     } catch (err) {
       console.error("Failed to unblock all models:", err);
+      notify.error("Failed to unblock models.");
     } finally {
       setUnblocking(false);
     }
   };
 
   const handleUnblockOne = async (provider: string, model: string) => {
+    if (!data) {
+      notify.error("Core unreachable — nothing to unblock.");
+      return;
+    }
     const key = `${provider}::${model}`;
     setUnblockingKey(key);
     try {
@@ -144,10 +183,19 @@ export default function HealthPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ provider, model }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        notify.error(
+          detail
+            ? `Failed to unblock ${provider}/${model}: ${detail.slice(0, 200)}`
+            : `Failed to unblock ${provider}/${model} (HTTP ${res.status}).`
+        );
+        return;
+      }
       await fetchHealth();
     } catch (err) {
       console.error(`Failed to unblock ${provider}/${model}:`, err);
+      notify.error(`Failed to unblock ${provider}/${model}.`);
     } finally {
       setUnblockingKey(null);
     }
@@ -882,7 +930,8 @@ export default function HealthPage() {
             </h2>
             <button
               onClick={handleUnblockAll}
-              disabled={unblocking}
+              disabled={unblocking || !data}
+              title={!data ? "Core unreachable — nothing to unblock." : undefined}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg
                 bg-amber-500/10 border border-amber-500/30 text-amber-600
                 hover:bg-amber-500/15 hover:border-amber-500/50
@@ -918,7 +967,8 @@ export default function HealthPage() {
                   </div>
                   <button
                     onClick={() => handleUnblockOne(lockProvider, lockModel)}
-                    disabled={unblockingKey === lockKey}
+                    disabled={unblockingKey === lockKey || !data}
+                    title={!data ? "Core unreachable — nothing to unblock." : undefined}
                     className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg
                       bg-amber-500/10 border border-amber-500/20 text-amber-600
                       hover:bg-amber-500/15 hover:border-amber-500/40

@@ -30,7 +30,11 @@ import {
   connectionBelongsToProviderPage,
   getProviderConnectionsRequestUrl,
 } from "../../providerPageUtils";
-import { aisixAdminModelsUrl, resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
+import {
+  aisixAdminModelsUrl,
+  getAisixAdminBase,
+  resolveAisixRequestUrl,
+} from "@/shared/utils/aisixEndpoints";
 import { normalizeCodexLimitPolicy, providerText } from "../providerPageHelpers";
 import { useProviderQuotaVisibility } from "./useProviderQuotaVisibility";
 import { useReorderByAvailability } from "./useReorderByAvailability";
@@ -117,6 +121,20 @@ async function loadProviderConnectionsData(
     console.error("Error fetching connections:", error);
     return null;
   }
+}
+
+/**
+ * `true` when a request URL resolves to the native read-only
+ * `:3001/admin/v1/provider_keys` collection. The native admin plane is
+ * read-only there (`POST /admin/v1/resources` is its sole write verb, with a
+ * core-side body contract this dashboard must not invent), so DELETE/PATCH
+ * against it are never sent — callers refuse loudly instead of 404ing.
+ */
+function isNativeProviderKeysWrite(url: string): boolean {
+  const resolved = /^https?:\/\//i.test(url) ? url : resolveAisixRequestUrl(url);
+  return resolved
+    .toLowerCase()
+    .startsWith(`${getAisixAdminBase().toLowerCase()}/admin/v1/provider_keys`);
 }
 
 async function loadProxyConfigData(): Promise<{ config: any } | null> {
@@ -469,6 +487,24 @@ export function useProviderConnections(
 
   const deleteConfirm = useConnectionDeleteConfirm(fetchConnections, notify);
 
+  /**
+   * Unified write gate: connection writes have no native verb, so a mutation
+   * that would land on the read-only provider_keys collection is refused
+   * BEFORE any request is sent, with an explanatory toast. Everything else
+   * still attempts the Next-only route and reports `!ok` loudly at the call
+   * site — silent write failures are the bug this removes.
+   */
+  const reportNativeWriteBlocked = (action: string) => {
+    notify.error(
+      providerText(
+        t,
+        "nativeConnectionWriteUnsupported",
+        "Cannot {action}: the native core exposes provider keys as read-only. Manage keys via POST /admin/v1/resources.",
+        { action }
+      )
+    );
+  };
+
   const handleUpdateConnectionStatus = async (id: string, isActive: boolean) => {
     try {
       const res = await fetch(`/api/providers/${id}`, {
@@ -478,9 +514,19 @@ export function useProviderConnections(
       });
       if (res.ok) {
         setConnections((prev: any[]) => prev.map((c) => (c.id === id ? { ...c, isActive } : c)));
+      } else {
+        const data = await res.json().catch(() => ({}));
+        notify.error(
+          (typeof data?.error === "string" && data.error) ||
+            data?.error?.message ||
+            providerText(t, "failedUpdateConnectionStatus", "Failed to update connection status")
+        );
       }
     } catch (error) {
       console.log("Error updating connection status:", error);
+      notify.error(
+        providerText(t, "failedUpdateConnectionStatus", "Failed to update connection status")
+      );
     }
   };
 
@@ -495,9 +541,19 @@ export function useProviderConnections(
         setConnections((prev: any[]) =>
           prev.map((c) => (c.id === connectionId ? { ...c, rateLimitProtection: enabled } : c))
         );
+      } else {
+        const data = await res.json().catch(() => ({}));
+        notify.error(
+          (typeof data?.error === "string" && data.error) ||
+            data?.error?.message ||
+            providerText(t, "failedToggleRateLimit", "Failed to toggle rate-limit protection")
+        );
       }
     } catch (error) {
       console.error("Error toggling rate limit:", error);
+      notify.error(
+        providerText(t, "failedToggleRateLimit", "Failed to toggle rate-limit protection")
+      );
     }
   };
 
@@ -706,9 +762,19 @@ export function useProviderConnections(
         setConnections((prev: any[]) =>
           prev.map((c) => (c.id === connectionId ? { ...c, proxyEnabled } : c))
         );
+      } else {
+        const data = await res.json().catch(() => ({}));
+        notify.error(
+          (typeof data?.error === "string" && data.error) ||
+            data?.error?.message ||
+            providerText(t, "failedToggleProxy", "Failed to toggle proxy for this connection")
+        );
       }
     } catch (error) {
       console.error("Error toggling proxy enabled:", error);
+      notify.error(
+        providerText(t, "failedToggleProxy", "Failed to toggle proxy for this connection")
+      );
     }
   };
 
@@ -726,9 +792,19 @@ export function useProviderConnections(
         setConnections((prev: any[]) =>
           prev.map((c) => (c.id === connectionId ? { ...c, perKeyProxyEnabled } : c))
         );
+      } else {
+        const data = await res.json().catch(() => ({}));
+        notify.error(
+          (typeof data?.error === "string" && data.error) ||
+            data?.error?.message ||
+            providerText(t, "failedToggleProxy", "Failed to toggle proxy for this connection")
+        );
       }
     } catch (error) {
       console.error("Error toggling per-key proxy enabled:", error);
+      notify.error(
+        providerText(t, "failedToggleProxy", "Failed to toggle proxy for this connection")
+      );
     }
   };
 
@@ -745,6 +821,7 @@ export function useProviderConnections(
       await fetchConnections();
     } catch (error) {
       console.error("Error retesting connection:", error);
+      notify.error(t("failedRetestConnection"));
     } finally {
       setRetestingId(null);
     }
@@ -846,10 +923,22 @@ export function useProviderConnections(
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ priority: p2 }),
         }),
-      ]);
+      ]).then(async (results) => {
+        const failed = results.filter((res) => !res.ok);
+        if (failed.length > 0) {
+          const data = await failed[0].json().catch(() => ({}));
+          notify.error(
+            (typeof data?.error === "string" && data.error) ||
+              data?.error?.message ||
+              providerText(t, "failedSwapPriority", "Failed to swap connection priority")
+          );
+          return;
+        }
+      });
       await fetchConnections();
     } catch (error) {
       console.log("Error swapping priority:", error);
+      notify.error(providerText(t, "failedSwapPriority", "Failed to swap connection priority"));
     }
   };
 
@@ -891,14 +980,25 @@ export function useProviderConnections(
 
   const handleBatchDeleteOpenModal = () => {
     if (selectedIds.size === 0) return;
+    // The batch endpoint resolves to the read-only native provider_keys
+    // collection — never open a confirm modal for a write that cannot run.
+    if (isNativeProviderKeysWrite(resolveAisixRequestUrl("/api/providers"))) {
+      reportNativeWriteBlocked("delete connections");
+      return;
+    }
     setBatchDeleteConfirmOpen(true);
   };
 
   const handleBatchDeleteConfirm = async (onAfter?: () => Promise<void>) => {
     setBatchDeleteConfirmOpen(false);
+    const batchUrl = resolveAisixRequestUrl("/api/providers");
+    if (isNativeProviderKeysWrite(batchUrl)) {
+      reportNativeWriteBlocked("delete connections");
+      return;
+    }
     setBatchDeleting(true);
     try {
-      const res = await fetch(resolveAisixRequestUrl("/api/providers"), {
+      const res = await fetch(batchUrl, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ids: Array.from(selectedIds) }),
@@ -924,6 +1024,11 @@ export function useProviderConnections(
 
   const handleBatchSetActive = async (isActive: boolean) => {
     if (selectedIds.size === 0 || batchUpdating) return;
+    const batchUrl = resolveAisixRequestUrl("/api/providers");
+    if (isNativeProviderKeysWrite(batchUrl)) {
+      reportNativeWriteBlocked(isActive ? "activate connections" : "deactivate connections");
+      return;
+    }
     setBatchUpdating(isActive ? "activate" : "deactivate");
     try {
       const ids = Array.from(selectedIds);
@@ -931,7 +1036,7 @@ export function useProviderConnections(
       let notFound = 0;
       for (let i = 0; i < ids.length; i += MAX_BULK_IDS) {
         const chunk = ids.slice(i, i + MAX_BULK_IDS);
-        const res = await fetch(resolveAisixRequestUrl("/api/providers"), {
+        const res = await fetch(batchUrl, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ids: chunk, isActive }),
@@ -1072,6 +1177,7 @@ export function useProviderConnections(
       }
 
       let assigned = 0;
+      let failed = 0;
       const sorted = [...(targetConnections as any[])].sort(
         (a: any, b: any) => (a.priority || 0) - (b.priority || 0)
       );
@@ -1098,6 +1204,7 @@ export function useProviderConnections(
 
         if (!patchRes.ok) {
           console.error(`Failed to update connection ${conn.id}`);
+          failed++;
           continue;
         }
 
@@ -1109,6 +1216,7 @@ export function useProviderConnections(
 
         if (!assignRes.ok) {
           console.error(`Failed to assign proxy to ${conn.id}`);
+          failed++;
           continue;
         }
 
@@ -1116,6 +1224,10 @@ export function useProviderConnections(
       }
 
       await fetchConnections();
+      if (failed > 0 && assigned === 0) {
+        notify.error(providerText(t, "failedDistributeProxies", "Failed to distribute proxies."));
+        return;
+      }
       const tagLabel = tagFilter ? `"${tagFilter}" ` : "";
       notify.success(
         providerText(
@@ -1125,6 +1237,16 @@ export function useProviderConnections(
           { assigned, tagLabel, total: sorted.length }
         )
       );
+      if (failed > 0) {
+        notify.warning(
+          providerText(
+            t,
+            "proxiesDistributedPartial",
+            "{failed} connection(s) could not be updated.",
+            { failed }
+          )
+        );
+      }
     } catch (err) {
       console.error("Error distributing proxies:", err);
       notify.error(providerText(t, "failedDistributeProxies", "Failed to distribute proxies."));

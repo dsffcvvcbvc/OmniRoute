@@ -20,6 +20,8 @@ export interface ProviderConnectionPermissionListProps {
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   onToggleConnection?: (id: string) => void;
+  /** The connections read failed: show an explicit note, not a silent empty list. */
+  loadError?: boolean;
 }
 
 function ProviderSelectionCheckbox({
@@ -57,6 +59,7 @@ export const ProviderConnectionPermissionList = memo(function ProviderConnection
   searchQuery: externalSearchQuery,
   onSearchChange: externalOnSearchChange,
   onToggleConnection: externalOnToggleConnection,
+  loadError = false,
 }: ProviderConnectionPermissionListProps) {
   const tc = useTranslations("common");
 
@@ -212,6 +215,11 @@ export const ProviderConnectionPermissionList = memo(function ProviderConnection
 
   return (
     <div className="flex flex-col gap-2">
+      {loadError && safeConnections.length === 0 ? (
+        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+          Connection list failed to load — connection restrictions unavailable.
+        </p>
+      ) : null}
       <div className="relative">
         <Input
           value={search}

@@ -6,7 +6,11 @@ import { Card } from "@/shared/components";
 import { useProviderNodeMap, resolveProviderName } from "@/lib/display/useProviderNodeMap";
 import { aisixStatusModelsUrl } from "@/shared/utils/aisixEndpoints";
 import { normalizeAisixHealthSnapshot } from "@/shared/utils/aisixHealth";
-import { fetchWithTimeout } from "@/shared/utils/fetchTimeout";
+import {
+  backoffPollDelayMs,
+  fetchWithTimeout,
+  isDocumentHidden,
+} from "@/shared/utils/fetchTimeout";
 
 type AutopilotAction = {
   type: string;
@@ -119,6 +123,8 @@ export default function ProviderHealthAutopilotCard() {
   // StrictMode mounts effects twice; without this guard the first (immediately
   // superseded) interval keeps polling and can setState after unmount.
   const cancelledRef = useRef(false);
+  // Consecutive failures — unreachable core backs off exponentially (LOW 14).
+  const failuresRef = useRef(0);
 
   const load = useCallback(async () => {
     try {
@@ -131,8 +137,10 @@ export default function ProviderHealthAutopilotCard() {
       if (cancelledRef.current) return;
       setReport(buildReportFromNative(normalizeAisixHealthSnapshot(json)));
       setError(null);
+      failuresRef.current = 0;
     } catch (err) {
       if (cancelledRef.current) return;
+      failuresRef.current += 1;
       setError(err instanceof Error ? err.message : t("loadFailed"));
     } finally {
       if (!cancelledRef.current) setLoading(false);
@@ -141,13 +149,20 @@ export default function ProviderHealthAutopilotCard() {
 
   useEffect(() => {
     cancelledRef.current = false;
-    void (async () => {
-      await load();
-    })();
-    const timer = setInterval(() => void load(), REFRESH_MS);
+    failuresRef.current = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const tick = async () => {
+      if (cancelledRef.current) return;
+      if (!isDocumentHidden()) {
+        await load();
+      }
+      if (cancelledRef.current) return;
+      timer = setTimeout(tick, backoffPollDelayMs(REFRESH_MS, failuresRef.current));
+    };
+    void tick();
     return () => {
       cancelledRef.current = true;
-      clearInterval(timer);
+      if (timer) clearTimeout(timer);
     };
   }, [load]);
 

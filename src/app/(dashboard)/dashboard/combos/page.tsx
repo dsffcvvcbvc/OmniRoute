@@ -876,6 +876,13 @@ function CombosPageContent() {
   const [comboConfigMode, setComboConfigMode] = useState("guided");
   const [routingSettings, setRoutingSettings] = useState(null);
   const [promptCompressionEnabled, setPromptCompressionEnabled] = useState(false);
+  // `/api/settings*` has NO native counterpart (pass-through, not mapped), so in
+  // the SPA these reads 404 and the defaults below would render as if they were
+  // freshly loaded settings. Separate error flags keep "empty" (defaults) and
+  // "failed" (defaults + badge) visibly distinct — stale must never look fresh.
+  const [settingsLoadError, setSettingsLoadError] = useState(false);
+  const [compressionLoadError, setCompressionLoadError] = useState(false);
+  const [proxyConfigLoadError, setProxyConfigLoadError] = useState(false);
   const [selectedIntelligentComboId, setSelectedIntelligentComboId] = useState<string | null>(null);
   const comboDragIndexRef = useRef<number | null>(null);
   const activeFilter = normalizeIntelligentRoutingFilter(searchParams.get("filter"));
@@ -907,25 +914,59 @@ function CombosPageContent() {
   }
 
   const fetchData = async () => {
+    // Each source degrades INDEPENDENTLY: one 404 / Prometheus-text body /
+    // stalled connection must not poison the other three. Every read goes
+    // through safeJson (ok + JSON content-type first — `:9090/metrics` answers
+    // `text/plain` Prometheus exposition, and a blind `.json()` on it used to
+    // reject the whole Promise.all and leave the page on stale data).
+    const safeJson = async (url: string): Promise<any | null> => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const contentType = res.headers.get("content-type") || "";
+        if (!contentType.includes("application/json") && !contentType.includes("+json")) {
+          return null;
+        }
+        return await res.json().catch(() => null);
+      } catch {
+        return null;
+      }
+    };
+    // First list-shaped array wins — the native admin plane has shipped
+    // `{connections|data|keys:[…]}` / `{nodes|models|data:[…]}` envelopes, and
+    // reading a single key renders a reachable plane as "0 connections"
+    // (mirrors fetchModalData below and loadProviderPageData).
+    const readList = (payload: unknown, fields: readonly string[]): any[] => {
+      if (Array.isArray(payload)) return payload;
+      if (!payload || typeof payload !== "object") return [];
+      for (const field of fields) {
+        const candidate = (payload as Record<string, unknown>)[field];
+        if (Array.isArray(candidate)) return candidate;
+      }
+      return [];
+    };
     try {
-      const [combosRes, providersRes, metricsRes, nodesRes] = await Promise.all([
-        fetch(resolveAisixRequestUrl("/api/combos")),
-        fetch(resolveAisixRequestUrl("/api/providers")),
-        fetch(resolveAisixRequestUrl("/api/combos/metrics")),
-        fetch(resolveAisixRequestUrl("/api/provider-nodes")),
+      const [combosData, providersData, metricsData, nodesData] = await Promise.all([
+        safeJson(resolveAisixRequestUrl("/api/combos")),
+        safeJson(resolveAisixRequestUrl("/api/providers")),
+        safeJson(resolveAisixRequestUrl("/api/combos/metrics")),
+        safeJson(resolveAisixRequestUrl("/api/provider-nodes")),
       ]);
-      const combosData = await combosRes.json();
-      const providersData = await providersRes.json();
-      const metricsData = await metricsRes.json();
-      const nodesData = nodesRes.ok ? await nodesRes.json() : { nodes: [] };
 
-      if (combosRes.ok) setCombos((combosData.combos || []).filter((c) => !c.isHidden));
-      if (providersRes.ok) {
-        const active = (providersData.connections || []).filter(isEligibleActiveConnection);
+      if (combosData) setCombos((combosData.combos || []).filter((c) => !c.isHidden));
+      if (providersData) {
+        const active = readList(providersData, ["connections", "data", "keys"]).filter(
+          isEligibleActiveConnection
+        );
         setActiveProviders(active);
       }
-      if (metricsRes.ok) setMetrics(metricsData.metrics || {});
-      setProviderNodes(nodesData.nodes || []);
+      if (metricsData) {
+        const metrics = metricsData.metrics ?? metricsData.data ?? {};
+        setMetrics(metrics && typeof metrics === "object" ? metrics : {});
+      }
+      if (nodesData) {
+        setProviderNodes(readList(nodesData, ["nodes", "models", "data"]));
+      }
     } catch (error) {
       console.log("Error fetching data:", error);
     } finally {
@@ -943,19 +984,40 @@ function CombosPageContent() {
     fetch(resolveAisixRequestUrl("/api/settings"))
       .then((r) => (r.ok ? r.json() : null))
       .then((settings) => {
-        if (!settings) return;
+        if (!settings) {
+          setSettingsLoadError(true);
+          return;
+        }
         setComboConfigMode(normalizeComboConfigMode(settings.comboConfigMode));
         setRoutingSettings(settings);
       })
-      .catch(() => setComboConfigMode("guided"));
+      .catch(() => {
+        setComboConfigMode("guided");
+        setSettingsLoadError(true);
+      });
     fetch(resolveAisixRequestUrl("/api/settings/compression"))
       .then((r) => (r.ok ? r.json() : null))
-      .then((settings) => setPromptCompressionEnabled(settings?.enabled === true))
-      .catch(() => setPromptCompressionEnabled(false));
+      .then((settings) => {
+        if (!settings) {
+          setCompressionLoadError(true);
+          return;
+        }
+        setPromptCompressionEnabled(settings?.enabled === true);
+      })
+      .catch(() => {
+        setPromptCompressionEnabled(false);
+        setCompressionLoadError(true);
+      });
     fetch(resolveAisixRequestUrl("/api/settings/proxy"))
       .then((r) => (r.ok ? r.json() : null))
-      .then((c) => setProxyConfig(c))
-      .catch(() => {});
+      .then((c) => {
+        if (!c) {
+          setProxyConfigLoadError(true);
+          return;
+        }
+        setProxyConfig(c);
+      })
+      .catch(() => setProxyConfigLoadError(true));
   }, []);
 
   const handleCreate = async (data) => {
@@ -1236,6 +1298,18 @@ function CombosPageContent() {
           </Button>
         </div>
       </div>
+
+      {/* Settings reads failed (Next-only, no native counterpart): the page runs
+          on built-in defaults — say so instead of presenting them as loaded. */}
+      {(settingsLoadError || compressionLoadError || proxyConfigLoadError) && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-600 dark:text-amber-300">
+          {getI18nOrFallback(
+            t,
+            "settingsUnavailable",
+            "Settings service unavailable — showing built-in defaults."
+          )}
+        </div>
+      )}
 
       <AutoComboCatalog onComboCreated={handleComboCreated} />
 

@@ -9,7 +9,11 @@ import { getProviderDisplayName } from "@/lib/display/names";
 import { cn } from "@/shared/utils/cn";
 import { aisixStatusModelsUrl } from "@/shared/utils/aisixEndpoints";
 import { normalizeAisixHealthSnapshot } from "@/shared/utils/aisixHealth";
-import { fetchWithTimeout } from "@/shared/utils/fetchTimeout";
+import {
+  backoffPollDelayMs,
+  fetchWithTimeout,
+  isDocumentHidden,
+} from "@/shared/utils/fetchTimeout";
 import { matchesSearch } from "@/shared/utils/turkishText";
 
 type HealthState = "healthy" | "degraded" | "down";
@@ -22,7 +26,7 @@ type HealthMatrixModel = {
   isLockedOut: boolean;
   lockoutReason: string | null;
   lockoutRemainingMs: number;
-  requests: number;
+  requests: number | null;
   successRate: number | null;
   avgLatencyMs: number | null;
   lastStatus: number | null;
@@ -66,7 +70,9 @@ type HealthMatrixProvider = {
     terminal: number;
   };
   modelLockoutCount: number;
-  requests: number;
+  // Request counters are NOT reported by the native plane — `null` renders as
+  // "n/a" (TelemetryCard pattern), never a fabricated 0.
+  requests: number | null;
   successRate: number | null;
   avgLatencyMs: number | null;
   lastRequestAt: string | null;
@@ -156,6 +162,10 @@ function ModelPill({ model }: { model: HealthMatrixModel }) {
   const t = useTranslations("health");
   const successRateLabel =
     model.successRate === null ? healthText(t, "notAvailable", "n/a") : `${model.successRate}%`;
+  const requestsLabel =
+    model.requests === null
+      ? healthText(t, "notAvailable", "n/a")
+      : model.requests.toLocaleString();
   return (
     <div
       className={cn(
@@ -178,7 +188,7 @@ function ModelPill({ model }: { model: HealthMatrixModel }) {
               "modelPillSummary",
               "{requests} req · {successRate} success · {latency} avg",
               {
-                requests: model.requests.toLocaleString(),
+                requests: requestsLabel,
                 successRate: successRateLabel,
                 latency: formatDuration(model.avgLatencyMs, t),
               }
@@ -281,7 +291,7 @@ const REQUEST_TIMEOUT_MS = 8000;
  * a matrix response. Casting it left `summary` and `accounts` undefined, so the
  * card rendered invented zeros. Now the native list is normalized and every
  * dimension the Rust core cannot report (per-account detail, request stats,
- * breakers, lockouts) stays an explicit 0/empty — the `noSyncedModelsOrTraffic`
+ * breakers, lockouts) stays an explicit null/0/empty — the `noSyncedModelsOrTraffic`
  * branch then renders instead of a fabricated matrix.
  */
 function buildMatrixFromNative(
@@ -299,7 +309,7 @@ function buildMatrixFromNative(
       circuitBreaker: null,
       connections: { total: 0, active: 0, cooldown: 0, inactive: 0, terminal: 0 },
       modelLockoutCount: 0,
-      requests: 0,
+      requests: null,
       successRate: null,
       avgLatencyMs: null,
       lastRequestAt: null,
@@ -338,6 +348,8 @@ export default function ProviderHealthMatrixCard() {
   // StrictMode mounts effects twice; without this guard the first (immediately
   // superseded) interval keeps polling and can setState after unmount.
   const cancelledRef = useRef(false);
+  // Consecutive failures — unreachable core backs off exponentially (LOW 14).
+  const failuresRef = useRef(0);
 
   const fetchMatrix = useCallback(async () => {
     setLoading(true);
@@ -359,8 +371,10 @@ export default function ProviderHealthMatrixCard() {
       setData(next);
       setExpanded((current) => current || next.providers[0]?.provider || null);
       setError(null);
+      failuresRef.current = 0;
     } catch (fetchError) {
       if (cancelledRef.current) return;
+      failuresRef.current += 1;
       setError(fetchError instanceof Error ? fetchError.message : "Failed to load matrix");
     } finally {
       if (!cancelledRef.current) setLoading(false);
@@ -369,13 +383,20 @@ export default function ProviderHealthMatrixCard() {
 
   useEffect(() => {
     cancelledRef.current = false;
-    void (async () => {
-      await fetchMatrix();
-    })();
-    const id = setInterval(fetchMatrix, REFRESH_MS);
+    failuresRef.current = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const tick = async () => {
+      if (cancelledRef.current) return;
+      if (!isDocumentHidden()) {
+        await fetchMatrix();
+      }
+      if (cancelledRef.current) return;
+      timer = setTimeout(tick, backoffPollDelayMs(REFRESH_MS, failuresRef.current));
+    };
+    void tick();
     return () => {
       cancelledRef.current = true;
-      clearInterval(id);
+      if (timer) clearTimeout(timer);
     };
   }, [fetchMatrix]);
 
@@ -545,7 +566,10 @@ export default function ProviderHealthMatrixCard() {
                       {
                         active: provider.connections.active,
                         total: provider.connections.total,
-                        requests: provider.requests.toLocaleString(),
+                        requests:
+                          provider.requests === null
+                            ? healthText(t, "notAvailable", "n/a")
+                            : provider.requests.toLocaleString(),
                         successRate:
                           provider.successRate === null
                             ? healthText(t, "notAvailable", "n/a")

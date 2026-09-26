@@ -13,8 +13,10 @@ import type { StreamMetrics } from "@/shared/schemas/playground";
 import { buildReasoningRequestFields } from "../reasoningControlUtils";
 import {
   buildNonChatRequestBody,
+  coreUnreachableMessage,
   formatNonChatResponse,
   isChatCompletionsEndpoint,
+  isCoreUnreachableError,
   lastUserContent,
   resolveChatTabRequestPath,
 } from "./chatTabEndpointRequest";
@@ -143,11 +145,14 @@ export default function ChatTab({ configState, onMetricsUpdate }: ChatTabProps) 
             configState.model
           );
 
-      const res = await fetch(resolveChatTabRequestPath(configState.endpoint), {
+      const requestUrl = resolveChatTabRequestPath(configState.endpoint);
+      const res = await fetch(requestUrl, {
         method: "POST",
         headers: fetchHeaders,
         body: JSON.stringify(requestBody),
         signal: controller.signal,
+        // No dashboard session on the native core — never send cookies.
+        credentials: "omit",
       });
 
       setResponseStatus(res.status);
@@ -245,6 +250,8 @@ export default function ChatTab({ configState, onMetricsUpdate }: ChatTabProps) 
       const e = err as { name?: string; message?: string };
       if (e.name === "AbortError") {
         setError(t("requestCancelled"));
+      } else if (isCoreUnreachableError(err)) {
+        setError(coreUnreachableMessage(resolveChatTabRequestPath(configState.endpoint)));
       } else {
         setError(e.message ?? t("networkError"));
       }

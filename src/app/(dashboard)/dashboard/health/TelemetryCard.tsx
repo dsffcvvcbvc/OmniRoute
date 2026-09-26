@@ -5,7 +5,11 @@ import { useTranslations } from "next-intl";
 import { Card } from "@/shared/components";
 import { aisixStatusModelsUrl } from "@/shared/utils/aisixEndpoints";
 import { adaptAisixTelemetry, type AisixTelemetry } from "@/shared/utils/aisixHealth";
-import { fetchWithTimeout } from "@/shared/utils/fetchTimeout";
+import {
+  backoffPollDelayMs,
+  fetchWithTimeout,
+  isDocumentHidden,
+} from "@/shared/utils/fetchTimeout";
 
 type TelemetrySample = {
   timestamp: number;
@@ -111,6 +115,8 @@ export default function TelemetryCard() {
   // StrictMode mounts effects twice; without this guard the first (immediately
   // superseded) interval keeps polling and can setState after unmount.
   const cancelledRef = useRef(false);
+  // Consecutive failures — unreachable core backs off exponentially (LOW 14).
+  const failuresRef = useRef(0);
 
   const loadTelemetry = useCallback(async () => {
     // ONE native read. `/api/telemetry/summary` and `/api/monitoring/health` were
@@ -130,6 +136,7 @@ export default function TelemetryCard() {
       setTelemetry(next);
       setError(null);
       setLastUpdated(new Date());
+      failuresRef.current = 0;
       // Only accumulate a sample when the native payload actually reported a
       // counter. Pushing fabricated zeros would draw a convincing flat line
       // where the honest answer is "no data".
@@ -146,6 +153,7 @@ export default function TelemetryCard() {
       }
     } catch (err) {
       if (cancelledRef.current) return;
+      failuresRef.current += 1;
       setError(err instanceof Error ? err.message : t("loadFailed"));
     } finally {
       if (!cancelledRef.current) setLoading(false);
@@ -154,13 +162,20 @@ export default function TelemetryCard() {
 
   useEffect(() => {
     cancelledRef.current = false;
-    void (async () => {
-      await loadTelemetry();
-    })();
-    const interval = setInterval(() => void loadTelemetry(), REFRESH_MS);
+    failuresRef.current = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const tick = async () => {
+      if (cancelledRef.current) return;
+      if (!isDocumentHidden()) {
+        await loadTelemetry();
+      }
+      if (cancelledRef.current) return;
+      timer = setTimeout(tick, backoffPollDelayMs(REFRESH_MS, failuresRef.current));
+    };
+    void tick();
     return () => {
       cancelledRef.current = true;
-      clearInterval(interval);
+      if (timer) clearTimeout(timer);
     };
   }, [loadTelemetry]);
 

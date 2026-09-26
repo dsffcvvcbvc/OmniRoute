@@ -236,6 +236,14 @@ export default function ApiManagerPageClient() {
   const [pageError, setPageError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
+  // `/api/keys|models|combos|providers` have no native counterpart — in the SPA
+  // these reads fail and empty lists would render as freshly-loaded truth.
+  // Separate error flags keep "empty" (genuinely zero) and "failed" (unknown,
+  // with an explicit badge) visibly distinct — stale must never look fresh.
+  const [keysLoadError, setKeysLoadError] = useState(false);
+  const [modelsLoadError, setModelsLoadError] = useState(false);
+  const [combosLoadError, setCombosLoadError] = useState(false);
+  const [connectionsLoadError, setConnectionsLoadError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [usageStats, setUsageStats] = useState<Record<string, KeyUsageStats>>({});
   const [sessionCounts, setSessionCounts] = useState<Record<string, number>>({});
@@ -341,6 +349,7 @@ export default function ApiManagerPageClient() {
       if (res.ok) {
         const data = await res.json();
         setAllModels(Array.isArray(data.data) ? data.data : []);
+        setModelsLoadError(false);
         return;
       }
 
@@ -387,12 +396,15 @@ export default function ApiManagerPageClient() {
             return true;
           })
         );
+        setModelsLoadError(false);
       } else {
         setAllModels([]);
+        setModelsLoadError(true);
       }
     } catch (error) {
       console.error("Error fetching models:", error);
       setAllModels([]);
+      setModelsLoadError(true);
     } finally {
       setModelsLoaded(true);
     }
@@ -407,9 +419,13 @@ export default function ApiManagerPageClient() {
         setAllCombos(
           combos.filter((combo: any) => typeof combo?.name === "string" && combo.name.trim())
         );
+        setCombosLoadError(false);
+      } else {
+        setCombosLoadError(true);
       }
     } catch (error) {
       console.error("Error fetching combos:", error);
+      setCombosLoadError(true);
     }
   };
 
@@ -419,9 +435,13 @@ export default function ApiManagerPageClient() {
       if (res.ok) {
         const data = await res.json();
         setAllConnections(data.connections || []);
+        setConnectionsLoadError(false);
+      } else {
+        setConnectionsLoadError(true);
       }
     } catch (error) {
       console.error("Error fetching connections:", error);
+      setConnectionsLoadError(true);
     }
   };
 
@@ -538,13 +558,17 @@ export default function ApiManagerPageClient() {
         const data = await res.json();
         setKeys(data.keys || []);
         setAllowKeyReveal(data.allowKeyReveal === true);
+        setKeysLoadError(false);
         // Fetch usage stats after keys are loaded
         fetchUsageStats(data.keys || []);
         fetchSessionCounts(data.keys || []);
         fetchDeviceCounts(data.keys || []);
+      } else {
+        setKeysLoadError(true);
       }
     } catch (error) {
       console.error("Error fetching keys:", error);
+      setKeysLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -1094,23 +1118,35 @@ export default function ApiManagerPageClient() {
         <p className="text-sm text-text-muted mb-4">{t("keysSecurityNote")}</p>
 
         {keys.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-border rounded-lg">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
-              <span className="material-symbols-outlined text-[32px]">vpn_key</span>
+          keysLoadError ? (
+            <div className="text-center py-12 border border-dashed border-red-500/40 rounded-lg">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 text-red-500 mb-4">
+                <span className="material-symbols-outlined text-[32px]">error</span>
+              </div>
+              {/* Literal: the apiManager catalog has no key for this and the
+                  completeness gate forbids en-only additions. */}
+              <p className="text-text-main font-medium mb-2">Failed to load API keys</p>
+              <p className="text-sm text-text-muted mb-4">{t("noKeysDesc")}</p>
             </div>
-            <p className="text-text-main font-medium mb-2">{t("noKeys")}</p>
-            <p className="text-sm text-text-muted mb-4">{t("noKeysDesc")}</p>
-            <Button
-              icon="add"
-              onClick={() => {
-                setNameError(null);
-                setCreateError(null);
-                setShowAddModal(true);
-              }}
-            >
-              {t("createFirstKey")}
-            </Button>
-          </div>
+          ) : (
+            <div className="text-center py-12 border border-dashed border-border rounded-lg">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
+                <span className="material-symbols-outlined text-[32px]">vpn_key</span>
+              </div>
+              <p className="text-text-main font-medium mb-2">{t("noKeys")}</p>
+              <p className="text-sm text-text-muted mb-4">{t("noKeysDesc")}</p>
+              <Button
+                icon="add"
+                onClick={() => {
+                  setNameError(null);
+                  setCreateError(null);
+                  setShowAddModal(true);
+                }}
+              >
+                {t("createFirstKey")}
+              </Button>
+            </div>
+          )
         ) : filteredKeys.length === 0 ? (
           <div className="text-center py-12 border border-dashed border-border rounded-lg">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
@@ -1704,8 +1740,11 @@ export default function ApiManagerPageClient() {
           modelsByProvider={filteredModelsByProvider}
           allModels={permissionModels}
           modelsLoaded={modelsLoaded}
+          modelsLoadError={modelsLoadError}
           allCombos={allCombos}
+          combosLoadError={combosLoadError}
           allConnections={allConnections}
+          connectionsLoadError={connectionsLoadError}
           searchModel={searchModel}
           onSearchChange={setSearchModel}
           onSave={handleUpdatePermissions}
@@ -1724,8 +1763,11 @@ const PermissionsModal = memo(function PermissionsModal({
   modelsByProvider,
   allModels,
   modelsLoaded,
+  modelsLoadError,
   allCombos,
+  combosLoadError,
   allConnections,
+  connectionsLoadError,
   searchModel,
   onSearchChange,
   onSave,
@@ -1736,8 +1778,11 @@ const PermissionsModal = memo(function PermissionsModal({
   modelsByProvider: ProviderGroup[];
   allModels: Model[];
   modelsLoaded: boolean;
+  modelsLoadError: boolean;
   allCombos: ComboOption[];
+  combosLoadError: boolean;
   allConnections: ProviderConnection[];
+  connectionsLoadError: boolean;
   searchModel: string;
   onSearchChange: (v: string) => void;
   onSave: (
@@ -2238,11 +2283,13 @@ const PermissionsModal = memo(function PermissionsModal({
               ? t("allowAllDesc")
               : !modelsLoaded
                 ? t("restrictLoading")
-                : selectedProviderCount > 0
-                  ? selectedPermissionSummary
-                  : totalModels === 0
-                    ? t("restrictCatalogUnavailable", { selectedCount })
-                    : t("restrictDesc", { selectedCount, totalModels })}
+                : modelsLoadError && totalModels === 0
+                  ? "Model catalog failed to load — no models listed."
+                  : selectedProviderCount > 0
+                    ? selectedPermissionSummary
+                    : totalModels === 0
+                      ? t("restrictCatalogUnavailable", { selectedCount })
+                      : t("restrictDesc", { selectedCount, totalModels })}
           </p>
         </div>
 
@@ -2994,6 +3041,7 @@ const PermissionsModal = memo(function PermissionsModal({
                 connections={allConnections}
                 selectedConnections={selectedConnections}
                 onSelectionChange={setSelectedConnections}
+                loadError={connectionsLoadError}
               />
             )}
           </div>
@@ -3002,6 +3050,7 @@ const PermissionsModal = memo(function PermissionsModal({
         {/* Allowed Combos Section */}
         <AllowedCombosSection
           allCombos={allCombos}
+          loadError={combosLoadError}
           allowAllCombos={allowAllCombos}
           selectedCombos={selectedCombos}
           onAllowAll={(preservedRules) => {

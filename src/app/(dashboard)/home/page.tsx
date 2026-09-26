@@ -10,13 +10,16 @@ import FirstRunReadinessCard from "../dashboard/FirstRunReadinessCard";
 
 // AGENT.md §3.3: SPA static export — no force-dynamic (prerenderable, data via /admin/v1/* fetch with defaults fallback).
 export default async function HomePage() {
-  // Settings failures degrade to defaults here (display-only) — see loadHomeSettings (#14060).
+  // Settings failures degrade to "unknown" here (display-only) — see loadHomeSettings (#14060).
   const [settings, machineId] = await Promise.all([loadHomeSettings(), getMachineId()]);
   const isBootstrapped = process.env.OMNIROUTE_BOOTSTRAPPED === "true";
+  // The first-run nag shows ONLY on an explicit `false`. `"unknown"` (core
+  // unreachable) hides it without claiming the setup is complete.
+  const setupComplete = settings.setupComplete !== false;
   return (
     <>
       {isBootstrapped && <BootstrapBanner />}
-      <FirstRunReadinessCard setupComplete={Boolean(settings.setupComplete)} />
+      <FirstRunReadinessCard setupComplete={setupComplete} />
       <KimiSponsorBanner />
       <CheaperInferenceSponsorBanner />
       <VscodeCopilotBanner />

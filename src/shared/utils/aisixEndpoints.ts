@@ -74,21 +74,41 @@ function readWindowHostname(): string | null {
 }
 
 /**
+ * Scheme the SPA itself was served with, or `null` during SSR/prerender (no
+ * `window`). An `https:` page fetching an `http:` core is blocked by the
+ * browser as mixed content, so LAN bases inherit the page scheme instead of
+ * hardcoding `http:` — the loopback/SSR fallbacks below stay plain HTTP
+ * (loopback is trustworthy and never mixed-content-blocked).
+ */
+function readWindowProtocol(): string | null {
+  try {
+    if (typeof window === "undefined") return null;
+    const protocol = window.location?.protocol;
+    return protocol === "https:" || protocol === "http:" ? protocol : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Resolution order for a native base:
- *   1. non-loopback `window.location.hostname` → `http://<host>:<port>`.
+ *   1. non-loopback `window.location.hostname` → `<page-scheme>://<host>:<port>`.
  *      The SPA was served by AISIX, so its own host is the native host. This
  *      wins over the env vars on purpose: an env var baked at build time cannot
- *      know the deployment hostname of a static bundle.
+ *      know the deployment hostname of a static bundle. The scheme is inherited
+ *      from the page so an `https:` dashboard does not get mixed-content-blocked
+ *      against its own core.
  *   2. `NEXT_PUBLIC_AISIX_*` override.
  *   3. `http://127.0.0.1:<port>` (loopback browser, or SSR/prerender).
  *
- * Scheme is always `http`: the Rust core serves its three planes as plain HTTP,
- * and the dashboard is served by the same process on the same host.
+ * The Rust core serves its three planes as plain HTTP; only the scheme of a
+ * same-host base follows the page — explicit env overrides are used verbatim.
  */
 function resolveAisixBase(envName: string, port: number, loopbackFallback: string): string {
   const hostname = readWindowHostname();
   if (hostname && !LOOPBACK_HOSTNAMES.has(hostname.toLowerCase())) {
-    return `http://${hostname}:${port}`;
+    const scheme = readWindowProtocol() ?? "http:";
+    return `${scheme}//${hostname}:${port}`;
   }
   return stripTrailingSlash(readPublicEnv(envName) ?? loopbackFallback);
 }

@@ -74,16 +74,22 @@ test("#14060: corrupted key_value keeps auth fail-closed and Home degrades witho
   // getSettings() must keep surfacing the read error — its auth callers depend on it.
   await assert.rejects(() => settingsDb.getSettings());
 
-  // (b) Home degrades to defaults instead of rejecting (the original 500).
+  // (b) Home degrades to "unknown" instead of rejecting (the original 500).
   // The loader is injected so the test stays hermetic (no native admin probe).
-  // An unreadable settings store is reported as "setup complete": the AISIX SPA
-  // bakes this value into prerendered HTML, so `false` here would render the
-  // first-run readiness card forever for operators who cannot complete a
-  // Next/SQLite onboarding wizard in the Rust core.
+  // An unreadable settings store is reported as "unknown" — NOT "complete":
+  // the AISIX SPA bakes this value into prerendered HTML, so `false` here would
+  // render the first-run readiness card forever for operators who cannot
+  // complete a Next/SQLite onboarding wizard in the Rust core, while `true`
+  // would falsely claim a completed setup. Home hides the nag for `unknown`
+  // without claiming completion.
   const homeSettings = await loadHomeSettings(async () => {
     throw new Error("key_value corrupt");
   });
-  assert.deepEqual(homeSettings, { setupComplete: true });
+  assert.deepEqual(homeSettings, { setupComplete: "unknown" });
+});
+
+test("loadHomeSettings reports an unreachable admin plane as unknown", async () => {
+  assert.deepEqual(await loadHomeSettings(async () => null), { setupComplete: "unknown" });
 });
 
 test("loadHomeSettings passes healthy settings through untouched", async () => {

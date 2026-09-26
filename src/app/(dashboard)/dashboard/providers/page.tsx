@@ -240,7 +240,7 @@ function ProvidersPageContent() {
   const liveModelsByProviderId = useSyncedModelsByProvider();
   const [showFreeOnly, setShowFreeOnly] = useState(false);
   const [openRouterProviderStats, setOpenRouterProviderStats] = useState<
-    OpenRouterProviderStatsEntry[]
+    OpenRouterProviderStatsEntry[] | null
   >([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   // #4240: media-category (serviceKind) filter — composes with activeCategory,
@@ -887,10 +887,9 @@ function ProvidersPageContent() {
     shouldShowFirstProviderHint(connections.length, searchQuery) && !showAllProviders;
 
   return (
-    <OpenRouterProviderStatsProvider entries={openRouterProviderStats}>
+    <OpenRouterProviderStatsProvider entries={openRouterProviderStats ?? []}>
       <div className="flex flex-col gap-6">
-          <DeprecatedProviderBanner />
-
+        <DeprecatedProviderBanner />
 
         {showFirstProviderHint && (
           <Card padding="lg">

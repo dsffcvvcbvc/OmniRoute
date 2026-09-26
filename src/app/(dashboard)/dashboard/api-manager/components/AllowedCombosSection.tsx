@@ -135,6 +135,7 @@ export function AllowedCombosSection({
   onAllowAll,
   onRestrict,
   onToggleCombo,
+  loadError = false,
 }: {
   allCombos: AllowedComboOption[];
   allowAllCombos: boolean;
@@ -142,6 +143,8 @@ export function AllowedCombosSection({
   onAllowAll: (preservedRules: string[]) => void;
   onRestrict: () => void;
   onToggleCombo: (comboName: string) => void;
+  /** The combos read failed: render an explicit error note, not a silent gap. */
+  loadError?: boolean;
 }) {
   const t = useTranslations("apiManager");
 
@@ -154,7 +157,16 @@ export function AllowedCombosSection({
     [allCombos]
   );
 
-  if (allCombos.length === 0) return null;
+  if (allCombos.length === 0) {
+    if (!loadError) return null;
+    return (
+      <div className="flex flex-col gap-2 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10">
+        <p className="text-xs text-amber-700 dark:text-amber-300">
+          Combo list failed to load — combo restrictions unavailable.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-2 p-3 rounded-lg border border-border bg-surface/40">

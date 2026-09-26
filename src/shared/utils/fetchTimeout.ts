@@ -19,7 +19,12 @@ interface FetchTimeoutOptions extends RequestInit {
 }
 
 export async function fetchWithTimeout(url: string | URL, options: FetchTimeoutOptions = {}) {
-  const { timeoutMs = FETCH_TIMEOUT_MS, signal: externalSignal, fetchFn, ...fetchOptions } = options;
+  const {
+    timeoutMs = FETCH_TIMEOUT_MS,
+    signal: externalSignal,
+    fetchFn,
+    ...fetchOptions
+  } = options;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -75,4 +80,34 @@ export class FetchTimeoutError extends Error {
  */
 export function getConfiguredTimeout() {
   return FETCH_TIMEOUT_MS;
+}
+
+/** Ceiling for dashboard backoff — a hidden/unreachable core must not wedge a tab at 15s forever. */
+const MAX_POLL_BACKOFF_MS = 5 * 60_000;
+
+/**
+ * True when the tab is backgrounded. Dashboard pollers skip their tick while
+ * hidden (the missed refresh simply happens on return) instead of hammering
+ * an unreachable core from a tab nobody is watching.
+ */
+export function isDocumentHidden(): boolean {
+  try {
+    return typeof document !== "undefined" && document.hidden === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Exponential backoff for dashboard polling against an unreachable core:
+ * `baseMs * 2^consecutiveFailures`, capped at 5 minutes. `0` failures returns
+ * the base interval unchanged, so healthy polling is untouched — only the
+ * red path slows down.
+ */
+export function backoffPollDelayMs(baseMs: number, consecutiveFailures: number): number {
+  const failures = Number.isFinite(consecutiveFailures)
+    ? Math.max(0, Math.floor(consecutiveFailures))
+    : 0;
+  if (failures <= 0) return baseMs;
+  return Math.min(MAX_POLL_BACKOFF_MS, baseMs * 2 ** Math.min(failures, 10));
 }

@@ -54,6 +54,7 @@ describe("loadProviderPageData — never freezes the dashboard skeleton", () => 
     assert.equal(data.expirations, null);
     assert.equal(data.blockedProviders, null);
     assert.equal(data.settings, null);
+    assert.equal(data.openRouterProviderStats, null);
   });
 
   test("returns parsed data when every endpoint resolves", async () => {
@@ -64,8 +65,10 @@ describe("loadProviderPageData — never freezes the dashboard skeleton", () => 
           nodes: [{ id: "n1" }],
           ccCompatibleProviderEnabled: true,
         },
-        "http://127.0.0.1:9090/status/models": { openai: "2030-01-01" },
-        "http://127.0.0.1:3001/admin/v1/resources/settings": { blockedProviders: ["openai"] },
+        "http://127.0.0.1:9090/metrics": {
+          object: "list",
+          data: [{ slug: "openai", displayName: "OpenAI", modelCount: 10 }],
+        },
       }),
       1000
     );
@@ -73,8 +76,29 @@ describe("loadProviderPageData — never freezes the dashboard skeleton", () => 
     assert.deepEqual(data.connections, [{ id: "c1" }]);
     assert.deepEqual(data.providerNodes, [{ id: "n1" }]);
     assert.equal(data.ccCompatibleProviderEnabled, true);
-    assert.deepEqual(data.expirations, { openai: "2030-01-01" });
-    assert.deepEqual(data.blockedProviders, ["openai"]);
+    // Credential expirations are Next/SQLite-only: the native plane reports no
+    // expiry dates, so the loader returns an explicit null instead of
+    // synthesizing {summary,list} from provider states.
+    assert.equal(data.expirations, null);
+    assert.equal(data.blockedProviders, null);
+    assert.deepEqual(data.openRouterProviderStats, [
+      { slug: "openai", displayName: "OpenAI", modelCount: 10 },
+    ]);
+  });
+
+  test("non-enrichment metrics payload degrades openRouter stats to null, not silent []", async () => {
+    const data = await loadProviderPageData(
+      jsonFetch({
+        "http://127.0.0.1:3001/admin/v1/provider_keys": { connections: [] },
+        "http://127.0.0.1:3001/admin/v1/models": { nodes: [] },
+        // Prometheus text is filtered by safeJson's content-type check; a JSON
+        // object that is not the enrichment shape must also stay explicit null.
+        "http://127.0.0.1:9090/metrics": { status: "ok" },
+      }),
+      1000
+    );
+
+    assert.equal(data.openRouterProviderStats, null);
   });
 
   test("a rejecting fetch degrades to defaults instead of throwing", async () => {
