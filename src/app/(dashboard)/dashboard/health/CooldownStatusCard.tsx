@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Card } from "@/shared/components";
@@ -35,7 +35,7 @@ type CooldownEntry = {
 };
 
 const REFRESH_MS = 15_000;
-const COOLDOWN_WINDOW_MS = 60_000;
+const REQUEST_TIMEOUT_MS = 8000;
 
 function toStringOrNull(value: unknown): string | null {
   if (typeof value === "string" && value.trim().length > 0) return value;
@@ -116,43 +116,54 @@ export default function CooldownStatusCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  // StrictMode mounts effects twice; without this guard the first (immediately
+  // superseded) interval keeps polling and can setState after unmount.
+  const cancelledRef = useRef(false);
 
   const loadCooldowns = useCallback(async () => {
     try {
       const response = await fetchWithTimeout(aisixStatusModelsUrl(), {
         cache: "no-store",
-        timeoutMs: 8000,
+        timeoutMs: REQUEST_TIMEOUT_MS,
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const payload = (await response.json()) as unknown;
       const now = Date.now();
+      // No upper time window: connection cooldowns are exponential
+      // (`baseCooldownMs * 2 ** failureIndex`) and reach 5/10 minutes by
+      // profile, so a fixed 60s cutoff silently dropped the long ones the card
+      // exists to show. Everything with a future timestamp is still cooling.
       const normalized = extractEntries(payload)
         .map(normalizeEntry)
         .filter((entry) => {
           if (entry.untilMs !== null) return entry.untilMs > now;
           return entry.reason.includes("429") || matchesSearch(entry.reason, "cooldown");
         })
-        .filter((entry) => {
-          if (entry.untilMs === null) return true;
-          return entry.untilMs - now <= COOLDOWN_WINDOW_MS + 5000;
-        })
-        .sort((a, b) => (a.untilMs ?? 0) - (b.untilMs ?? 0));
+        // Soonest expiry first; entries with no deadline last, not first — `?? 0`
+        // used to sort a null deadline ahead of every real cooldown.
+        .sort((a, b) => (a.untilMs ?? Infinity) - (b.untilMs ?? Infinity));
+      if (cancelledRef.current) return;
       setEntries(normalized);
       setError(null);
       setLastUpdated(new Date());
     } catch (err) {
+      if (cancelledRef.current) return;
       setError(err instanceof Error ? err.message : "Failed to load");
     } finally {
-      setLoading(false);
+      if (!cancelledRef.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    cancelledRef.current = false;
     void (async () => {
       await loadCooldowns();
     })();
     const id = setInterval(() => void loadCooldowns(), REFRESH_MS);
-    return () => clearInterval(id);
+    return () => {
+      cancelledRef.current = true;
+      clearInterval(id);
+    };
   }, [loadCooldowns]);
 
   return (

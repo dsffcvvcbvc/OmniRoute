@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Card } from "@/shared/components";
-import { aisixResourcesUrl } from "@/shared/utils/aisixEndpoints";
+import { aisixAdminModelsUrl } from "@/shared/utils/aisixEndpoints";
 import { fetchWithTimeout } from "@/shared/utils/fetchTimeout";
 
 type ResourcesStatus = {
@@ -14,6 +14,7 @@ type ResourcesStatus = {
 };
 
 const REFRESH_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 8000;
 
 function toStringOrNull(value: unknown): string | null {
   if (typeof value === "string" && value.trim().length > 0) return value;
@@ -62,37 +63,44 @@ export default function HotReloadIndicator() {
     reachable: false,
   });
   const [loading, setLoading] = useState(true);
+  // StrictMode mounts effects twice; without this guard the first (immediately
+  // superseded) interval keeps polling and can setState after unmount.
+  const cancelledRef = useRef(false);
 
   const loadStatus = useCallback(async () => {
+    // READ ONLY. The native admin plane exposes `POST /admin/v1/resources` as its
+    // sole resources verb, so an earlier revision retried a failed GET with
+    // `POST {}` — a periodic UNSOLICITED WRITE from a passive status card. The
+    // probe now reads the real catalog endpoint and degrades to
+    // `reachable: false` on any failure.
     try {
-      const url = aisixResourcesUrl();
-      let response = await fetchWithTimeout(url, { cache: "no-store", timeoutMs: 8000 });
-      if (!response.ok) {
-        response = await fetchWithTimeout(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: "{}",
-          cache: "no-store",
-          timeoutMs: 8000,
-        });
-      }
+      const response = await fetchWithTimeout(aisixAdminModelsUrl(), {
+        cache: "no-store",
+        timeoutMs: REQUEST_TIMEOUT_MS,
+      });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const payload = (await response.json()) as unknown;
       const parsed = parseStatus(payload);
+      if (cancelledRef.current) return;
       setStatus({ ...parsed, reachable: true });
     } catch {
+      if (cancelledRef.current) return;
       setStatus((prev) => ({ ...prev, reachable: false }));
     } finally {
-      setLoading(false);
+      if (!cancelledRef.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    cancelledRef.current = false;
     void (async () => {
       await loadStatus();
     })();
     const id = setInterval(() => void loadStatus(), REFRESH_MS);
-    return () => clearInterval(id);
+    return () => {
+      cancelledRef.current = true;
+      clearInterval(id);
+    };
   }, [loadStatus]);
 
   const appliedLabel = formatAppliedAt(status.appliedAt);

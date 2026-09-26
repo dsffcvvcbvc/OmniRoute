@@ -246,6 +246,16 @@
     "usage.tierUltra",
     "usage.totalRequests",
     "usage.totalTokens",
-    "usage.warningThresholdPlaceholder"
+    "usage.warningThresholdPlaceholder",
+    "comboControl.latency",
+    "health.cooldown",
+    "health.cooldownCount",
+    "health.latency",
+    "health.models",
+    "health.promptCache",
+    "home.apiKeyLabel",
+    "home.recentRequestsModel",
+    "telemetry.avgLatency",
+    "telemetry.latencyTrend"
   ]
 }

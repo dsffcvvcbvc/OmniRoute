@@ -20,6 +20,11 @@
 import { proxyRequest } from "@/lib/services/reverseProxy";
 
 // AGENT.md §3.3: SPA static export — embed reverse-proxy excluded from export.
+// `output: "export"` cannot emit a Route Handler at all, and this one can never
+// be static-gen enabled (it proxies a live service UI). The export build moves
+// this directory aside via `getTransientBuildPaths()` in
+// `scripts/build/build-next-isolated.mjs` (OMNIROUTE_EXPORT=1) and restores it
+// in the caller's `finally`; the Next build keeps the route.
 
 // Optional catch-all: `path` is `undefined` for the segment-less `/embed/` root.
 type RouteParams = { name: string; path?: string[] };

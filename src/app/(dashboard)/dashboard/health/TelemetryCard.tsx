@@ -1,45 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Card } from "@/shared/components";
-import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
-
-type TelemetryPayload = {
-  count?: number;
-  totalRequests?: number;
-  avg?: number;
-  avgLatencyMs?: number;
-  p50?: number;
-  p95?: number;
-  p99?: number;
-  uptime?: number;
-  errorRate?: number;
-  activeConnections?: number;
-  memoryUsage?: {
-    rss?: number;
-    heapUsed?: number;
-    heapTotal?: number;
-  };
-  sessions?: {
-    activeCount?: number;
-  };
-  quotaMonitor?: {
-    errors?: number;
-  };
-};
-
-type HealthPayload = {
-  system?: {
-    uptime?: number;
-    memoryUsage?: {
-      rss?: number;
-      heapUsed?: number;
-      heapTotal?: number;
-    };
-  };
-  activeConnections?: number;
-};
+import { aisixStatusModelsUrl } from "@/shared/utils/aisixEndpoints";
+import { adaptAisixTelemetry, type AisixTelemetry } from "@/shared/utils/aisixHealth";
+import { fetchWithTimeout } from "@/shared/utils/fetchTimeout";
 
 type TelemetrySample = {
   timestamp: number;
@@ -50,8 +16,10 @@ type TelemetrySample = {
 
 const REFRESH_MS = 30_000;
 const MAX_SAMPLES = 24;
+const REQUEST_TIMEOUT_MS = 8000;
 
-function formatDuration(seconds = 0) {
+function formatDuration(seconds?: number | null) {
+  if (typeof seconds !== "number" || !Number.isFinite(seconds) || seconds < 0) return "—";
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
@@ -61,16 +29,27 @@ function formatDuration(seconds = 0) {
   return `${minutes}m`;
 }
 
-function formatBytes(bytes = 0) {
+function formatBytes(bytes?: number | null) {
+  if (typeof bytes !== "number" || !Number.isFinite(bytes) || bytes < 0) return "—";
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
-function formatMs(value?: number) {
+function formatMs(value?: number | null) {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—";
   return `${Math.round(value)}ms`;
+}
+
+function formatCount(value?: number | null) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+  return value.toLocaleString();
+}
+
+function formatPercent(value?: number | null) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+  return `${value.toFixed(2)}%`;
 }
 
 function Sparkline({
@@ -123,93 +102,79 @@ function getIndicatorTone(value: number, warning: number, critical: number, inve
 
 export default function TelemetryCard() {
   const t = useTranslations("telemetry");
-  const [telemetry, setTelemetry] = useState<TelemetryPayload | null>(null);
-  const [health, setHealth] = useState<HealthPayload | null>(null);
+  const th = useTranslations("health");
+  const [telemetry, setTelemetry] = useState<AisixTelemetry | null>(null);
   const [samples, setSamples] = useState<TelemetrySample[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  // StrictMode mounts effects twice; without this guard the first (immediately
+  // superseded) interval keeps polling and can setState after unmount.
+  const cancelledRef = useRef(false);
 
   const loadTelemetry = useCallback(async () => {
+    // ONE native read. `/api/telemetry/summary` and `/api/monitoring/health` were
+    // two Next-only endpoints; on the native transport the first 404'd and the
+    // second resolves to the same `:9090/status/models` snapshot this card now
+    // reads directly. Fields the native plane does not report stay `null` and
+    // render as "—" instead of a fabricated 0.
     try {
-      const [telemetryResult, healthResult] = await Promise.allSettled([
-        fetch("/api/telemetry/summary").then((response) => {
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          return response.json() as Promise<TelemetryPayload>;
-        }),
-        fetch(resolveAisixRequestUrl("/api/monitoring/health")).then((response) => {
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          return response.json() as Promise<HealthPayload>;
-        }),
-      ]);
-
-      if (telemetryResult.status === "rejected" && healthResult.status === "rejected") {
-        throw telemetryResult.reason;
-      }
-
-      const nextTelemetry = telemetryResult.status === "fulfilled" ? telemetryResult.value : null;
-      const nextHealth = healthResult.status === "fulfilled" ? healthResult.value : null;
-      if (nextTelemetry) setTelemetry(nextTelemetry);
-      if (nextHealth) setHealth(nextHealth);
+      const response = await fetchWithTimeout(aisixStatusModelsUrl(), {
+        cache: "no-store",
+        timeoutMs: REQUEST_TIMEOUT_MS,
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = (await response.json()) as unknown;
+      const next = adaptAisixTelemetry(payload);
+      if (cancelledRef.current) return;
+      setTelemetry(next);
       setError(null);
       setLastUpdated(new Date());
-
-      const memoryBytes =
-        nextTelemetry?.memoryUsage?.rss || nextHealth?.system?.memoryUsage?.rss || 0;
-      const latencyMs =
-        nextTelemetry?.avgLatencyMs ?? nextTelemetry?.avg ?? nextTelemetry?.p50 ?? 0;
-      const throughput = nextTelemetry?.totalRequests ?? nextTelemetry?.count ?? 0;
-
-      setSamples((prev) => [
-        ...prev.slice(Math.max(0, prev.length - MAX_SAMPLES + 1)),
-        {
-          timestamp: Date.now(),
-          latencyMs,
-          throughput,
-          memoryBytes,
-        },
-      ]);
+      // Only accumulate a sample when the native payload actually reported a
+      // counter. Pushing fabricated zeros would draw a convincing flat line
+      // where the honest answer is "no data".
+      if (next.avgLatencyMs !== null || next.totalRequests !== null) {
+        setSamples((prev) => [
+          ...prev.slice(Math.max(0, prev.length - MAX_SAMPLES + 1)),
+          {
+            timestamp: Date.now(),
+            latencyMs: next.avgLatencyMs ?? 0,
+            throughput: next.totalRequests ?? 0,
+            memoryBytes: 0,
+          },
+        ]);
+      }
     } catch (err) {
+      if (cancelledRef.current) return;
       setError(err instanceof Error ? err.message : t("loadFailed"));
     } finally {
-      setLoading(false);
+      if (!cancelledRef.current) setLoading(false);
     }
   }, [t]);
 
   useEffect(() => {
+    cancelledRef.current = false;
     void (async () => {
       await loadTelemetry();
     })();
     const interval = setInterval(() => void loadTelemetry(), REFRESH_MS);
-    return () => clearInterval(interval);
+    return () => {
+      cancelledRef.current = true;
+      clearInterval(interval);
+    };
   }, [loadTelemetry]);
 
   const values = useMemo(() => {
-    const totalRequests = telemetry?.totalRequests ?? telemetry?.count ?? 0;
-    const avgLatency = telemetry?.avgLatencyMs ?? telemetry?.avg ?? telemetry?.p50;
-    const p95Latency = telemetry?.p95 ?? avgLatency ?? 0;
-    const quotaErrors = telemetry?.quotaMonitor?.errors ?? 0;
-    const errorRate =
-      typeof telemetry?.errorRate === "number"
-        ? telemetry.errorRate
-        : totalRequests > 0
-          ? (quotaErrors / Math.max(totalRequests, 1)) * 100
-          : 0;
-
     return {
-      uptime: telemetry?.uptime ?? health?.system?.uptime ?? 0,
-      totalRequests,
-      avgLatency,
-      p95Latency,
-      errorRate,
-      activeConnections:
-        telemetry?.activeConnections ??
-        telemetry?.sessions?.activeCount ??
-        health?.activeConnections ??
-        0,
-      memoryUsage: telemetry?.memoryUsage ?? health?.system?.memoryUsage ?? {},
+      uptime: telemetry?.uptime ?? null,
+      totalRequests: telemetry?.totalRequests ?? null,
+      avgLatency: telemetry?.avgLatencyMs ?? null,
+      p95Latency: telemetry?.p95LatencyMs ?? null,
+      errorRate: telemetry?.errorRate ?? null,
+      activeConnections: telemetry?.activeConnections ?? null,
+      hasSignal: telemetry?.hasReportedSignal === true,
     };
-  }, [health, telemetry]);
+  }, [telemetry]);
 
   const metricCards = [
     {
@@ -220,7 +185,7 @@ export default function TelemetryCard() {
     },
     {
       label: t("totalRequests"),
-      value: values.totalRequests.toLocaleString(),
+      value: formatCount(values.totalRequests),
       icon: "receipt_long",
       tone: "bg-primary/10 text-primary",
     },
@@ -228,23 +193,30 @@ export default function TelemetryCard() {
       label: t("avgLatency"),
       value: formatMs(values.avgLatency),
       icon: "speed",
-      tone: getIndicatorTone(values.p95Latency, 2_000, 10_000),
+      tone:
+        values.p95Latency === null
+          ? "bg-text-muted/10 text-text-muted"
+          : getIndicatorTone(values.p95Latency, 2_000, 10_000),
     },
     {
       label: t("errorRate"),
-      value: `${values.errorRate.toFixed(2)}%`,
+      value: formatPercent(values.errorRate),
       icon: "error",
-      tone: getIndicatorTone(values.errorRate, 1, 5),
+      tone:
+        values.errorRate === null
+          ? "bg-text-muted/10 text-text-muted"
+          : getIndicatorTone(values.errorRate, 1, 5),
     },
     {
       label: t("activeConnections"),
-      value: values.activeConnections.toLocaleString(),
+      value: formatCount(values.activeConnections),
       icon: "hub",
       tone: "bg-cyan-500/10 text-cyan-500",
     },
     {
       label: t("memoryUsage"),
-      value: formatBytes(values.memoryUsage.rss ?? values.memoryUsage.heapUsed ?? 0),
+      // The native core reports no RSS/heap figure.
+      value: formatBytes(null),
       icon: "memory",
       tone: "bg-violet-500/10 text-violet-500",
     },
@@ -286,6 +258,14 @@ export default function TelemetryCard() {
         </div>
       )}
 
+      {/* Reachable native core that reports no counters: say so once, instead of
+          showing a grid of plausible-looking zeros. */}
+      {!error && !loading && !values.hasSignal ? (
+        <div className="mb-4 rounded-lg border border-border bg-surface/40 px-3 py-2 text-sm text-text-muted">
+          {th("notAvailable")}
+        </div>
+      ) : null}
+
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {metricCards.map((metric) => (
           <div key={metric.label} className="rounded-xl border border-border bg-surface/50 p-3">
@@ -317,16 +297,17 @@ export default function TelemetryCard() {
         <div className="rounded-xl border border-border bg-surface/40 p-3">
           <div className="mb-2 flex items-center justify-between text-xs text-text-muted">
             <span>{t("throughputTrend")}</span>
-            <span>{values.totalRequests.toLocaleString()}</span>
+            <span>{formatCount(values.totalRequests)}</span>
           </div>
           <Sparkline samples={samples} field="throughput" />
         </div>
         <div className="rounded-xl border border-border bg-surface/40 p-3">
           <div className="mb-2 flex items-center justify-between text-xs text-text-muted">
             <span>{t("memoryTrend")}</span>
-            <span>{formatBytes(values.memoryUsage.heapUsed ?? 0)}</span>
+            <span>{formatBytes(null)}</span>
           </div>
-          <Sparkline samples={samples} field="memoryBytes" />
+          {/* No process-memory series natively — always the empty placeholder. */}
+          <Sparkline samples={[]} field="memoryBytes" />
         </div>
       </div>
     </Card>

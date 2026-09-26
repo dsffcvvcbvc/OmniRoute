@@ -420,6 +420,12 @@ export default function ApiTab(_props: ApiTabProps) {
         if (selectedConnection) {
           fetchHeaders["X-OmniRoute-Connection"] = selectedConnection;
         }
+        // CORS/auth contract for the native data plane (`:3000`): the AISIX core
+        // is a loopback/LAN OpenAI-compatible server with no Next.js session
+        // layer, so a browser `Authorization: Bearer` is only forwarded when the
+        // operator actually pasted a key into the request body. Nothing is
+        // injected implicitly — an empty header would make the core answer 401
+        // instead of proxying the request.
         res = await fetch(aisixDataPlaneUrl(path), {
           method: "POST",
           headers: fetchHeaders,
@@ -435,6 +441,10 @@ export default function ApiTab(_props: ApiTabProps) {
         if (selectedConnection) {
           fetchHeaders["X-OmniRoute-Connection"] = selectedConnection;
         }
+        // Same contract as the multipart branch above: no implicit Authorization
+        // header. The Playground targets the LOCAL native core, which routes on
+        // the configured provider keys rather than a dashboard session; a
+        // `Bearer` value would have to come from the operator's own body.
         res = await fetch(aisixDataPlaneUrl(path), {
           method: "POST",
           headers: fetchHeaders,

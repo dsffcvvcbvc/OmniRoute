@@ -49,6 +49,29 @@ export function getTransientBuildPaths(rootDir = projectRoot, env = process.env)
     });
   }
 
+  if (env.OMNIROUTE_EXPORT === "1") {
+    // AGENT.md §3.3: `output: "export"` cannot emit a Route Handler — Next
+    // throws E301 ("dynamic/revalidate not configured on route") for any
+    // `route.ts` that is not static-gen enabled, and an embedded-service reverse
+    // proxy can never be. Move the dashboard's embed proxy aside for the export
+    // build (restored by the caller's `finally`, git-recoverable regardless).
+    paths.push({
+      label: "embedded-service reverse proxy (not exportable)",
+      sourcePath: path.join(
+        rootDir,
+        "src",
+        "app",
+        "(dashboard)",
+        "dashboard",
+        "providers",
+        "services",
+        "[name]",
+        "embed"
+      ),
+      backupPath: path.join(backupRoot, "embed"),
+    });
+  }
+
   return paths;
 }
 

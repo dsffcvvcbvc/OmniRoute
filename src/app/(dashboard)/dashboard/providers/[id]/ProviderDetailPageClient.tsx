@@ -232,28 +232,14 @@ export default function ProviderDetailPageClient() {
     },
   });
 
-  // D28 — AISIX SPA: referral links do not exist in Rust core (Law 5 Case B).
-  // Best-effort probe of the native catalog; static website stays the fallback.
-  const [referralUrl, setReferralUrl] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/admin/v1/models");
-        if (!res.ok) return;
-        if (cancelled) return;
-        setReferralUrl(null);
-      } catch {
-        // Best-effort only — never blocks rendering of the provider page.
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [providerId]);
+  // D28 — AISIX SPA: referral links do not exist in the Rust core (Law 5 Case B),
+  // so there is nothing to probe. An earlier revision fired a GET /admin/v1/models
+  // "probe" whose only effect was `setReferralUrl(null)` — a dead network round-trip
+  // whose value could never change the outcome. The static catalog website stays the
+  // single source for the header link.
   const { website: providerHeaderWebsite, isReferralLink } = resolveProviderHeaderLink(
     providerInfo?.website,
-    referralUrl
+    null
   );
   const oauthProviderId = resolveProviderOAuthBackendId(providerId, providerInfo);
   const providerSupportsOAuth =

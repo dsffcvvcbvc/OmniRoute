@@ -391,7 +391,7 @@ export default function ApiManagerPageClient() {
         setAllModels([]);
       }
     } catch (error) {
-      console.log("Error fetching models:", error);
+      console.error("Error fetching models:", error);
       setAllModels([]);
     } finally {
       setModelsLoaded(true);
@@ -409,7 +409,7 @@ export default function ApiManagerPageClient() {
         );
       }
     } catch (error) {
-      console.log("Error fetching combos:", error);
+      console.error("Error fetching combos:", error);
     }
   };
 
@@ -421,7 +421,7 @@ export default function ApiManagerPageClient() {
         setAllConnections(data.connections || []);
       }
     } catch (error) {
-      console.log("Error fetching connections:", error);
+      console.error("Error fetching connections:", error);
     }
   };
 
@@ -468,7 +468,7 @@ export default function ApiManagerPageClient() {
       }
       setUsageStats(stats);
     } catch (e) {
-      console.log("Error fetching usage stats:", e);
+      console.error("Error fetching usage stats:", e);
     }
   };
 
@@ -493,7 +493,7 @@ export default function ApiManagerPageClient() {
       }
       setSessionCounts(normalized);
     } catch (error) {
-      console.log("Error fetching session counts:", error);
+      console.error("Error fetching session counts:", error);
     }
   };
 
@@ -525,7 +525,7 @@ export default function ApiManagerPageClient() {
       );
       setDeviceCounts(Object.fromEntries(results));
     } catch (error) {
-      console.log("Error fetching device counts:", error);
+      console.error("Error fetching device counts:", error);
     }
   };
 
@@ -544,7 +544,7 @@ export default function ApiManagerPageClient() {
         fetchDeviceCounts(data.keys || []);
       }
     } catch (error) {
-      console.log("Error fetching keys:", error);
+      console.error("Error fetching keys:", error);
     } finally {
       setLoading(false);
     }
@@ -752,7 +752,7 @@ export default function ApiManagerPageClient() {
         resolveAisixRequestUrl(`/api/keys/${encodeURIComponent(keyId)}/reveal`)
       );
       if (!res.ok) {
-        console.log("Error revealing key:", await res.text());
+        console.error("Error revealing key:", await res.text());
         return;
       }
 
@@ -767,7 +767,7 @@ export default function ApiManagerPageClient() {
         await copy(data.key, `existing_key_${keyId}`);
       }
     } catch (error) {
-      console.log("Error copying existing key:", error);
+      console.error("Error copying existing key:", error);
     }
   };
 
@@ -787,7 +787,7 @@ export default function ApiManagerPageClient() {
           resolveAisixRequestUrl(`/api/keys/${encodeURIComponent(keyId)}/reveal`)
         );
         if (!res.ok) {
-          console.log("Error revealing key:", await res.text());
+          console.error("Error revealing key:", await res.text());
           return;
         }
         const data = await res.json();
@@ -798,7 +798,7 @@ export default function ApiManagerPageClient() {
           return next;
         });
       } catch (error) {
-        console.log("Error revealing key:", error);
+        console.error("Error revealing key:", error);
         return;
       }
     }

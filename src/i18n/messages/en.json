@@ -4814,7 +4814,7 @@
     "lastRequest": "Last request",
     "lastError": "Last error",
     "cooldownStatusTitle": "Keys in Cooldown (429 → 60s)",
-    "cooldownStatusDescription": "Keys in 60s Cooldown after 429; used for Failover and SSE / TTFT diagnostics.",
+    "cooldownStatusDescription": "Keys in 60s Cooldown after 429; used for Failover and SSE/TTFT diagnostics.",
     "cooldownColKey": "Key",
     "cooldownColProvider": "Provider",
     "cooldownColUntil": "Cooldown until",

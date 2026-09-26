@@ -16,7 +16,9 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 // AGENT.md §3.3 Stage 3: static SPA export for AISIX binary (`npm run build:export`
 // sets OMNIROUTE_EXPORT=1). Export build writes self-contained `out/` with zero Node.js.
 const isExportBuild = process.env.OMNIROUTE_EXPORT === "1";
-const distDir = isExportBuild ? "out" : process.env.NEXT_DIST_DIR || ".build/next";
+const distDir = isExportBuild
+  ? process.env.NEXT_DIST_DIR || "out"
+  : process.env.NEXT_DIST_DIR || ".build/next";
 const projectRoot = dirname(fileURLToPath(import.meta.url));
 const scriptSrc =
   process.env.NODE_ENV === "development"
@@ -166,6 +168,12 @@ const nextConfig = {
     // value that is unique per build run when git is absent (CI tarball).
     NEXT_PUBLIC_SW_BUILD_ID:
       process.env.OMNIROUTE_SW_BUILD_ID || process.env.SOURCE_VERSION || `${Date.now()}`,
+    // AISIX SPA profile marker, derived from the build profile (no operator-set
+    // env var, so it needs no ENVIRONMENT.md entry). `process.env.OMNIROUTE_EXPORT`
+    // is NOT readable in the browser bundle — `next.config.mjs` only inlines the
+    // NEXT_PUBLIC_* keys declared here — so the SPA-only sidebar filter in
+    // src/shared/constants/sidebarVisibility/sections.ts reads this instead.
+    NEXT_PUBLIC_AISIX_SPA_EXPORT: isExportBuild ? "1" : "0",
   },
   distDir,
   // Turbopack config: redirect native modules to stubs at build time
@@ -500,6 +508,18 @@ const nextConfig = {
   },
 
   async headers() {
+    // ⚠️ `headers()` is INERT under `output: "export"` (OMNIROUTE_EXPORT=1):
+    // a static export emits plain files into `out/`, and there is no server
+    // process to attach response headers to — so every rule built here (the CSP
+    // below, X-Frame-Options, HSTS, …) is silently lost in the AISIX SPA build.
+    // The static bundle therefore ships WITHOUT a Content-Security-Policy. It is
+    // NOT replaced by a `<meta http-equiv>`: a meta CSP silently drops
+    // `frame-ancestors`, `report-uri` and `sandbox`, and a wrong policy would
+    // brick the SPA with no server-side fallback to diagnose it. The operator
+    // serving `out/` is responsible for the response headers; see
+    // docs/reference/ENVIRONMENT.md → NEXT_PUBLIC_AISIX_ADMIN for how the SPA
+    // locates the native core.
+    //
     // #10273: opt-in embedding for the VS Code Simple Browser (OmniCopilot). Off by default —
     // `securityHeaders` then applies to `/:path*` exactly as it always has. When the operator
     // sets DASHBOARD_ALLOW_EMBED=vscode, buildSecurityHeaderRules() splits that catch-all into

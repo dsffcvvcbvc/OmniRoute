@@ -218,78 +218,98 @@ export const COMPRESSION_CONTEXT_GROUP: SidebarItemGroup = {
   ],
 };
 
+/**
+ * AISIX SPA profile (AGENT.md §3.3) — items whose pages drive a Node-only
+ * subsystem (the MITM target registry and the traffic-inspector proxy) that does
+ * not exist in the Rust core, so the static bundle can only render dead links.
+ *
+ * Filtered HERE, at the single source every consumer reads (Sidebar,
+ * CommandPalette, Header, Settings → Sidebar), instead of per-consumer: the
+ * marker is inlined into the client bundle by `next.config.mjs` (`env`), because
+ * `process.env.OMNIROUTE_EXPORT` is not readable in the browser.
+ */
+const AISIX_SPA_UNAVAILABLE_ITEM_IDS = new Set<string>(["agent-bridge", "traffic-inspector"]);
+
+function aisixSpaFilter(items: readonly SidebarItemDefinition[]): readonly SidebarItemDefinition[] {
+  if (process.env.NEXT_PUBLIC_AISIX_SPA_EXPORT !== "1") return items;
+  return items.filter((item) => !AISIX_SPA_UNAVAILABLE_ITEM_IDS.has(item.id));
+}
+
+const TOOLS_GROUP_ITEMS: readonly SidebarItemDefinition[] = [
+  {
+    id: "cli-code",
+    href: "/dashboard/cli-code",
+    i18nKey: "cliCode",
+    subtitleKey: "cliCodeSubtitle",
+    icon: "terminal",
+  },
+  {
+    id: "cli-agents",
+    href: "/dashboard/cli-agents",
+    i18nKey: "cliAgents",
+    subtitleKey: "cliAgentsSubtitle",
+    icon: "smart_toy",
+  },
+  {
+    id: "acp-agents",
+    href: "/dashboard/acp-agents",
+    i18nKey: "acpAgents",
+    subtitleKey: "acpAgentsSubtitle",
+    icon: "device_hub",
+  },
+  {
+    id: "cloud-agents",
+    href: "/dashboard/cloud-agents",
+    i18nKey: "cloudAgents",
+    subtitleKey: "cloudAgentsSubtitle",
+    icon: "cloud",
+  },
+  {
+    id: "conductor",
+    href: "/dashboard/conductor",
+    i18nKey: "conductor",
+    subtitleKey: "conductorSubtitle",
+    icon: "account_tree",
+    labelFallback: "Conductor",
+    subtitleFallback: "CLI-agent fleet",
+  },
+  {
+    id: "orchestration",
+    href: "/dashboard/orchestration",
+    i18nKey: "orchestration",
+    subtitleKey: "orchestrationSubtitle",
+    icon: "account_tree",
+  },
+  {
+    id: "agent-bridge",
+    href: "/dashboard/tools/agent-bridge",
+    i18nKey: "agentBridge",
+    subtitleKey: "agentBridgeSubtitle",
+    icon: "link",
+  },
+  {
+    id: "traffic-inspector",
+    href: "/dashboard/tools/traffic-inspector",
+    i18nKey: "trafficInspector",
+    subtitleKey: "trafficInspectorSubtitle",
+    icon: "network_check",
+  },
+  {
+    id: "discovery",
+    href: "/dashboard/discovery",
+    i18nKey: "discovery",
+    subtitleKey: "discoverySubtitle",
+    icon: "travel_explore",
+  },
+];
+
 const TOOLS_GROUP: SidebarItemGroup = {
   type: "group",
   id: "tools",
   titleKey: "toolsGroup",
   titleFallback: "Tools",
-  items: [
-    {
-      id: "cli-code",
-      href: "/dashboard/cli-code",
-      i18nKey: "cliCode",
-      subtitleKey: "cliCodeSubtitle",
-      icon: "terminal",
-    },
-    {
-      id: "cli-agents",
-      href: "/dashboard/cli-agents",
-      i18nKey: "cliAgents",
-      subtitleKey: "cliAgentsSubtitle",
-      icon: "smart_toy",
-    },
-    {
-      id: "acp-agents",
-      href: "/dashboard/acp-agents",
-      i18nKey: "acpAgents",
-      subtitleKey: "acpAgentsSubtitle",
-      icon: "device_hub",
-    },
-    {
-      id: "cloud-agents",
-      href: "/dashboard/cloud-agents",
-      i18nKey: "cloudAgents",
-      subtitleKey: "cloudAgentsSubtitle",
-      icon: "cloud",
-    },
-    {
-      id: "conductor",
-      href: "/dashboard/conductor",
-      i18nKey: "conductor",
-      subtitleKey: "conductorSubtitle",
-      icon: "account_tree",
-      labelFallback: "Conductor",
-      subtitleFallback: "CLI-agent fleet",
-    },
-    {
-      id: "orchestration",
-      href: "/dashboard/orchestration",
-      i18nKey: "orchestration",
-      subtitleKey: "orchestrationSubtitle",
-      icon: "account_tree",
-    },
-    {
-      id: "agent-bridge",
-      href: "/dashboard/tools/agent-bridge",
-      i18nKey: "agentBridge",
-      subtitleKey: "agentBridgeSubtitle",
-      icon: "link",
-    },
-    {
-      id: "traffic-inspector",
-      href: "/dashboard/tools/traffic-inspector",
-      i18nKey: "trafficInspector",
-      subtitleKey: "trafficInspectorSubtitle",
-      icon: "network_check",
-    },
-    {
-      id: "discovery",
-      href: "/dashboard/discovery",
-      i18nKey: "discovery",
-      subtitleKey: "discoverySubtitle",
-      icon: "travel_explore",
-    },
-  ],
+  // AISIX SPA: drop the Node-only tools (see aisixSpaFilter). No-op otherwise.
+  items: aisixSpaFilter(TOOLS_GROUP_ITEMS),
 };
 
 const INTEGRATIONS_GROUP: SidebarItemGroup = {

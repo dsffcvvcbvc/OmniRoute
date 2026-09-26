@@ -75,11 +75,30 @@ test("#14060: corrupted key_value keeps auth fail-closed and Home degrades witho
   await assert.rejects(() => settingsDb.getSettings());
 
   // (b) Home degrades to defaults instead of rejecting (the original 500).
-  const homeSettings = await loadHomeSettings();
-  assert.deepEqual(homeSettings, { setupComplete: false });
+  // The loader is injected so the test stays hermetic (no native admin probe).
+  // An unreadable settings store is reported as "setup complete": the AISIX SPA
+  // bakes this value into prerendered HTML, so `false` here would render the
+  // first-run readiness card forever for operators who cannot complete a
+  // Next/SQLite onboarding wizard in the Rust core.
+  const homeSettings = await loadHomeSettings(async () => {
+    throw new Error("key_value corrupt");
+  });
+  assert.deepEqual(homeSettings, { setupComplete: true });
 });
 
 test("loadHomeSettings passes healthy settings through untouched", async () => {
   const result = await loadHomeSettings(async () => ({ setupComplete: true }));
   assert.deepEqual(result, { setupComplete: true });
+});
+
+test("loadHomeSettings treats a reachable native admin catalog as setup complete", async () => {
+  // No explicit setupComplete flag in the native payload — the readable catalog
+  // is the signal (Law 5 Case A).
+  const result = await loadHomeSettings(async () => ({ models: [] }));
+  assert.deepEqual(result, { setupComplete: true });
+});
+
+test("loadHomeSettings keeps an explicit false from a settings-shaped payload", async () => {
+  const result = await loadHomeSettings(async () => ({ setupComplete: false }));
+  assert.deepEqual(result, { setupComplete: false });
 });

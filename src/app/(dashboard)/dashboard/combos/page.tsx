@@ -2493,29 +2493,25 @@ function ComboFormModal({
   const fetchModalData = async () => {
     setBuilderLoading(true);
     try {
-      const [aliasesRes, nodesRes, pricingRes, builderRes] = await Promise.all([
-        fetch("/api/models/alias"),
+      // `/api/models/alias` and `/api/pricing` have NO native counterpart — the
+      // Rust core exposes no alias or pricing collection (only :3001 models /
+      // provider_keys, :9090 status/models + metrics, :3000 chat). Fetching them
+      // in the SPA only produced 404s, so both stay explicitly empty and the
+      // builder renders its empty-state branches instead of a silent `.catch`.
+      const [nodesRes, builderRes] = await Promise.all([
         fetch(resolveAisixRequestUrl("/api/provider-nodes")),
-        fetch("/api/pricing"),
         fetch(resolveAisixRequestUrl("/api/combos/builder/options")),
       ]);
 
-      if (!aliasesRes.ok || !nodesRes.ok) {
-        throw new Error(
-          `Failed to fetch data: aliases=${aliasesRes.status}, nodes=${nodesRes.status}`
-        );
+      if (!nodesRes.ok) {
+        throw new Error(`Failed to fetch data: nodes=${nodesRes.status}`);
       }
-      const pricingData = pricingRes.ok ? await pricingRes.json() : {};
       const builderData = builderRes.ok ? await builderRes.json() : {};
 
-      const [aliasesData, nodesData] = await Promise.all([aliasesRes.json(), nodesRes.json()]);
-      setPricingByProvider(
-        pricingData && typeof pricingData === "object" && !Array.isArray(pricingData)
-          ? pricingData
-          : {}
-      );
-      setModelAliases(aliasesData.aliases || {});
-      setProviderNodes(nodesData.nodes || []);
+      const nodesData = await nodesRes.json();
+      setPricingByProvider({});
+      setModelAliases({});
+      setProviderNodes(nodesData.nodes ?? nodesData.models ?? nodesData.data ?? []);
       setBuilderOptions({
         providers: builderData.providers || [],
         comboRefs: builderData.comboRefs || [],

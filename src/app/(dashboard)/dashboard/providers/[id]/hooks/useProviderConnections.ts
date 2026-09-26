@@ -55,6 +55,24 @@ interface ProviderConnectionsFetchResult {
   nodeResolved: boolean;
 }
 
+/**
+ * The native admin plane has shipped more than one envelope for these two
+ * collections (`{connections:[…]}`, `{data:[…]}`, `{keys:[…]}` /
+ * `{nodes:[…]}`, `{models:[…]}`). Reading only one key is how a reachable
+ * admin plane ends up rendering as "0 connections" — mirror the tolerant
+ * shape resolution in `loadProviderPageData` so both dashboards agree.
+ */
+function readNativeList(payload: unknown, fields: readonly string[]): any[] {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+  const record = payload as Record<string, unknown>;
+  for (const field of fields) {
+    const candidate = record[field];
+    if (Array.isArray(candidate)) return candidate;
+  }
+  return [];
+}
+
 async function loadProviderConnectionsData(
   providerId: string,
   isCompatible: boolean
@@ -68,7 +86,7 @@ async function loadProviderConnectionsData(
     const connectionsData = await connectionsRes.json();
     const nodesData = await nodesRes.json();
     const connections = connectionsRes.ok
-      ? (connectionsData.connections || []).filter((c: any) =>
+      ? readNativeList(connectionsData, ["connections", "data", "keys"]).filter((c: any) =>
           connectionBelongsToProviderPage(c.provider, providerId)
         )
       : null;
@@ -76,7 +94,11 @@ async function loadProviderConnectionsData(
     let nodeResolved = false;
     if (nodesRes.ok) {
       nodeResolved = true;
-      node = (nodesData.nodes || []).find((entry: any) => entry.id === providerId) || null;
+      const readNode = (payload: unknown) =>
+        readNativeList(payload, ["nodes", "data", "models"]).find(
+          (entry: any) => entry.id === providerId
+        ) || null;
+      node = readNode(nodesData);
 
       // Newly created compatible nodes can be briefly unavailable on one worker.
       if (!node && isCompatible) {
@@ -85,14 +107,14 @@ async function loadProviderConnectionsData(
           const retryRes = await fetch(aisixAdminModelsUrl(), { cache: "no-store" });
           if (!retryRes.ok) continue;
           const retryData = await retryRes.json();
-          node = (retryData.nodes || []).find((entry: any) => entry.id === providerId) || null;
+          node = readNode(retryData);
           if (node) break;
         }
       }
     }
     return { connections, node, nodeResolved };
   } catch (error) {
-    console.log("Error fetching connections:", error);
+    console.error("Error fetching connections:", error);
     return null;
   }
 }
@@ -108,31 +130,37 @@ async function loadProxyConfigData(): Promise<{ config: any } | null> {
   }
 }
 
-async function resolveConnectionProxies(
-  conns: { id?: string }[]
-): Promise<Record<string, { proxy: any; level: string } | null> | null> {
-  try {
-    const results = await Promise.all(
-      conns
-        .filter((c) => c.id)
-        .map((c) =>
-          fetch(
-            resolveAisixRequestUrl(`/api/settings/proxy?resolve=${encodeURIComponent(c.id!)}`),
-            { cache: "no-store" }
-          )
-            .then((r) => (r.ok ? r.json() : null))
-            .then((data) => [c.id!, data] as [string, any])
-            .catch(() => [c.id!, null] as [string, any])
-        )
-    );
-    const map: Record<string, { proxy: any; level: string } | null> = {};
-    for (const [id, data] of results) {
-      map[id] = data?.proxy ? data : null;
-    }
-    return map;
-  } catch {
-    return null;
+/**
+ * Build the per-connection proxy badge map from ONE `/api/settings/proxy`
+ * read.
+ *
+ * Why: the old implementation issued one `?resolve=<connectionId>` request per
+ * connection. On the native transport that path resolves to a resources
+ * sub-path that does not exist (and on the Next build it is an N+1 request
+ * storm), so every badge silently fell back to "no proxy" through a swallowed
+ * `.catch`. The collection response already carries the assignments; resolve
+ * them client-side.
+ */
+function resolveConnectionProxies(
+  conns: { id?: string }[],
+  config: unknown
+): Record<string, { proxy: any; level: string } | null> | null {
+  const assignments = readNativeList(config, ["assignments", "proxies", "items", "data"]);
+  const byScopeId = new Map<string, { proxy: any; level: string }>();
+  for (const assignment of assignments) {
+    const scopeId = typeof assignment?.scopeId === "string" ? assignment.scopeId : null;
+    if (!scopeId || !assignment?.proxy) continue;
+    byScopeId.set(scopeId, {
+      proxy: assignment.proxy,
+      level: typeof assignment.level === "string" ? assignment.level : "account",
+    });
   }
+  const map: Record<string, { proxy: any; level: string } | null> = {};
+  for (const conn of conns) {
+    if (!conn.id) continue;
+    map[conn.id] = byScopeId.get(conn.id) ?? null;
+  }
+  return map;
 }
 
 // ──── types ─────────────────────────────────────────────────────────────────
@@ -332,19 +360,20 @@ export function useProviderConnections(
    * `/api/settings/proxies/assignments`).
    *
    * Two independent sources back those views and BOTH must be re-read:
-   *  - `proxyConfig`   ← GET /api/settings/proxy          (provider-level chip)
-   *  - `connProxyMap`  ← GET /api/settings/proxy?resolve= (per-connection badges)
+   *  - `proxyConfig`   ← GET /api/settings/proxy  (provider-level chip AND the
+   *    per-connection badge assignments, resolved client-side from that single
+   *    response)
+   *  - `connProxyMap`  ← derived from the same payload
    *
    * The `connProxyMap` effect below is keyed on [loading, connections], and a
    * proxy save changes neither, so without this callback the account-row
    * badges keep showing pre-save state until a manual reload.
    */
   const refreshProxyState = useCallback(async () => {
-    const [configResult, map] = await Promise.all([
-      loadProxyConfigData(),
-      resolveConnectionProxies(connectionsRef.current),
-    ]);
-    if (configResult) setProxyConfig(configResult.config);
+    const [configResult] = await Promise.all([loadProxyConfigData()]);
+    if (!configResult) return;
+    setProxyConfig(configResult.config);
+    const map = resolveConnectionProxies(connectionsRef.current, configResult.config);
     if (map) setConnProxyMap(map);
   }, []);
 
@@ -379,11 +408,13 @@ export function useProviderConnections(
     void runProxyConfig();
   }, [providerId, isCompatible]);
 
-  // Per-connection proxy (handles registry assignments)
+  // Per-connection proxy badges, derived from the same /api/settings/proxy read.
   useEffect(() => {
     if (loading || connections.length === 0) return;
     const run = async () => {
-      const map = await resolveConnectionProxies(connections);
+      const result = await loadProxyConfigData();
+      if (!result) return;
+      const map = resolveConnectionProxies(connections, result.config);
       if (map) setConnProxyMap(map);
     };
     void run();

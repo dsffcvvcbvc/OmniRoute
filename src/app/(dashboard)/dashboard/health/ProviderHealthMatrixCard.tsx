@@ -1,13 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import Badge from "@/shared/components/Badge";
 import { Card } from "@/shared/components";
 import { getProviderDisplayName } from "@/lib/display/names";
 import { cn } from "@/shared/utils/cn";
-import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
+import { aisixStatusModelsUrl } from "@/shared/utils/aisixEndpoints";
+import { normalizeAisixHealthSnapshot } from "@/shared/utils/aisixHealth";
+import { fetchWithTimeout } from "@/shared/utils/fetchTimeout";
+import { matchesSearch } from "@/shared/utils/turkishText";
 
 type HealthState = "healthy" | "degraded" | "down";
 type ModelStatus = "healthy" | "degraded" | "error" | "locked" | "idle";
@@ -267,6 +270,62 @@ function AccountRow({ account }: { account: HealthMatrixAccount }) {
   );
 }
 
+const REFRESH_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 8000;
+
+/**
+ * Build the matrix the card renders from the ONE native read it has.
+ *
+ * The card used to `GET /api/providers/health-matrix?…`, which on the native
+ * transport resolves to `:9090/status/models` — a provider/model state list, not
+ * a matrix response. Casting it left `summary` and `accounts` undefined, so the
+ * card rendered invented zeros. Now the native list is normalized and every
+ * dimension the Rust core cannot report (per-account detail, request stats,
+ * breakers, lockouts) stays an explicit 0/empty — the `noSyncedModelsOrTraffic`
+ * branch then renders instead of a fabricated matrix.
+ */
+function buildMatrixFromNative(
+  snapshot: ReturnType<typeof normalizeAisixHealthSnapshot>,
+  options: { providerFilter: string; onlyIssues: boolean }
+): HealthMatrixResponse {
+  const wanted = options.providerFilter.trim();
+  const providers: HealthMatrixProvider[] = snapshot.providerStatuses
+    .filter((status) => (wanted ? matchesSearch(status.provider, wanted) : true))
+    .filter((status) => (options.onlyIssues ? status.state !== "healthy" : true))
+    .map((status) => ({
+      provider: status.provider,
+      state: status.state,
+      score: status.state === "healthy" ? 100 : status.state === "degraded" ? 50 : 0,
+      circuitBreaker: null,
+      connections: { total: 0, active: 0, cooldown: 0, inactive: 0, terminal: 0 },
+      modelLockoutCount: 0,
+      requests: 0,
+      successRate: null,
+      avgLatencyMs: null,
+      lastRequestAt: null,
+      lastErrorAt: status.lastFailureAt ? new Date(status.lastFailureAt).toISOString() : null,
+      issueCount: status.state === "healthy" ? 0 : 1,
+      accounts: [],
+    }));
+
+  const healthyCount = providers.filter((entry) => entry.state === "healthy").length;
+  const degradedCount = providers.filter((entry) => entry.state === "degraded").length;
+  return {
+    checkedAt: new Date().toISOString(),
+    range: "24h",
+    summary: {
+      providerCount: providers.length,
+      connectionCount: 0,
+      modelCount: snapshot.providerStatuses.length,
+      issueCount: providers.reduce((sum, entry) => sum + entry.issueCount, 0),
+      healthyCount,
+      degradedCount,
+      downCount: providers.length - healthyCount - degradedCount,
+    },
+    providers,
+  };
+}
+
 export default function ProviderHealthMatrixCard() {
   const t = useTranslations("health");
   const [data, setData] = useState<HealthMatrixResponse | null>(null);
@@ -276,39 +335,48 @@ export default function ProviderHealthMatrixCard() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // StrictMode mounts effects twice; without this guard the first (immediately
+  // superseded) interval keeps polling and can setState after unmount.
+  const cancelledRef = useRef(false);
 
   const fetchMatrix = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        range,
-        includeHealthy: onlyIssues ? "false" : "true",
+      // `range` is not a native parameter — the core reports a live snapshot only.
+      // It stays in the UI as the display window label.
+      void range;
+      const response = await fetchWithTimeout(aisixStatusModelsUrl(), {
+        cache: "no-store",
+        timeoutMs: REQUEST_TIMEOUT_MS,
       });
-      if (providerFilter.trim()) params.set("provider", providerFilter.trim());
-      const response = await fetch(
-        resolveAisixRequestUrl(`/api/providers/health-matrix?${params.toString()}`),
-        {
-          cache: "no-store",
-        }
-      );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const next = (await response.json()) as HealthMatrixResponse;
+      const json = await response.json();
+      const next = buildMatrixFromNative(normalizeAisixHealthSnapshot(json), {
+        providerFilter,
+        onlyIssues,
+      });
+      if (cancelledRef.current) return;
       setData(next);
       setExpanded((current) => current || next.providers[0]?.provider || null);
       setError(null);
     } catch (fetchError) {
+      if (cancelledRef.current) return;
       setError(fetchError instanceof Error ? fetchError.message : "Failed to load matrix");
     } finally {
-      setLoading(false);
+      if (!cancelledRef.current) setLoading(false);
     }
   }, [onlyIssues, providerFilter, range]);
 
   useEffect(() => {
+    cancelledRef.current = false;
     void (async () => {
       await fetchMatrix();
     })();
-    const id = setInterval(fetchMatrix, 30000);
-    return () => clearInterval(id);
+    const id = setInterval(fetchMatrix, REFRESH_MS);
+    return () => {
+      cancelledRef.current = true;
+      clearInterval(id);
+    };
   }, [fetchMatrix]);
 
   const providers = useMemo(() => data?.providers ?? [], [data?.providers]);

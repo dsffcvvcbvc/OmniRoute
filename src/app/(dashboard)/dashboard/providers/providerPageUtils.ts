@@ -21,7 +21,6 @@ import {
   aisixAdminModelsUrl,
   aisixMetricsUrl,
   aisixProviderKeysUrl,
-  aisixResourcesUrl,
   aisixStatusModelsUrl,
 } from "@/shared/utils/aisixEndpoints";
 import {
@@ -669,8 +668,8 @@ export interface OpenRouterProviderStatsEntry {
 const PROVIDER_PAGE_FETCH_TIMEOUT_MS = 20_000;
 
 /**
- * Load the four data sources the providers dashboard renders from, each bounded
- * by an AbortSignal timeout and independently degrading to a default.
+ * Load the data sources the providers dashboard renders from, each bounded by
+ * an AbortSignal timeout and independently degrading to a default.
  *
  * Why this exists (infinite-skeleton bug): the page used to gate its `loading`
  * flag on `await Promise.all([fetch(...) x4])` with **no** timeout. A bare
@@ -682,6 +681,11 @@ const PROVIDER_PAGE_FETCH_TIMEOUT_MS = 20_000;
  * only a timeout/abort can. Here every request is time-bounded and failures
  * degrade to a default, so the loader always resolves within the timeout and the
  * page paints from whatever data arrived (matching the fast provider_keys read).
+ *
+ * All four sources are real native endpoints. The dashboard's settings /
+ * blocked-provider list is intentionally NOT fetched: `POST
+ * /admin/v1/resources` is the only resources verb in the Rust core, so there is
+ * no readable settings collection to request.
  */
 export async function loadProviderPageData(
   fetchImpl: typeof fetch = globalThis.fetch as typeof fetch,
@@ -698,15 +702,13 @@ export async function loadProviderPageData(
     }
   };
 
-  const [connectionsData, nodesData, expirationsData, settingsData, openRouterStatsData] =
-    await Promise.all([
-      // Native transport (§3.2) via fetchWithTimeout — same degrade-to-default shape.
-      safeJson(aisixProviderKeysUrl()),
-      safeJson(aisixAdminModelsUrl()),
-      safeJson(aisixStatusModelsUrl()),
-      safeJson(aisixResourcesUrl("/settings"), { cache: "no-store" }),
-      safeJson(aisixMetricsUrl()),
-    ]);
+  const [connectionsData, nodesData, expirationsData, openRouterStatsData] = await Promise.all([
+    // Native transport (§3.2) via fetchWithTimeout — same degrade-to-default shape.
+    safeJson(aisixProviderKeysUrl()),
+    safeJson(aisixAdminModelsUrl()),
+    safeJson(aisixStatusModelsUrl()),
+    safeJson(aisixMetricsUrl()),
+  ]);
 
   const connectionsRaw =
     connectionsData?.connections ?? connectionsData?.data ?? connectionsData?.keys ?? [];
@@ -719,10 +721,12 @@ export async function loadProviderPageData(
     providerNodes: Array.isArray(nodesRaw) ? nodesRaw : [],
     ccCompatibleProviderEnabled: nodesData?.ccCompatibleProviderEnabled === true,
     expirations: expirationsData ?? null,
-    blockedProviders: Array.isArray(settingsData?.blockedProviders)
-      ? settingsData.blockedProviders
-      : null,
-    settings: settingsData ?? null,
+    // No native settings collection (the Rust core only accepts
+    // `POST /admin/v1/resources`), so there is nothing to block/unblock here.
+    // `null` = "not reported natively"; the page keeps its last known list
+    // instead of wiping it with an invented empty one.
+    blockedProviders: null,
+    settings: null,
     openRouterProviderStats: Array.isArray(openRouterStatsRaw) ? openRouterStatsRaw : [],
   };
 }

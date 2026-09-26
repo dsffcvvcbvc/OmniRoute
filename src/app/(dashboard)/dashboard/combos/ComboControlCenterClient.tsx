@@ -28,10 +28,6 @@ type ComboMetricsResponse = {
   message?: string;
 };
 
-type ComboHealthResponse = {
-  combos?: ComboControlCenterHealth[];
-};
-
 type CallLogEntry = {
   id?: string;
   requestId?: string;
@@ -54,10 +50,6 @@ const STATE_STYLES: Record<ComboControlCenterSummary["healthState"], string> = {
   critical: "border-red-500/20 bg-red-500/10 text-red-400",
   idle: "border-blue-500/20 bg-blue-500/10 text-blue-400",
 };
-
-function toArray<T>(value: unknown): T[] {
-  return Array.isArray(value) ? (value as T[]) : [];
-}
 
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url, { cache: "no-store" });
@@ -257,31 +249,30 @@ export default function ComboControlCenterClient({ comboId }: { comboId: string 
       const comboData = await fetchJson<ComboControlCenterCombo>(
         resolveAisixRequestUrl(`/api/combos/${comboId}`)
       );
-      const [metricsData, healthData, logsData] = await Promise.all([
+      // `/api/usage/combo-health` and `/api/usage/call-logs` have NO native
+      // counterpart — the Rust core exposes no usage or call-collection surface.
+      // They used to be `.catch`-ed into a silent `null`/`[]`, so the card reported
+      // "no health data" and "no calls" as if that were a real reading. Both are now
+      // left explicitly empty, which the summary/empty-state branches below render.
+      const [metricsData] = await Promise.all([
         fetchJson<ComboMetricsResponse>(
           resolveAisixRequestUrl(
             `/api/combos/metrics?combo=${encodeURIComponent(comboData.name || "")}`
           )
         ).catch(() => ({ metrics: null })),
-        fetchJson<ComboHealthResponse>(`/api/usage/combo-health?range=${range}&comboId=${comboId}`)
-          .then((data) => data.combos?.[0] || null)
-          .catch(() => null),
-        fetchJson<CallLogEntry[]>(
-          `/api/usage/call-logs?combo=1&search=${encodeURIComponent(comboData.name || "")}&limit=8`
-        ).catch(() => []),
       ]);
 
       setCombo(comboData);
       setMetrics(metricsData.metrics || null);
-      setHealth(healthData);
-      setLogs(toArray<CallLogEntry>(logsData));
+      setHealth(null);
+      setLogs([]);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [comboId, range, t]);
+  }, [comboId, t]);
 
   useEffect(() => {
     // Async continuation — see react-hooks/set-state-in-effect.

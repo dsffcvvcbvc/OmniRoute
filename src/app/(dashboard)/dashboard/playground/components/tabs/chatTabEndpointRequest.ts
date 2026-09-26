@@ -17,7 +17,17 @@ export function isChatCompletionsEndpoint(endpoint: PlaygroundEndpoint | undefin
   return !endpoint || endpoint === "chat.completions";
 }
 
-/** Resolves the absolute fetch URL (data plane `:3000`) for the selected Playground endpoint. */
+/**
+ * Resolves the absolute fetch URL (data plane `:3000`) for the selected Playground endpoint.
+ *
+ * CORS/auth contract: the native data plane is the operator's own OpenAI-compatible
+ * server on their own host — it has no Next.js dashboard session, so the browser
+ * MUST NOT send an implicit `Authorization: Bearer` or a same-origin cookie it
+ * cannot attach cross-origin anyway. Routing is done by the core's configured
+ * provider keys, with `X-OmniRoute-Connection` as the only per-request hint
+ * (see ApiTab.tsx). Cross-origin reads therefore require the core to allow this
+ * origin; a rejected preflight surfaces as a normal network error in the UI.
+ */
 export function resolveChatTabRequestPath(endpoint: PlaygroundEndpoint | undefined): string {
   return `${getAisixDataBase()}${endpointToPath(endpoint ?? "chat.completions")}`;
 }
