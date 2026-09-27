@@ -219,6 +219,9 @@ test.describe("request budget and fault tolerance", () => {
 
     const requestRate = watch.requests.length / Math.max(1, (Date.now() - watch.start) / 1000);
 
+    // Recorded BEFORE the assertions below, deliberately. A red run is the run
+    // that most needs the numbers: if the assertion fires first, the evidence
+    // for why it fired is the thing that gets lost.
     writeEvidence("08-renderer-responsiveness.json", {
       evaluateMs,
       screenshotMs,
