@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { DEFAULT_LOCALE, RTL_LOCALES, type Locale } from "@/i18n/config";
 import { buildLocaleMessages, normalizeComplianceEventTypes } from "@/i18n/catalog";
 import { subscribeLocaleChange, isSupportedLocale } from "@/i18n/localeChange";
+import { readStoredLocale } from "@/shared/lib/persistLocale";
 import enCatalog from "@/i18n/messages/en.json";
 
 /**
@@ -49,6 +50,21 @@ import enCatalog from "@/i18n/messages/en.json";
  * `OMNIROUTE_EXPORT=1`), so it is the only one on the critical path. The other
  * 66 arrive as lazy chunks on first use, which is what makes the language
  * switcher work client-side in the export instead of silently doing nothing.
+ *
+ * FIRST PAINT, HONESTLY. A stored non-default locale reaches the copy only
+ * after its chunk has loaded, so the first paint of a cold load is still the
+ * prerendered English. That is not laziness, it is the only correct order.
+ * Reading the store in the FIRST RENDER would be the alternative, and it is
+ * wrong twice over: it would make the first client render disagree with every
+ * prerendered route (a hydration mismatch on all of them), and it still would
+ * not help, because the catalogue is a lazily imported chunk BY DESIGN —
+ * inlining it to render it synchronously is the ~1.9 GiB regression this
+ * provider exists to remove. `useSyncExternalStore` splits the difference: the
+ * hydration render is byte-identical to the shipped HTML (that is what
+ * `getServerSnapshot` is for) and React re-reads the store in the same tick it
+ * finishes hydrating, so `<html lang>`/`dir` and the correct copy land as early
+ * as this design allows — one tick after hydration, and one extra request only
+ * on a cold cache.
  */
 
 type Messages = Record<string, unknown>;
@@ -87,7 +103,37 @@ interface SpaIntlProviderProps {
 const MAX_CACHED_LOCALES = 4;
 
 export function SpaIntlProvider({ locale: initialLocale, children }: SpaIntlProviderProps) {
-  const [activeLocale, setActiveLocale] = useState(initialLocale);
+  // THE STORED PREFERENCE, re-derived on every render. This is the fix for a
+  // preference that was stored and then ignored on every page load: the export
+  // prerenders exactly one locale (`src/i18n/request.ts` pins `DEFAULT_LOCALE`
+  // under `OMNIROUTE_EXPORT=1`), so `initialLocale` is English on every route
+  // and no server render ever follows a page load to re-read the cookie. The
+  // only thing that can restore `ja` is this read.
+  //
+  // `useSyncExternalStore` and not a `useState` + effect, for two reasons that
+  // are the same reason:
+  //   - `getServerSnapshot` returns the locale the export PRERENDERED, which is
+  //     what keeps the hydration render byte-identical to the shipped HTML.
+  //     Seeding `useState` from the store instead would make the first client
+  //     render disagree with every prerendered route and log a hydration
+  //     mismatch on all of them.
+  //   - the store is re-read when the change channel fires, so a value that
+  //     lands between the render and the subscription is still picked up. That
+  //     is not hypothetical: `src/app/layout.tsx` renders
+  //     `<SpaIntlProvider>{<LocaleAutoDetect/>}</SpaIntlProvider>` and React
+  //     flushes a child's passive effect BEFORE its parent's, so the
+  //     auto-detection's `setClientLocale` announces before the subscription
+  //     exists. It survives because `persistLocale` is SYNCHRONOUS — by the time
+  //     this hook re-reads, the write is already on disk. An announce-only
+  //     design (a `setClientLocale` call for the stored value, no read) drops it
+  //     on the floor; `tests/unit/ui/spa-intl-provider.test.tsx` renders the
+  //     real tree order to keep that from being reintroduced.
+  const storedLocale = useSyncExternalStore(
+    subscribeLocaleChange,
+    () => readStoredLocale() ?? initialLocale,
+    () => initialLocale
+  );
+
   // Loaded catalogues keyed by locale. The default one is in the bundle, so it is
   // seeded here and the common path (every route of the export) never loads
   // anything. `messages` is DERIVED from this rather than stored separately, so
@@ -95,11 +141,18 @@ export function SpaIntlProvider({ locale: initialLocale, children }: SpaIntlProv
   const [catalogues, setCatalogues] = useState<Record<string, Messages>>({
     [DEFAULT_LOCALE]: EAGER_MESSAGES,
   });
-  const messages = catalogues[activeLocale] ?? EAGER_MESSAGES;
 
-  // Manual selection (LanguageSelector) and first-visit auto-detection
-  // (LocaleAutoDetect) both announce the new locale through this channel.
-  useEffect(() => subscribeLocaleChange((code) => setActiveLocale(code)), []);
+  // A change announced while the page is alive: the in-app selection
+  // (LanguageSelector) and the first-visit auto-detection
+  // (LocaleAutoDetect). It deliberately WINS over `storedLocale`, so a browser
+  // that refused the write — storage blocked, quota full — still switches for
+  // this session; the choice simply will not survive the next reload, which is
+  // the honest outcome when there is nowhere to put it.
+  const [announced, setAnnounced] = useState<string | null>(null);
+  useEffect(() => subscribeLocaleChange((code) => setAnnounced(code)), []);
+
+  const activeLocale = announced ?? storedLocale;
+  const messages = catalogues[activeLocale] ?? EAGER_MESSAGES;
 
   // Load the catalogue for the active locale. The default one is already in
   // memory, so this is a no-op for every route in the export; a non-default
