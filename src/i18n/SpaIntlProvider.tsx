@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { DEFAULT_LOCALE, RTL_LOCALES, type Locale } from "@/i18n/config";
 import { buildLocaleMessages, normalizeComplianceEventTypes } from "@/i18n/catalog";
-import { subscribeLocaleChange } from "@/i18n/localeChange";
+import { subscribeLocaleChange, isSupportedLocale } from "@/i18n/localeChange";
 import enCatalog from "@/i18n/messages/en.json";
 
 /**
@@ -105,7 +105,14 @@ export function SpaIntlProvider({ locale: initialLocale, children }: SpaIntlProv
   // memory, so this is a no-op for every route in the export; a non-default
   // locale resolves from its own lazy chunk.
   useEffect(() => {
-    if (catalogues[activeLocale]) return;
+    // `activeLocale` reaches this component from three places — the server's
+    // `getLocale()` (already narrowed by resolveRequestedLocale), the locale
+    // cookie and `navigator.languages` — so re-check against the configured
+    // list here rather than trusting the call chain. The bundler resolves the
+    // specifier to a fixed map of chunks, so this is not a filesystem read, but
+    // the invariant belongs next to the only place a locale becomes a module
+    // path.
+    if (!isSupportedLocale(activeLocale) || catalogues[activeLocale]) return;
 
     let cancelled = false;
     void (async () => {
@@ -125,8 +132,11 @@ export function SpaIntlProvider({ locale: initialLocale, children }: SpaIntlProv
           return next;
         });
       } catch {
-        // A catalogue that will not load must not blank the UI: keep the last
-        // good tree rendered and leave `activeLocale` alone.
+        // A catalogue that will not load must not blank the UI. `messages` is
+        // derived as `catalogues[activeLocale] ?? EAGER_MESSAGES`, so the
+        // bundled default stays rendered and the page keeps working — in the
+        // target locale's own `dir`/`lang`, with English copy, which is a far
+        // better failure than an empty shell.
       }
     })();
 

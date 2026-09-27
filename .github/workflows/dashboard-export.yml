@@ -64,10 +64,16 @@ jobs:
       # its route payload. This step is the other half: it proves the prune
       # actually ran in THIS artifact, so a silently-disabled prune cannot ship a
       # silently-inflated one.
+      #
+      # The size it adds is whatever the duplicated payload weighs, which is not
+      # a constant: it was 472.8 MiB while every payload still carried a copy of
+      # the message catalogue and 11.7 MiB after the catalogue was hoisted into
+      # one shared chunk. The step below prints the real number, so the guard
+      # cites a fact rather than a number that has already been overtaken.
       - name: Assert the _full segment prune ran
         run: |
           if find out -name '__next._full.txt' -print -quit | grep -q .; then
-            echo "::error::__next._full.txt survived the export prune — artifact is ~473 MiB larger than it needs to be"
+            echo "::error::__next._full.txt survived the export prune — see the size ledger below for what it costs"
             find out -name '__next._full.txt' | head
             exit 1
           fi

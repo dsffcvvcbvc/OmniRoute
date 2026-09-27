@@ -194,6 +194,20 @@ describe("SpaIntlProvider", () => {
     expect(view.text("locale")).toBe("en");
     expect(document.cookie).not.toContain("NEXT_LOCALE=klingon");
   });
+
+  /**
+   * Defence in depth at the one place a locale becomes a MODULE PATH. The
+   * bundler resolves `import(\`./messages/${activeLocale}.json\`)` to a fixed map
+   * of chunks, so this is not a filesystem read — but `activeLocale` originates
+   * from a cookie, from `navigator.languages` and from the server, and the
+   * invariant belongs beside that import rather than three calls up the chain.
+   */
+  it("renders the bundled default, not a crash, when mounted with an unknown locale", async () => {
+    const view = await mount("klingon");
+
+    expect(view.text("locale")).toBe("klingon");
+    expect(view.text("settings")).toBe(read(enMessages, "sidebar.settings"));
+  });
 });
 
 /**
