@@ -1321,7 +1321,9 @@
       "open": "فتح",
       "close": "إغلاق"
     },
-    "noResults": "لا توجد نتائج"
+    "noResults": "لا توجد نتائج",
+    "modelCatalog": "دليل النماذج",
+    "modelCatalogSubtitle": "تصفّح النماذج عبر المزوّدين"
   },
   "webhooks": {
     "title": "خطافات الويب",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "رابط الشريك",
     "dismissAriaLabel": "إغلاق"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "تعطيل إنشاء متغيرات مستوى التفكير (مثل -low و-medium و-high) في كتالوج /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "تعطيل إنشاء متغيرات مستوى التفكير (مثل -low و-medium و-high) في كتالوج /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "للمزوّدين الذين تُحتسب حصصهم حسب عنوان الخروج، ضع عضو المجموعة الذي يشارك عنوان الخروج المرصود لعضو رُفض مؤخرًا في مرتبة أقل قليلًا من الأعضاء السليمين. ترتيب فقط، ولا يُستبعَد أبدًا. يتطلب PROXY_SKIP_RECENTLY_FAILED الذي ينتج إشارة الرفض التي يقرأها. معطّل افتراضيًا: ترتيب الاختيار هو دوران عادي تمامًا."
 }

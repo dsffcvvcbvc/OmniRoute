@@ -1321,7 +1321,9 @@
       "open": "उघडा",
       "close": "बंद करा"
     },
-    "noResults": "कोणतेही परिणाम नाहीत"
+    "noResults": "कोणतेही परिणाम नाहीत",
+    "modelCatalog": "मॉडेल कॅटलॉग",
+    "modelCatalogSubtitle": "पुरवठादारांमधील मॉडेल पहा"
   },
   "webhooks": {
     "title": "वेबहुक",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "भागीदार लिंक",
     "dismissAriaLabel": "बंद करा"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models कॅटलॉगमध्ये विचार-पातळीच्या प्रकारांची (उदा. -low, -medium, -high) निर्मिती अक्षम करा."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models कॅटलॉगमध्ये विचार-पातळीच्या प्रकारांची (उदा. -low, -medium, -high) निर्मिती अक्षम करा.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "क्वोटा निर्गम पत्त्यानुसार मोजल्या जाणाऱ्या पुरवठादारांसाठी, अलीकडे नाकारलेल्या सदस्याशी त्याचाच नोंदवलेला निर्गम पत्ता असलेल्या पूल सदस्याला निरोगी सदस्यांच्या ठीक खाली क्रमवारीत आणा. फक्त क्रम, कधीही वगळणी नाही. यासाठी PROXY_SKIP_RECENTLY_FAILED आवश्यक आहे, जे ते वाचणारा नाकारण्य संकेत तयार करते. डीफॉल्टनुसार बंद: निवड क्रम अगदी साध्या फिरतीसारखाच असतो."
 }

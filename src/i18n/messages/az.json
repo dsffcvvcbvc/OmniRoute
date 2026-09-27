@@ -1321,7 +1321,9 @@
       "open": "açıq",
       "close": "bağla"
     },
-    "noResults": "Heç bir nəticə yoxdur"
+    "noResults": "Heç bir nəticə yoxdur",
+    "modelCatalog": "Model kataloqu",
+    "modelCatalogSubtitle": "Provayderlər arasında modellərə baxın"
   },
   "webhooks": {
     "title": "Vebhuklar",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Tərəfdaş keçidi",
     "dismissAriaLabel": "Bağla"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models kataloqunda düşünmə səviyyəsi variantlarının (məsələn, -low, -medium, -high) yaradılmasını deaktiv edin."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models kataloqunda düşünmə səviyyəsi variantlarının (məsələn, -low, -medium, -high) yaradılmasını deaktiv edin.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Kvota hesabı çıxış ünvanına görə hesablanan təchizatçılar üçün eyni müşahidə olunmuş çıxış ünvanını bölüşən hovuz üzvünü sağlam üzvlərdən bir az aşağıda sıralayın. Yalnız sıra — heç vaxt tamamen çıxarılmaz. Oxuduğu rədd siqnalını yaradan PROXY_SKIP_RECENTLY_FAILED tələb edir. Standart olaraq söndürülüb: seçim sırası tam olaraq sadə dövüngüdür."
 }

@@ -1321,7 +1321,9 @@
       "open": "відкрити",
       "close": "закрити"
     },
-    "noResults": "Немає результатів"
+    "noResults": "Немає результатів",
+    "modelCatalog": "Каталог моделей",
+    "modelCatalogSubtitle": "Огляд моделей у провайдерів"
   },
   "webhooks": {
     "title": "Веб-хуки",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Партнерське посилання",
     "dismissAriaLabel": "Закрити"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Вимкнути створення варіантів рівня міркування (наприклад, -low, -medium, -high) у каталозі /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Вимкнути створення варіантів рівня міркування (наприклад, -low, -medium, -high) у каталозі /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Для провайдерів, квота яких рахується за адресою виходу, учасник пулу з тим самим спостереженим адресом виходу, що й у нещодавно відхиленого учасника, ставиться трохи нижче здорових учасників. Лише порядок, без виключень. Потребує PROXY_SKIP_RECENTLY_FAILED, який і дає сигнал відхилення, що його читає. Типово вимкнено: порядок вибору — звичайна ротація."
 }

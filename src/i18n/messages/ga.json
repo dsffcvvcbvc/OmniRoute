@@ -1321,7 +1321,9 @@
       "open": "Oscail",
       "close": "Dún"
     },
-    "noResults": "Gan torthaí"
+    "noResults": "Gan torthaí",
+    "modelCatalog": "Catalóg samhlailí",
+    "modelCatalogSubtitle": "Brabhsáilí samhlailí sna soláthróirí"
   },
   "webhooks": {
     "title": "Crúcaí gréasáin",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Nasc comhpháirtíochta",
     "dismissAriaLabel": "Dún"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Díchumasaigh giniúint leaganacha leibhéil smaointeoireachta (m.sh. -low, -medium, -high) i gcatalóg /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Díchumasaigh giniúint leaganacha leibhéil smaointeoireachta (m.sh. -low, -medium, -high) i gcatalóg /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Do sholáraithe ar braitheadh a gcuota de réir an seoladh egressa, socraigh ball den phool a bhfuil an seoladh egressa breathnaithe cé leis le ball diúlaithe le déanaí díreach faoi bhaillí folláin. Ordain amháin, níor athshlonnadh riamh. Teastaíonn PROXY_SKIP_RECENTLY_FAILED, a chruthaitheann an comhartha diúltaigh a léann sé. Aslán díomhaighte: tá ord roghnaíocht díreach an rothaithe simplí."
 }

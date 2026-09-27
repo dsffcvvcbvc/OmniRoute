@@ -1321,7 +1321,9 @@
       "open": "otwórz",
       "close": "zamknij"
     },
-    "noResults": "Brak wyników"
+    "noResults": "Brak wyników",
+    "modelCatalog": "Katalog modeli",
+    "modelCatalogSubtitle": "Przeglądaj modele u dostawców"
   },
   "webhooks": {
     "title": "Webhooki",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Link partnerski",
     "dismissAriaLabel": "Zamknij"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Wyłącz generowanie wariantów poziomu rozumowania (np. -low, -medium, -high) w katalogu /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Wyłącz generowanie wariantów poziomu rozumowania (np. -low, -medium, -high) w katalogu /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Dla dostawców, których limit rozliczany jest według adresu wychodzącego, umieść członka puli, który dzieli zaobserwowany adres wychodzący z niedawno odrzuconym członkiem, tuż pod zdrowymi członkami. Tylko kolejność — nigdy wykluczenie. Wymaga PROXY_SKIP_RECENTLY_FAILED, który generuje odczytywany sygnał odrzucenia. Domyślnie wyłączone: kolejność wyboru to dokładnie zwykła rotacja."
 }

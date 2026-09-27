@@ -1321,7 +1321,9 @@
       "open": "atidaryti",
       "close": "uždaryti"
     },
-    "noResults": "Rezultatų nerasta"
+    "noResults": "Rezultatų nerasta",
+    "modelCatalog": "Modelių katalogas",
+    "modelCatalogSubtitle": "Naršyti modelius pas tiekėjų"
   },
   "webhooks": {
     "title": "Webhookai",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Partnerio nuoroda",
     "dismissAriaLabel": "Uždaryti"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Išjungti mąstymo lygio variantų (pvz., -low, -medium, -high) generavimą /v1/models kataloge."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Išjungti mąstymo lygio variantų (pvz., -low, -medium, -high) generavimą /v1/models kataloge.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Tiems teikėjams, kurių kvota skaičiuojama pagal išeigos adresą, baseelio narys, kuris dalijasi stebimu išeigos adresu neseniai atmestu nariu, reikia įstatyti tiesiai po sveikais nariais. Tik tvarka — niekada nepašalinamas. Reikia PROXY_SKIP_RECENTLY_FAILED, kuris sukuria skaitomą atmetimo signalą. Pagal numatytąjį išjungta: pasirinkimo tvarka yra tiksliai įprasta rotacija."
 }

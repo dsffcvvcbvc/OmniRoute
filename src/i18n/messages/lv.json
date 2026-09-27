@@ -1321,7 +1321,9 @@
       "open": "atvērt",
       "close": "aizvērt"
     },
-    "noResults": "Nav rezultātu"
+    "noResults": "Nav rezultātu",
+    "modelCatalog": "Modeļu katalogs",
+    "modelCatalogSubtitle": "Pārlūkot modeļus pie pakalpojumu sniedzējiem"
   },
   "webhooks": {
     "title": "Tīmekļa aizķeres",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Partnera saite",
     "dismissAriaLabel": "Aizvērt"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Atspējot domāšanas līmeņu variantu (piem., -low, -medium, -high) ģenerēšanu /v1/models katalogā."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Atspējot domāšanas līmeņu variantu (piem., -low, -medium, -high) ģenerēšanu /v1/models katalogā.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Tiem pakalpojumu sniedzējiem, kuru kvota tiek aprēķināta pēc izejas adreses, baseino dalībnieku, kas dalās novērotā izejas adresē ar nesenāci atteigtu dalībnieku, novieto tieši zem veselajiem dalībniekiem. Tikai kārtojums — nekad neizslēdz. Nepieciešams PROXY_SKIP_RECENTLY_FAILED, kas ģenerē lasīmo atteikuma signālu. Pēc noklusējuma izslēgts: atlases kārtojums ir tieši parasta rotācija."
 }

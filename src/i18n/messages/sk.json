@@ -1321,7 +1321,9 @@
       "open": "otvorené",
       "close": "zatvoriť"
     },
-    "noResults": "Žiadne výsledky"
+    "noResults": "Žiadne výsledky",
+    "modelCatalog": "Katalóg modelov",
+    "modelCatalogSubtitle": "Prehliadať modely poskytovateľov"
   },
   "webhooks": {
     "title": "Webhooky",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Partnerský odkaz",
     "dismissAriaLabel": "Zavrieť"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Zakázať generovanie variantov úrovne uvažovania (napr. -low, -medium, -high) v katalógu /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Zakázať generovanie variantov úrovne uvažovania (napr. -low, -medium, -high) v katalógu /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Pre poskytovateľov, ktorých kvóta sa počíta podľa výstupnej adresy, člena poolu, ktorý zdieľa pozorovanú výstupnú adresu s nedávno odmietnutým členom, umiestnite tesne pod zdravých členov. Len poradie — nikdy vylúčenie. Vyžaduje PROXY_SKIP_RECENTLY_FAILED, ktorý vytvára signál odmietnutia, ktorý číta. V predvolenom stave vypnuté: poradie výberu je presne bežná rotácia."
 }

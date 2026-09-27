@@ -1321,7 +1321,9 @@
       "open": "buksan",
       "close": "isara"
     },
-    "noResults": "Walang resulta"
+    "noResults": "Walang resulta",
+    "modelCatalog": "Katalogo ng mga modelo",
+    "modelCatalogSubtitle": "Tingnan ang mga modelo sa mga provider"
   },
   "webhooks": {
     "title": "Mga Webhook",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Link ng partner",
     "dismissAriaLabel": "Isara"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Huwag paganahin ang pagbuo ng mga variant ng antas ng pag-iisip (hal. -low, -medium, -high) sa katalogong /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Huwag paganahin ang pagbuo ng mga variant ng antas ng pag-iisip (hal. -low, -medium, -high) sa katalogong /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Para sa mga provider na binibilang ang quota ayon sa egress address, ilagay ang miyembrong pool na nagbabahagi ng minag-obserbaheng egress address ng miyembrong t-initanggihan kamakailan sa ilalim mismo ng mga malusog na miyembro. Pagkakasunod-sunod lamang, hindi kailanman tinatanggal. Kailangan ang PROXY_SKIP_RECENTLY_FAILED, na lumilikha ng signal ng pagtanggal na binabasa nito. Naka-off sa default: ang pagkakasunod-sunod ng pagpili ay eksaktong ang karaniwang pag-ikot."
 }

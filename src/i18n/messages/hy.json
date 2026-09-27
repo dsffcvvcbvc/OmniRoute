@@ -1321,7 +1321,9 @@
       "open": "բացել",
       "close": "փակել"
     },
-    "noResults": "Արդյունքներ չկան"
+    "noResults": "Արդյունքներ չկան",
+    "modelCatalog": "Մոդելների կատալոգ",
+    "modelCatalogSubtitle": "Ուղափոխեք մոդելները մատակարարների մոտ"
   },
   "webhooks": {
     "title": "Վեբհուկներ",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Գործընկերային հղում",
     "dismissAriaLabel": "Փակել"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Անջատել մտածողության մակարդակի տարբերակների (օր.՝ -low, -medium, -high) ստեղծումը /v1/models կատալոգում։"
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Անջատել մտածողության մակարդակի տարբերակների (օր.՝ -low, -medium, -high) ստեղծումը /v1/models կատալոգում։",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Եթե քուտան հաշվվում է ելքային հասցեով, պուլի այն անդամը, որը կիսում է վերջին ժամանակներում մերժված անդամի դիտարկված ելքային հասցեն, տեղադրեք հենց առողջ անդամների տակ։ Միայն դասակարգություն, երբեք բացառում: Պահանջում է PROXY_SKIP_RECENTLY_FAILED, որը ստեղծում է նրա կարդալիս մերժման ազդանշանը: Լռելյայն անջատում է՝ ընտրության դասակարգությունը ճշգրիտ սովորական պտտառումն է:"
 }

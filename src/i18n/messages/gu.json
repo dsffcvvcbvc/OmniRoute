@@ -1321,7 +1321,9 @@
       "open": "ખોલો",
       "close": "બંધ કરો"
     },
-    "noResults": "કોઈ પરિણામો નથી"
+    "noResults": "કોઈ પરિણામો નથી",
+    "modelCatalog": "મોડેલ કેટાલોગ",
+    "modelCatalogSubtitle": "પ્રોવાઇડર્સ વચ્ચે મોડેલ જુઓ"
   },
   "webhooks": {
     "title": "વેબહુક્સ",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "ભાગીદાર લિંક",
     "dismissAriaLabel": "બંધ કરો"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models કેટલોગમાં વિચાર-સ્તરના વેરિઅન્ટ્સ (દા.ત. -low, -medium, -high) બનાવવાનું નિષ્ક્રિય કરો."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models કેટલોગમાં વિચાર-સ્તરના વેરિઅન્ટ્સ (દા.ત. -low, -medium, -high) બનાવવાનું નિષ્ક્રિય કરો.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "જે પ્રવાઇડર્સનું કોટા એગ્રેસ સરનામા પ્રમાણે ગણાતું હોય તેમના માટે, તાજેમાં નકારાયેલ સભ્ય સાથે એ જ નોંધાયેલ એગ્રેસ સરનામું ધરાવતા પૂલ સભ્યને તંદુરસ્ત સભ્યોની ઠીક નીચે ક્રમાંકવો. ફક્ત ક્રમ, ક્યારેય બાકાત નહીં. આને PROXY_SKIP_RECENTLY_FAILED ની જરૂર છે, જે તે વાંચતો નકારણાનો સંકેત બનાવે છે. ડિફોલ્ટ રીતે બંધ: પસંદગીનો ક્રમ બરાબર સામાન્ય ફેરવઠ છે."
 }

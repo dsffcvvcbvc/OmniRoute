@@ -1321,7 +1321,9 @@
       "open": "açık",
       "close": "kapat"
     },
-    "noResults": "Sonuç yok"
+    "noResults": "Sonuç yok",
+    "modelCatalog": "Model kataloğu",
+    "modelCatalogSubtitle": "Sağlayıcılar arasında modellerde göz atın"
   },
   "webhooks": {
     "title": "Web kancaları",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "İş ortağı bağlantısı",
     "dismissAriaLabel": "Kapat"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models kataloğunda düşünme düzeyi varyantlarının (ör. -low, -medium, -high) oluşturulmasını devre dışı bırakın."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models kataloğunda düşünme düzeyi varyantlarının (ör. -low, -medium, -high) oluşturulmasını devre dışı bırakın.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Kotası çıkış adresine göre hesaplanan sağlayıcılar için, gözlenen çıkış adresini son reddedilen üyeyle paylaşan havuz üyesini sağlıklı üyelerin hemen altına yerleştirin. Yalnızca sıralama — asla çıkarma değil. Okuduğu ret sinyalini üreten PROXY_SKIP_RECENTLY_FAILED gerektirir. Varsayılan olarak kapalı: seçim sırası tam olarak sıradan rotasyondur."
 }

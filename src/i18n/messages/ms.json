@@ -1321,7 +1321,9 @@
       "open": "buka",
       "close": "tutup"
     },
-    "noResults": "Tiada hasil"
+    "noResults": "Tiada hasil",
+    "modelCatalog": "Katalog model",
+    "modelCatalogSubtitle": "Layari model merentas pembekal"
   },
   "webhooks": {
     "title": "Webhook",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Pautan rakan kongsi",
     "dismissAriaLabel": "Tutup"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Lumpuhkan penjanaan varian tahap pemikiran (cth. -low, -medium, -high) dalam katalog /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Lumpuhkan penjanaan varian tahap pemikiran (cth. -low, -medium, -high) dalam katalog /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Untuk pembekal yang kuantanya dikira mengikut alamat keluar, letakkan anggota kumpulan yang berkongsi alamat keluar yangiosamente dengan anggota yang baru ditolak tepat di bawah anggota yang sihat. Susunan sahaja, tidak sekali-kali dikecualikan. Memerlukan PROXY_SKIP_RECENTLY_FAILED, yang menghasilkan isyarat penolakan yang dibacanya. Dimatikan secara lalai: susunan pemilihan ialah tepat putaran biasa."
 }

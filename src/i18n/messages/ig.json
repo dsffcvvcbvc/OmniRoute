@@ -1321,7 +1321,9 @@
       "open": "mepee",
       "close": "mechie"
     },
-    "noResults": "Enweghị nsonaazụ"
+    "noResults": "Enweghị nsonaazụ",
+    "modelCatalog": "Katalọgụdị Ụdọ",
+    "modelCatalogSubtitle": "Lee ụdọ dị n'akụụọ ndị na-eme ka"
   },
   "webhooks": {
     "title": "Nko weebụ",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Njikọ onye mmekọ",
     "dismissAriaLabel": "Mechie"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Gbanyụọ imepụta ụdị ọkwa echiche dị iche iche (dịka -low, -medium, -high) na katalọgụ /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Gbanyụọ imepụta ụdị ọkwa echiche dị iche iche (dịka -low, -medium, -high) na katalọgụ /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Maka ndị na-eme ka ego ha dị site na nke mmadị, bughị akụkụ nkeoke ọzọ na nke e nwere naanị ya na nke a na-atụ ọ dịka anyị mere n'oge na-adịghị Anyị, nke ka n'okpuru ndị ọzọ dị ọtụtịtụ. Naanị ọrụdụ, ịkwaghị akụkụ ọ bụla. Ọ chọrọ PROXY_SKIP_RECENTLY_FAILED, nke na-akpọta akara njọ ọ na-agbanye. Akpọchiri site na ntọala: usoro nhọọ bụ nke akuko kọ dịka ọ dị."
 }

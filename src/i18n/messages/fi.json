@@ -1321,7 +1321,9 @@
       "open": "avaa",
       "close": "sulje"
     },
-    "noResults": "Ei tuloksia"
+    "noResults": "Ei tuloksia",
+    "modelCatalog": "Malliluettelo",
+    "modelCatalogSubtitle": "Selaa palveluntarjoajien malleja"
   },
   "webhooks": {
     "title": "Webhookit",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Kumppanilinkki",
     "dismissAriaLabel": "Sulje"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Poista käytöstä ajattelutason varianttien (esim. -low, -medium, -high) luonti /v1/models-luettelossa."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Poista käytöstä ajattelutason varianttien (esim. -low, -medium, -high) luonti /v1/models-luettelossa.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Palveluntarjoajille, joiden kiintiö lasketaan poistumisosoitteen mukaan, sijoita alta- jaon jäsen, joka jakaa havaitun poistumisosoitteen äskettäin hylätyn jäsenen kanssa, juuri terveiden jäsenten alle. Vain järjestys — ei koskaan poisjättö. Vaatii PROXY_SKIP_RECENTLY_FAILED:n, joka tuottaa sen lukeman hylkäyssignaalin. Oletuksena pois päältä: valintajärjestys on täsmälleen tavallinen kierto."
 }

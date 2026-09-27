@@ -1321,7 +1321,9 @@
       "open": "เปิด",
       "close": "ปิด"
     },
-    "noResults": "ไม่มีผลลัพธ์"
+    "noResults": "ไม่มีผลลัพธ์",
+    "modelCatalog": "แคตตาล็อกโมเดล",
+    "modelCatalogSubtitle": "ดูโมเดลจากผู้ให้บริการ"
   },
   "webhooks": {
     "title": "เว็บฮุค",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "ลิงก์พาร์ทเนอร์",
     "dismissAriaLabel": "ปิด"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "ปิดใช้งานการสร้างโมเดลรูปแบบย่อยตามระดับการคิด (เช่น -low, -medium, -high) ในแค็ตตาล็อก /v1/models"
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "ปิดใช้งานการสร้างโมเดลรูปแบบย่อยตามระดับการคิด (เช่น -low, -medium, -high) ในแค็ตตาล็อก /v1/models",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "สำหรับผู้ให้บริการที่โควตาคิดตามที่อยู่ egress ขอให้จัดอันดับสมาชิกในกลุ่มที่ใช้ที่อยู่ egress ที่สังเกตเห็นเดียวกับสมาชิกที่เพิ่งถูกปฏิเสธ ให้อยู่ใต้สมาชิกที่สุขภาพดีทันที เรียงลำดับเท่านั้น ไม่เคยตัดออก ต้องมี PROXY_SKIP_RECENTLY_FAILED ซึ่งสร้างสัญญาณการปฏิเสธที่มันอ่าน ปิดไว้โดยค่าเริ่มต้น: ลำดับการเลือกคือการหมุนเวียนตามปกติพอดี"
 }

@@ -1321,7 +1321,9 @@
       "open": "åben",
       "close": "luk"
     },
-    "noResults": "Ingen resultater"
+    "noResults": "Ingen resultater",
+    "modelCatalog": "Modelkatalog",
+    "modelCatalogSubtitle": "Gennemse modeller hos udbyderne"
   },
   "webhooks": {
     "title": "Webhooks",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Partnerlink",
     "dismissAriaLabel": "Luk"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Deaktivér genereringen af varianter af tænkeniveau (f.eks. -low, -medium, -high) i /v1/models-kataloget."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Deaktivér genereringen af varianter af tænkeniveau (f.eks. -low, -medium, -high) i /v1/models-kataloget.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "For udbydere, hvis kvote tælles efter udgangsadresse, placeres et poolmedlem, der deler den observerede udgangsadresse med et nyligt afvist medlem, lige under de sunde medlemmer. Kun rækkefølge — aldrig udeladelse. Kræver PROXY_SKIP_RECENTLY_FAILED, som producerer det afvisningssignal, den læser. Slået fra som standard: rækkefølgen for valg er præcis den almindelige rotation."
 }

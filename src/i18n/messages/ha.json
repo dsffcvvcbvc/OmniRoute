@@ -1321,7 +1321,9 @@
       "open": "buɗe",
       "close": "rufe"
     },
-    "noResults": "Babu sakamako"
+    "noResults": "Babu sakamako",
+    "modelCatalog": "Katalogin ƙara",
+    "modelCatalogSubtitle": "Duba sabis wa saƙaɗo"
   },
   "webhooks": {
     "title": "Ƙugiyoyin yanar gizo",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Hanyar haɗin abokin hulɗa",
     "dismissAriaLabel": "Yi watsi"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Kashe samar da nau'ikan matakan tunani (misali -low, -medium, -high) a cikin kundin /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Kashe samar da nau'ikan matakan tunani (misali -low, -medium, -high) a cikin kundin /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Ga wa masu saƙaɗo da aka lissafi da adireshin fita, sanya wani memba da ke buya wanda yake ɗauke da adireshin fita da aka gani tare da memba da aka yi maga da kwanan nan, kawai kadan a karkashin memba masu lafiya. Sadar ne kawai, ba a sake yin tafiɓa ba. Yana buƙatar PROXY_SKIP_RECENTLY_FAILED, wanda ke ƙirƙirar alamar yin maga da yake karanta. An rufe shi ta tsoari: tsarin zaɓi shi ne gexacta jimawa na al'ada."
 }

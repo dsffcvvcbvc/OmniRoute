@@ -1321,7 +1321,9 @@
       "open": "打開",
       "close": "關閉"
     },
-    "noResults": "沒有結果"
+    "noResults": "沒有結果",
+    "modelCatalog": "模型目錄",
+    "modelCatalogSubtitle": "跨供應商瀏覽模型"
   },
   "webhooks": {
     "title": "Webhook",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "合作夥伴連結",
     "dismissAriaLabel": "關閉"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "停用在 /v1/models 目錄中產生思考層級變體（例如 -low、-medium、-high）。"
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "停用在 /v1/models 目錄中產生思考層級變體（例如 -low、-medium、-high）。",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "對依出口位址分桶計算配額的供應商，將與最近遭拒成員共享相同觀測出口位址的集區成員排在健康成員之下。僅調整順序，絕不排除。需要 PROXY_SKIP_RECENTLY_FAILED，它會產生其所讀取的拒絕訊號。預設關閉：選擇順序與一般輪詢完全一致。"
 }

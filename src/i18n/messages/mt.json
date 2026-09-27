@@ -1321,7 +1321,9 @@
       "open": "iftaħ",
       "close": "agħlaq"
     },
-    "noResults": "Ebda riżultat"
+    "noResults": "Ebda riżultat",
+    "modelCatalog": "Katalogu tal-modelli",
+    "modelCatalogSubtitle": "Fli modelsi kull l-fornituri"
   },
   "webhooks": {
     "title": "Webhooks",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Link tas-sieħeb",
     "dismissAriaLabel": "Agħlaq"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Itfi l-ġenerazzjoni ta’ varjanti tal-livell ta’ ħsieb (eż. -low, -medium, -high) fil-katalgu /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Itfi l-ġenerazzjoni ta’ varjanti tal-livell ta’ ħsieb (eż. -low, -medium, -high) fil-katalgu /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Għall-fornituri li l-kwota tagħhom titkompja skont l-indirizz tal-ħruġ, qiegħed membru tal-pool li jqassam l-indirizz tal-ħruġ osservat ma' membru rrifjutat danament bħal taħt i-membri sani. Ordni biss — qatt esklussjoni. Teħtieġ PROXY_SKIP_RECENTLY_FAILED, li jipproduxi s-sinjal tar-rifju li jaqra. Mux off bil-default: l-ordni tal-għażla huwa eżatt ir-rotazzjoni ordinarja."
 }

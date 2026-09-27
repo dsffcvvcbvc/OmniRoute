@@ -1321,7 +1321,9 @@
       "open": "打开",
       "close": "关闭"
     },
-    "noResults": "没有结果"
+    "noResults": "没有结果",
+    "modelCatalog": "模型目录",
+    "modelCatalogSubtitle": "跨提供商浏览模型"
   },
   "webhooks": {
     "title": "Webhook",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "合作伙伴链接",
     "dismissAriaLabel": "关闭"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "禁用在 /v1/models 目录中生成思考级别变体（例如 -low、-medium、-high）。"
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "禁用在 /v1/models 目录中生成思考级别变体（例如 -low、-medium、-high）。",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "对按出口地址分桶计算配额的提供商，将与最近被拒成员共享相同观测出口地址的池成员排在健康成员之下。仅调整顺序，绝不排除。需要 PROXY_SKIP_RECENTLY_FAILED，它会生成其所读取的拒绝信号。默认关闭：选择顺序与普通轮询完全一致。"
 }

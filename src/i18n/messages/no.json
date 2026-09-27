@@ -1321,7 +1321,9 @@
       "open": "åpne",
       "close": "lukk"
     },
-    "noResults": "Ingen resultater"
+    "noResults": "Ingen resultater",
+    "modelCatalog": "Modellkatalog",
+    "modelCatalogSubtitle": "Utforsk modeller hos leverandørene"
   },
   "webhooks": {
     "title": "Webhooker",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Partnerlenke",
     "dismissAriaLabel": "Lukk"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Deaktiver generering av varianter for resonneringsnivå (f.eks. -low, -medium, -high) i /v1/models-katalogen."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Deaktiver generering av varianter for resonneringsnivå (f.eks. -low, -medium, -high) i /v1/models-katalogen.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "For leverandører hvis kvote telles etter utgående adresse, plasserer du et poolmedlem som deler den observerte utgående adressen med et nylig avvist medlem rett under de friske medlemmene. Bare rekkefølge, aldri utelattelse. Krever PROXY_SKIP_RECENTLY_FAILED, som produserer avvisningssignalet den leser. Av som standard: rekkefølgen for utvalg er nøyaktig den vanlige rotasjonen."
 }

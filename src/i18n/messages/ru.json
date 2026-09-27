@@ -1322,7 +1322,9 @@
       "open": "открыть",
       "close": "закрыть"
     },
-    "noResults": "Нет результатов"
+    "noResults": "Нет результатов",
+    "modelCatalog": "Каталог моделей",
+    "modelCatalogSubtitle": "Обзор моделей у провайдеров"
   },
   "webhooks": {
     "title": "Вебхуки",

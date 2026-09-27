@@ -1321,7 +1321,9 @@
       "open": "খুলুন",
       "close": "বন্ধ করুন"
     },
-    "noResults": "কোন ফলাফল নেই"
+    "noResults": "কোন ফলাফল নেই",
+    "modelCatalog": "মডেল ক্যাটালগ",
+    "modelCatalogSubtitle": "প্রদানকারীদের মধ্যে মডেল দেখুন"
   },
   "webhooks": {
     "title": "ওয়েবহুক",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "অংশীদার লিঙ্ক",
     "dismissAriaLabel": "বন্ধ করুন"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models ক্যাটালগে চিন্তার স্তরের ভ্যারিয়েন্ট (যেমন -low, -medium, -high) তৈরি করা বন্ধ করুন।"
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models ক্যাটালগে চিন্তার স্তরের ভ্যারিয়েন্ট (যেমন -low, -medium, -high) তৈরি করা বন্ধ করুন।",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "যেসব প্রদানকারীর কোটা বেরির ঠিকানা অনুযায়ী হিসাব হয়, তাদের জন্য সদস্যকে কোনো সদস্য ভাগ করলে সাম্প্রতিকভাবে প্রত্যাখ্যাত সদস্যের পর্যবেক্ষিত বেরির ঠিকানার সঙ্গে একই বেরির ঠিকানা থাকলে তাকে সুস্থ সদস্যদের ঠিক নিচে সাজান। শুধু ক্রম, কখনও বাদ নয়। এতে PROXY_SKIP_RECENTLY_FAILED দরকার, যা এটি যে প্রত্যাখ্যানের সংকেত পড়ে তা তৈরি করে। ডিফল্টভাবে বন্ধ: নির্বাচনের ক্রম ঠিক সাধারণ ঘূর্ণিই।"
 }

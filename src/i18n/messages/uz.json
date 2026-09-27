@@ -1321,7 +1321,9 @@
       "open": "ochish",
       "close": "yopish"
     },
-    "noResults": "Natijalar yo‘q"
+    "noResults": "Natijalar yo‘q",
+    "modelCatalog": "Modellar katalogi",
+    "modelCatalogSubtitle": "Taqdimotchilar orasidagi modellarni ko'rib chiqing"
   },
   "webhooks": {
     "title": "Vebhuklar",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Hamkor havolasi",
     "dismissAriaLabel": "Yopish"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models katalogida fikrlash darajasi variantlarini (masalan, -low, -medium, -high) yaratishni o‘chirib qo‘ying."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models katalogida fikrlash darajasi variantlarini (masalan, -low, -medium, -high) yaratishni o‘chirib qo‘ying.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Kvotasi chiqish manzili bo'yicha hisoblanadigan provayderlar uchun, yaqinda rad etilgan azo bilan bir xil kuzatilgan chiqish manziliga ega bo'lgan guruh a'zosini sog'a'm a'zolar ostiga joylashtiring. Faqat tartib, hech qachon chiqarib tashlanmaydi. Bu uchun PROXY_SKIP_RECENTLY_FAILED kerak, u o'qigan rad javobini yaratadi. Standart bo'yicha o'chiq: tanlash tartibi aynan oddiy aylanishdir."
 }

@@ -1321,7 +1321,9 @@
       "open": "திறக்கவும்",
       "close": "மூடு"
     },
-    "noResults": "எந்த முடிவுகளும் இல்லை"
+    "noResults": "எந்த முடிவுகளும் இல்லை",
+    "modelCatalog": "மாடல் பட்டியல்",
+    "modelCatalogSubtitle": "விநியோகங்களில் மாடல்களை உலவிப்பு"
   },
   "webhooks": {
     "title": "வெப்ஹூக்ஸ்",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "கூட்டாளர் இணைப்பு",
     "dismissAriaLabel": "மூடு"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models பட்டியலில் thinking level variants (எ.கா. -low, -medium, -high) உருவாக்கப்படுவதை முடக்கவும்."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models பட்டியலில் thinking level variants (எ.கா. -low, -medium, -high) உருவாக்கப்படுவதை முடக்கவும்.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "வெளியேறும் முகவரி அடிப்படையில் ஒதுக்கீடு கணக்கிடப்படும் வழங்கிகளுக்கு, சமீபத்தில் நிராகரிக்கப்பட்ட உறுப்பினருடன் ஒரே கண்காணித்த வெளியேறும் முகவரைக் கொண்ட குழு உறுப்பினரை, ஆரோக்கியமான உறுப்பினர்களுக்கு சற்றுக் கீழாக வைக்கவும். வரிசை மட்டும், ஒருபோதும் நீக்கப்படாது. அது வாசிக்கும் நிராகரிப்பு சமிக்ஷையை உருவாக்கும் PROXY_SKIP_RECENTLY_FAILED தேவை. இயல்பாக அணைப்பு: தேர்வு வரிசை சரியாக வழக்கமான சுழற்சியே."
 }

@@ -1321,7 +1321,9 @@
       "open": "ತೆರೆಯಿರಿ",
       "close": "ಮುಚ್ಚಿರಿ"
     },
-    "noResults": "ಯಾವುದೇ ಫಲಿತಾಂಶಗಳಿಲ್ಲ"
+    "noResults": "ಯಾವುದೇ ಫಲಿತಾಂಶಗಳಿಲ್ಲ",
+    "modelCatalog": "ಮಾದರಿ ಪಟ್ಟಿ",
+    "modelCatalogSubtitle": "ಪ್ರವೇಶಕರ ನಡುವೆ ಮಾದರಿಗಳನ್ನು ನೋಡಿ"
   },
   "webhooks": {
     "title": "ವೆಬ್ಹುಕ್ಗಳು",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "ಪಾಲುದಾರರ ಲಿಂಕ್",
     "dismissAriaLabel": "ವಜಾಗೊಳಿಸಿ"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models ಕ್ಯಾಟಲಾಗ್ನಲ್ಲಿ ಚಿಂತನಾ ಮಟ್ಟದ ರೂಪಾಂತರಗಳ (ಉದಾ. -low, -medium, -high) ರಚನೆಯನ್ನು ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಿ."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models ಕ್ಯಾಟಲಾಗ್ನಲ್ಲಿ ಚಿಂತನಾ ಮಟ್ಟದ ರೂಪಾಂತರಗಳ (ಉದಾ. -low, -medium, -high) ರಚನೆಯನ್ನು ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಿ.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "ನಿರ್ಗಮನ ವಿಳಾಸದ ಪ್ರಕಾರ ಕೋಟಾ ಲೆಕ್ಕಹಾಕುವ ಪ್ರೈಡರ್‌ಗಳಿಗಾಗಿ, ಇತ್ತೀಚೆಗೆ ತಿರಸುಲಿಗೊಂಡ ಸದಸ್ಯನೊಂದಿಗೆ ಅದೇ ಗಮನಿಸಿದ ನಿರ್ಗಮನ ವಿಳಾಸವನ್ನು ಹಂಚಿಕೊಳ್ಳುವ ಪೂಲ್ ಸದಸ್ಯನ್ನು ಆರೋಗ್ಯಕರ ಸದಸ್ಯರ ನಿಖರವೇ ಕೆಳಗೆ ಜೋಡಿಸಿ. ಕೇವಲ ಕ್ರಮ, ಎಂದಿಗೂ ಹೊರತುಪಡಿಸುವುದಿಲ್ಲ. ಅದು ಓದುವ ತಿರಸುಲಿಕೆ ಸಂಕೇತವನ್ನು ನೀಡುವ PROXY_SKIP_RECENTLY_FAILED ಅಗತ್ಯ. ಪೂರ್ವನಿಯಮಿತವಾಗಿ ಆಫ್: ಆಯ್ಕೆಯ ಕ್ರಮ ನಿಖರವಾಗಿ ಸಾಮಾನ್ಯ ಪರಿವರ್ತನೆ."
 }

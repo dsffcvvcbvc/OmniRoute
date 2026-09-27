@@ -1322,7 +1322,9 @@
       "open": "mở",
       "close": "đóng"
     },
-    "noResults": "Không có kết quả"
+    "noResults": "Không có kết quả",
+    "modelCatalog": "Danh mục mô hình",
+    "modelCatalogSubtitle": "Duyệt các mô hình theo nhà cung cấp"
   },
   "webhooks": {
     "title": "Webhook",

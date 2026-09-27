@@ -1321,7 +1321,9 @@
       "open": "öppna",
       "close": "stäng"
     },
-    "noResults": "Inga resultat"
+    "noResults": "Inga resultat",
+    "modelCatalog": "Modellkatalog",
+    "modelCatalogSubtitle": "Bläddra bland leverantörernas modeller"
   },
   "webhooks": {
     "title": "Webhookar",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Partnerlänk",
     "dismissAriaLabel": "Stäng"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Inaktivera genereringen av varianter med olika tankenivåer (t.ex. -low, -medium, -high) i katalogen /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Inaktivera genereringen av varianter med olika tankenivåer (t.ex. -low, -medium, -high) i katalogen /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "För leverantörer vars kvot beräknas per utgående adress, placerar du en poolmedlem som delar den observerade utgående adressen med en nyligen avvisad medlem strax under de friska medlemmena. Endast ordning, aldrig uteslutning. Kräver PROXY_SKIP_RECENTLY_FAILED, som producerar avvisningssignalen den läser. Av som standard: urvalsordningen är exakt den vanliga rotationen."
 }

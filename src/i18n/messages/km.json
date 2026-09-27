@@ -1321,7 +1321,9 @@
       "open": "បើក",
       "close": "បិទ"
     },
-    "noResults": "គ្មានលទ្ធផល"
+    "noResults": "គ្មានលទ្ធផល",
+    "modelCatalog": "កាតាលូគម្មវិទ្យា",
+    "modelCatalogSubtitle": "រុករកម៉ូដែលនៅតាមអ្នកផ្តល់សេវា"
   },
   "webhooks": {
     "title": "Webhooks",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "តំណដៃគូ",
     "dismissAriaLabel": "បិទ"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "បិទការបង្កើតវ៉ារ្យ៉ង់កម្រិតនៃការគិត (ឧ. -low, -medium, -high) នៅក្នុងកាតាឡុក /v1/models។"
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "បិទការបង្កើតវ៉ារ្យ៉ង់កម្រិតនៃការគិត (ឧ. -low, -medium, -high) នៅក្នុងកាតាឡុក /v1/models។",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "សម្រាប់អ្នកផ្តល់សេវាដែលវិភាគដោយអាសយដ្ឋានចេញទៅ សមាជិកក្នុងប៉ូលដែលចែករំលែកអាសយដ្ឋានចេញទៅដែលត្រូវបានសង្កេតជាមួយសមាជិកដែលត្រូវបានបដិសេធនៅពេលថ្មីៗ ត្រូវដាក់នៅបន្ទាប់សមាជិកដែលមានសុខភាពដោយភ្លាមៗ តែជាលំដាប់តែ មិនដកចេញទេ ត្រូវការ PROXY_SKIP_RECENTLY_FAILED ដែលផ្តល់សញ្ញាបដិសេធដែលវាអាន ល្មានបិទជាលម្បលទ្បាប់៖ លំដាប់ជ្រើសរើសគឺជាការបង្វាស់ធម្មតា។"
 }

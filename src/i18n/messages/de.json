@@ -1321,7 +1321,9 @@
       "open": "öffnen",
       "close": "schließen"
     },
-    "noResults": "Keine Ergebnisse"
+    "noResults": "Keine Ergebnisse",
+    "modelCatalog": "Modellkatalog",
+    "modelCatalogSubtitle": "Modelle bei den Anbietern durchsuchen"
   },
   "webhooks": {
     "title": "Webhooks",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Partnerlink",
     "dismissAriaLabel": "Schließen"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Deaktiviert die Generierung von Denkstufenvarianten (z. B. -low, -medium, -high) im /v1/models-Katalog."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Deaktiviert die Generierung von Denkstufenvarianten (z. B. -low, -medium, -high) im /v1/models-Katalog.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Für Anbieter, deren Kontingent nach Ausgangsadresse berechnet wird, sortiert ein Poolmitglied, das die beobachtete Ausgangsadresse mit einem kürzlich abgelehnten Mitglied teilt, direkt unter die gesunden Mitglieder. Nur Reihenfolge, nie Ausschluss. Benötigt PROXY_SKIP_RECENTLY_FAILED, das das Abweigerungssignal erzeugt, das es liest. Standardmäßig aus: Die Auswahlreihenfolge ist genau die einfache Rotation."
 }

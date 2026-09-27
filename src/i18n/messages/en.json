@@ -1322,7 +1322,9 @@
       "open": "open",
       "close": "close"
     },
-    "noResults": "No results"
+    "noResults": "No results",
+    "modelCatalog": "Model catalog",
+    "modelCatalogSubtitle": "Browse models across providers"
   },
   "webhooks": {
     "title": "Webhooks",

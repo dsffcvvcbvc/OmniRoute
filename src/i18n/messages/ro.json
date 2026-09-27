@@ -1321,7 +1321,9 @@
       "open": "deschide",
       "close": "închide"
     },
-    "noResults": "Niciun rezultat"
+    "noResults": "Niciun rezultat",
+    "modelCatalog": "Catalog de modele",
+    "modelCatalogSubtitle": "Răsfoiește modelele furnizorilor"
   },
   "webhooks": {
     "title": "Webhook-uri",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Link de partener",
     "dismissAriaLabel": "Închideți"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Dezactivați generarea variantelor de nivel de gândire (de ex. -low, -medium, -high) în catalogul /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Dezactivați generarea variantelor de nivel de gândire (de ex. -low, -medium, -high) în catalogul /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Pentru furnizorii a căror cotă se calculează după adresa de ieșire, plasează un membru din grup care împarte adresa de ieșire observată cu un membru refuzat recent chiar sub membrii sănătoși. Doar ordine, niciodată excludere. Necesită PROXY_SKIP_RECENTLY_FAILED, care produce semnalul de refuz pe care îl citește. Oprit implicit: ordinea de selecție este exact rotația obișnuită."
 }

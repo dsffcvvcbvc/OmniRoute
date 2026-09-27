@@ -1321,7 +1321,9 @@
       "open": "ava",
       "close": "sulge"
     },
-    "noResults": "Tulemusi pole"
+    "noResults": "Tulemusi pole",
+    "modelCatalog": "Mudelite kataloog",
+    "modelCatalogSubtitle": "Sirvitajate mudelite sirvimine"
   },
   "webhooks": {
     "title": "Veebihaagid",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Partnerlink",
     "dismissAriaLabel": "Sulge"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Keela mõtlemistaseme variantide (nt -low, -medium, -high) loomine /v1/models kataloogis."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Keela mõtlemistaseme variantide (nt -low, -medium, -high) loomine /v1/models kataloogis.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Väljundaadressi järgi kvoodiga teenuste puhul paiguta see basseeli liige, kes jagab hiljuti tagasi lükatud liikmega vaadeldud väljundaadressi, täpselt tervete liikmete alla. Ainult järjestus, mitte kunagi väljajätmine. Vajalik on PROXY_SKIP_RECENTLY_FAILED, mis tekitab loetava keelamärguandi. Vaikimisi välja: valiku järjestus on täpselt tavaline ringluseke."
 }

@@ -1321,7 +1321,9 @@
       "open": "ਖੋਲ੍ਹੋ",
       "close": "ਬੰਦ ਕਰੋ"
     },
-    "noResults": "ਕੋਈ ਨਤੀਜਾ ਨਹੀਂ"
+    "noResults": "ਕੋਈ ਨਤੀਜਾ ਨਹੀਂ",
+    "modelCatalog": "ਮਾਡਲ ਕੈਟਲਾਗ",
+    "modelCatalogSubtitle": "ਮੋਡਲਾਂ ਦੇਖੋ ਪ੍ਰੋਵਾਈਡਰਾਂ ਵਿੱਚ"
   },
   "webhooks": {
     "title": "ਵੈੱਬਹੁੱਕਸ",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "ਭਾਈਵਾਲ ਲਿੰਕ",
     "dismissAriaLabel": "ਬੰਦ ਕਰੋ"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models ਕੈਟਾਲਾਗ ਵਿੱਚ ਸੋਚਣ ਦੇ ਪੱਧਰ ਦੇ ਰੂਪਾਂ (ਉਦਾਹਰਨ ਲਈ -low, -medium, -high) ਦੀ ਰਚਨਾ ਨੂੰ ਅਯੋਗ ਕਰੋ।"
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models ਕੈਟਾਲਾਗ ਵਿੱਚ ਸੋਚਣ ਦੇ ਪੱਧਰ ਦੇ ਰੂਪਾਂ (ਉਦਾਹਰਨ ਲਈ -low, -medium, -high) ਦੀ ਰਚਨਾ ਨੂੰ ਅਯੋਗ ਕਰੋ।",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "ਲਈ ਪ੍ਰਦਾਤਾਵਾਂ ਜਿਨ੍ਹਾਂ ਦੀ ਕੋਟਾ ਨਿਕਸਾਰ ਪਤੇ ਅਨੁਸਾਰ ਗਿਣੀ ਜਾਂਦੀ ਹੈ, ਉੱਥੇ ਉਸ ਪੂਲ ਮੈਂਬਰ ਨੂੰ ਜਿਸ ਦਾ ਨਿਰੀਖਿਆ ਗਿਆ ਨਿਕਸਾਰ ਪਤਾ ਹਾਲ ਵਿੱਚ ਠੁਕਰਾਏ ਗਏ ਮੈਂਬਰ ਨਾਲ ਸਾਂਝਾ ਹੈ, ਠੀਕ ਸਿਹਤਮੰਦ ਮੈਂਬਰਾਂ ਹੇਠਾਂ ਰੱਖੋ। ਸਿਰਫ਼ ਕ੍ਰਮ, ਕਦੇ ਵੀ ਬਾਹਰ ਨਹੀਂ ਕੀਤਾ ਜਾਂਦਾ। ਇਸ ਲਈ PROXY_SKIP_RECENTLY_FAILED ਚਾਹੀਦਾ ਹੈ, ਜੋ ਇਹ ਪੜ੍ਹਦਾ ਹੈ ਉਹ ਠੁਕਰਾਅ ਸੰਕੇਤ ਬਣਾਉਂਦਾ ਹੈ। ਡਿਫਾਲਟ ਰੂਪ ਵਿੱਚ ਬੰਦ: ਚੋਣ ਦਾ ਕ੍ਰਮ ਬਿਲਕੁਲ ਆਮ ਚੱਕਰਾਵਾਂ ਹੈ।"
 }

@@ -1321,7 +1321,9 @@
       "open": "ouvrir",
       "close": "fermer"
     },
-    "noResults": "Aucun résultat"
+    "noResults": "Aucun résultat",
+    "modelCatalog": "Catalogue de modèles",
+    "modelCatalogSubtitle": "Parcourir les modèles des fournisseurs"
   },
   "webhooks": {
     "title": "Webhooks",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Lien partenaire",
     "dismissAriaLabel": "Fermer"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Désactiver la génération des variantes de niveau de réflexion (par ex. -low, -medium, -high) dans le catalogue /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Désactiver la génération des variantes de niveau de réflexion (par ex. -low, -medium, -high) dans le catalogue /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Pour les fournisseurs dont le quota est calculé par adresse de sortie, classez un membre du pool partageant l'adresse de sortie observée avec un membre récemment refusé juste sous les membres sains. Ordre uniquement, jamais d'exclusion. Nécessite PROXY_SKIP_RECENTLY_FAILED, qui produit le signal de refus qu'il lit. Désactivé par défaut : l'ordre de sélection est exactement la rotation simple."
 }

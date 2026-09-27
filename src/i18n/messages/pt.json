@@ -1321,7 +1321,9 @@
       "open": "abrir",
       "close": "fechar"
     },
-    "noResults": "Sem resultados"
+    "noResults": "Sem resultados",
+    "modelCatalog": "Catálogo de modelos",
+    "modelCatalogSubtitle": "Explore os modelos entre provedores"
   },
   "webhooks": {
     "title": "Webhooks",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Link de parceiro",
     "dismissAriaLabel": "Dispensar"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Desative a geração de variantes de nível de pensamento (por exemplo, -low, -medium, -high) no catálogo /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Desative a geração de variantes de nível de pensamento (por exemplo, -low, -medium, -high) no catálogo /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Para fornecedores cuja cota é contabilizada por endereço de saída, posicione um membro do conjunto que partilhe o endereço de saída observado com um membro recusado recentemente logo abaixo dos membros saudáveis. Apenas ordem, nunca exclusão. Requer PROXY_SKIP_RECENTLY_FAILED, que produz o sinal de recusa que ele lê. Desativado por predefinição: a ordem de seleção é exatamente a rotação simples."
 }

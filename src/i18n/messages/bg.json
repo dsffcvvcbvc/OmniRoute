@@ -1321,7 +1321,9 @@
       "open": "отвори",
       "close": "затвори"
     },
-    "noResults": "Няма резултати"
+    "noResults": "Няма резултати",
+    "modelCatalog": "Каталог на моделите",
+    "modelCatalogSubtitle": "Преглед на моделите при доставчиците"
   },
   "webhooks": {
     "title": "Уеб кукички",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Партньорска връзка",
     "dismissAriaLabel": "Затваряне"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Деактивирайте генерирането на варианти за ниво на разсъждение (напр. -low, -medium, -high) в каталога /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Деактивирайте генерирането на варианти за ниво на разсъждение (напр. -low, -medium, -high) в каталога /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "За доставчиците, чиято квота се отчита по изходен адрес, поставете член от пула, който споделя наблюдавания изходен адрес с наскоро отхвърлен член, точно под здравите членове. Само подреждане — никога изключване. Изисква PROXY_SKIP_RECENTLY_FAILED, който създава сигнала за отказ, който чете. Изключено по подразбиране: редът на избиране е точно обикновеното кръгово избиране."
 }

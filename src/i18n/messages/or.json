@@ -1321,7 +1321,9 @@
       "open": "ଖୋଲନ୍ତୁ",
       "close": "ବନ୍ଦ କରନ୍ତୁ"
     },
-    "noResults": "କୌଣସି ଫଳାଫଳ ନାହିଁ"
+    "noResults": "କୌଣସି ଫଳାଫଳ ନାହିଁ",
+    "modelCatalog": "ମଡେଲ କାଟାଲଗ",
+    "modelCatalogSubtitle": "ପ୍ରଦାୟକାର ମଧ୍ୟରେ ମଡେଲ ଦେଖନ୍ତୁ"
   },
   "webhooks": {
     "title": "ୱେବହୁକ୍ଗୁଡ଼ିକ",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "ସହଭାଗୀ ଲିଙ୍କ୍",
     "dismissAriaLabel": "ବନ୍ଦ କରନ୍ତୁ"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models କ୍ୟାଟାଲଗ୍ରେ ଚିନ୍ତନ ସ୍ତର ଭାରିଆଣ୍ଟଗୁଡ଼ିକର (ଯଥା -low, -medium, -high) ସୃଷ୍ଟିକୁ ଅକ୍ଷମ କରନ୍ତୁ।"
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models କ୍ୟାଟାଲଗ୍ରେ ଚିନ୍ତନ ସ୍ତର ଭାରିଆଣ୍ଟଗୁଡ଼ିକର (ଯଥା -low, -medium, -high) ସୃଷ୍ଟିକୁ ଅକ୍ଷମ କରନ୍ତୁ।",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "ଯେଉଁମାନଙ୍କ କୋଟା ବାହାରଗମ୍ଭ ଠିକଣା ଅନୁଯାୟୀ ଗଣନା ହୁଏ, ସେମାନଙ୍କ ପାଇଁ ଅଳ୍ପ କେବଳ ବର୍ତ୍ତମାନର ପରିଗଲିତ ବାହାରଗମ୍ଭ ଠିକଣା ଥିବୁଥିବା ପୁଲ୍ ସଦସ୍ୟକୁ ସ୍ଵସ୍ଥ ସଦସ୍ୟଙ୍କ ଠିକ ତଳେ ରଖନ୍ତୁ। କେବଳ କ୍ରମ, କେବେ ବାହାର କରନ୍ତୁ ନାହିଁ। ଏହାର ପାଇଁ PROXY_SKIP_RECENTLY_FAILED ଦରକାର, ଯାହା ଏହା ପଢ଼ୁଥିବା ପ୍ରତ୍ୟାଷ ସଙ୍କେତ ସୃଷ୍ଟି କରେ। ଡିଫଲ୍ଟ ଭାବେ ବନ୍ଦ: ବାଛିବା କ୍ରମ ଠିକ୍ ସାଧାରନ ଘୂମଣ ସହିତ ସମାନ।"
 }

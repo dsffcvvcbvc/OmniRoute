@@ -1321,7 +1321,9 @@
       "open": "खोल्नुहोस्",
       "close": "बन्द गर्नुहोस्"
     },
-    "noResults": "कुनै परिणाम छैन"
+    "noResults": "कुनै परिणाम छैन",
+    "modelCatalog": "मोडेल क्याटलग",
+    "modelCatalogSubtitle": "प्रदायकहरूमा मोडेलहरू हेर्नुहोस्"
   },
   "webhooks": {
     "title": "वेबहुकहरू",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "साझेदार लिङ्क",
     "dismissAriaLabel": "बन्द गर्नुहोस्"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models क्याटलगमा सोचाइ स्तरका भेरियन्टहरू (जस्तै -low, -medium, -high) उत्पन्न गर्ने सुविधा निष्क्रिय गर्नुहोस्।"
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models क्याटलगमा सोचाइ स्तरका भेरियन्टहरू (जस्तै -low, -medium, -high) उत्पन्न गर्ने सुविधा निष्क्रिय गर्नुहोस्।",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "कोटा निर्गम ठेगानाअनुसार गणना हुने प्रदायकहरूका लागि, हालै अस्वीकार भएको सदस्यसँग उही अवलोकन गरिएको निर्गम ठेगाना भएको पुल सदस्यलाई स्वस्थ सदस्यहरूको ठीक तल राख्नुहोस्। क्रम मात्र, कहिल्यै बहिष्करण होइन। यसका लागि PROXY_SKIP_RECENTLY_FAILED चाहिन्छ, जसले यसले पढ्ने अस्वीकरण संकेत उत्पन्न गर्छ। पूर्वनिर्धारित रूपमा बन्द: छनोट क्रम ठीक सामान्य चक्रण हो।"
 }

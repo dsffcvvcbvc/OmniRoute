@@ -1321,7 +1321,9 @@
       "open": "megnyitás",
       "close": "bezárás"
     },
-    "noResults": "Nincs találat"
+    "noResults": "Nincs találat",
+    "modelCatalog": "Modellkatalógus",
+    "modelCatalogSubtitle": "Szolgáltatók modelljeinek böngészése"
   },
   "webhooks": {
     "title": "Webhookok",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Partnerlink",
     "dismissAriaLabel": "Bezárás"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Letiltja a gondolkodási szint szerinti változatok (pl. -low, -medium, -high) létrehozását a /v1/models katalógusban."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Letiltja a gondolkodási szint szerinti változatok (pl. -low, -medium, -high) létrehozását a /v1/models katalógusban.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Azoknál a szolgáltatóknál, akiknek a kvótáját kilépési cím alapján számolják, azt a készlet-tagot, aki azonos megfigyelt kilépési címet oszt egy nemrég elutasított taggal, helyezd közvetlenül az egészséges tagok alá. Csak sorrend — kizárás soha. Ehhez PROXY_SKIP_RECENTLY_FAILED kell, amely az általa olvasott elutasítási jelet állítja elő. Alapértelmezés szerint kikapcsolva: a kiválasztási sorrend pontosan a szokásos forgatás."
 }

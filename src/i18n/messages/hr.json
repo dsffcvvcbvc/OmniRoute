@@ -1321,7 +1321,9 @@
       "open": "otvori",
       "close": "zatvori"
     },
-    "noResults": "Nema rezultata"
+    "noResults": "Nema rezultata",
+    "modelCatalog": "Katalog modela",
+    "modelCatalogSubtitle": "Pregledajte modele kod pružatelja"
   },
   "webhooks": {
     "title": "Webhookovi",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Partnerska poveznica",
     "dismissAriaLabel": "Odbaci"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Onemogući generiranje varijanti razine razmišljanja (npr. -low, -medium, -high) u katalogu /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Onemogući generiranje varijanti razine razmišljanja (npr. -low, -medium, -high) u katalogu /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Za davatelje čija se kvota obračunava prema izlaznoj adresi, člana bazena koji dijeli zapaženu izlaznu adresu s nedavno odbijenim članom poredajte neposredno ispod zdravih članova. Samo redoslijed — nikada izostavljanje. Zahtijeva PROXY_SKIP_RECENTLY_FAILED, koji proizvodi signal odbijanja koji čita. Isključeno po zadanom: redoslijed odabira je točno obična rotacija."
 }

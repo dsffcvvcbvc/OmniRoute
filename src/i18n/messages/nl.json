@@ -1321,7 +1321,9 @@
       "open": "open",
       "close": "sluiten"
     },
-    "noResults": "Geen resultaten"
+    "noResults": "Geen resultaten",
+    "modelCatalog": "Modelcatalogus",
+    "modelCatalogSubtitle": "Blader modellen van aanbieders"
   },
   "webhooks": {
     "title": "Webhaken",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Partnerlink",
     "dismissAriaLabel": "Sluiten"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Schakel het genereren van varianten op denkniveau (bijv. -low, -medium, -high) in de catalogus /v1/models uit."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Schakel het genereren van varianten op denkniveau (bijv. -low, -medium, -high) in de catalogus /v1/models uit.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Voor aanbieders waarvan het quota op uitgaand adres wordt berekend, plaats je een poolmember die het waargenomen uitgaande adres deelt met een recent geweigerd lid vlak onder de gezonde leden. Alleen volgorde, nooit uitsluiting. Vereist PROXY_SKIP_RECENTLY_FAILED, dat het afwijzingssignaal levert dat het leest. Standaard uit: de selectievolgorde is precies de gewone rotatie."
 }

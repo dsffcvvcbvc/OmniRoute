@@ -1321,7 +1321,9 @@
       "open": "ဖွင့်ရန်",
       "close": "ပိတ်ရန်"
     },
-    "noResults": "ရလဒ်မရှိပါ"
+    "noResults": "ရလဒ်မရှိပါ",
+    "modelCatalog": "မော်ဒယ် ကာတာလောဂ",
+    "modelCatalogSubtitle": "ပေါင်းစပ်သူများ၏ မော်ဒယ်များကို ရှာဖွေပါ"
   },
   "webhooks": {
     "title": "ဝဘ်ဟုတ်များ",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "မိတ်ဖက်လင့်ခ်",
     "dismissAriaLabel": "ပိတ်ရန်"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models catalog တွင် thinking level မူကွဲများ (ဥပမာ -low, -medium, -high) ဖန်တီးခြင်းကို ပိတ်ပါ။"
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models catalog တွင် thinking level မူကွဲများ (ဥပမာ -low, -medium, -high) ဖန်တီးခြင်းကို ပိတ်ပါ။",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "ပိုရိတ်အလိုက် တွက်ချက်သည့် provider များအတွက် မကြာမီက ငြင်းပယ်ခဲ့သော member နဲ့ တူညီသော အမှန်တကယ် တွေ့ရှိထားသည့် ထွက်လမ်း လိပ်စာရင်းကို မကျန်သော member များအောက် ချက်ချင်းရှိထားပါ။ အစဉ်ပိုင်းသာ — လုံးဝ မဖယ်ရှားပါ။ မိမိ ဖတ်လိုက်သော ငြင်းပယ်မှု လက္ခဏာကို ထုတ်ပေးသည့် PROXY_SKIP_RECENTLY_FAILED လိုအပ်ပါသည်။ မူလအတိုင်း ပိတ်သည် — ရွေးချယ်မှု အစဉ်သည် သာမန် လှည့်ပတ်မှုနှင့် အတိအကျပင် တူညီပါသည်။"
 }

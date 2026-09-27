@@ -1321,7 +1321,9 @@
       "open": "ክፈት",
       "close": "ዝጋ"
     },
-    "noResults": "ምንም ውጤት የለም"
+    "noResults": "ምንም ውጤት የለም",
+    "modelCatalog": "የሞዴል ካታሎግ",
+    "modelCatalogSubtitle": "በአቅራቦዎች ላይ ሞዴሎችን ይመልከቱ"
   },
   "webhooks": {
     "title": "የድር መንጠቆዎች",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "የአጋር አገናኝ",
     "dismissAriaLabel": "ዝጋ"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "በ/v1/models ካታሎግ ውስጥ የአስተሳሰብ ደረጃ ተለዋጮችን (ለምሳሌ -low, -medium, -high) ማመንጨትን አሰናክል።"
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "በ/v1/models ካታሎግ ውስጥ የአስተሳሰብ ደረጃ ተለዋጮችን (ለምሳሌ -low, -medium, -high) ማመንጨትን አሰናክል።",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "ለየት አውታረ አድራሻዎች ያላቸው አቅራቦዎች፣ ከቅርብ የተከለከለ አካል ጋር የሚጋራ የውጣ አድራሻ ያለውን የመርሃው አካል ከጤናኛ አካሎች በታች ብቻ ያስቀምጡ። መደረድ ብቻ ፣ ምንም ሁሉ አይገለለጥም። PROXY_SKIP_RECENTLY_FAILED ያስፈልጋል፣ የሚያነበበው የአሰካኝነት ምልክት ይሰጣል። በመጀመሪያ ጠፍቷል፦ የመምረጥ ቅደም ተከተል በትክክል ስርዓቱን ነው።"
 }

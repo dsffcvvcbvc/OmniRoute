@@ -1321,7 +1321,9 @@
       "open": "fungua",
       "close": "funga"
     },
-    "noResults": "Hakuna matokeo"
+    "noResults": "Hakuna matokeo",
+    "modelCatalog": "Katalogi ya mifano",
+    "modelCatalogSubtitle": "Tafuta mifano kwa wtoa"
   },
   "webhooks": {
     "title": "Viboko vya mtandao",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Kiungo cha mshirika",
     "dismissAriaLabel": "Funga"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Zima uundaji wa vibadala vya kiwango cha kufikiri (k.m. -low, -medium, -high) katika katalogi ya /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Zima uundaji wa vibadala vya kiwango cha kufikiri (k.m. -low, -medium, -high) katika katalogi ya /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Kwa wanaotoa ambao kila yao inahesabiwa kwa anwani ya kutoka, weka mwanachama wa kundi anayeshiriki anwani ya kutoka iliyotazama na mwanachama aliyekataliwa hivi karibuni tu chini ya wanachama walio wazima. Mpangilio tu, kamwe haukitengwa. Inahitaji PROXY_SKIP_RECENTLY_FAILED, ambacho hutoa ishara ya kukataliwa inayosoma. Imezimwa kwa chaguo-msingi: mpangilio wa uteuzi ni hasa mzunguko wa kawaida."
 }

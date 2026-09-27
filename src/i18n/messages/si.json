@@ -1321,7 +1321,9 @@
       "open": "විවෘත කරන්න",
       "close": "වසන්න"
     },
-    "noResults": "ප්රතිඵල නොමැත"
+    "noResults": "ප්රතිඵල නොමැත",
+    "modelCatalog": "මාදල් දර්ශනය",
+    "modelCatalogSubtitle": "මාදල් බලන්න සපයන්නා අතර"
   },
   "webhooks": {
     "title": "වෙබ්හුක්",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "හවුල්කරු සබැඳිය",
     "dismissAriaLabel": "ඉවත දමන්න"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models නාමාවලිය තුළ චින්තන මට්ටමේ ප්රභේද (උදා. -low, -medium, -high) ජනනය කිරීම අක්රිය කරන්න."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models නාමාවලිය තුළ චින්තන මට්ටමේ ප්රභේද (උදා. -low, -medium, -high) ජනනය කිරීම අක්රිය කරන්න.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "සපාකරණුකරණය එම්ට්‍රාන්ට් ලිපිනය අනුව ගණනය කරන සපාකරණුකාරීන් සඳහා, මුහුණ්ට ප්‍රතික්ෂේප කළ සාමාජිකයාගේ නිරීක්ෂිත එම්ට්‍රාන්ට් ලිපිනයම බෙදාගන්නා තාප සාමාජිකයාව සුවස් සාමාජිකයන්ගේ යටතට තදකටම තබන්න. අනුපිළිවෙල පමණයි, කිසිවක් බිඳ දැමීමක් නොකරයි. PROXY_SKIP_RECENTLY_FAILED අවශ්‍යයි — එය එහි කියවන ප්‍රතික්ෂේප සංඥාව නිරූපණය කරයි. පෙරනිමිතව අක්‍රියයි: තේරීමේ අනුපිළිවෙල හරියටම සාමාන්‍ය භ්‍රමණයයි."
 }

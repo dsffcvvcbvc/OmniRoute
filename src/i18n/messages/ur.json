@@ -1321,7 +1321,9 @@
       "open": "کھولیں",
       "close": "بند کریں"
     },
-    "noResults": "کوئی نتائج نہیں"
+    "noResults": "کوئی نتائج نہیں",
+    "modelCatalog": "ماڈل کیٹلاگ",
+    "modelCatalogSubtitle": "فراہم کنندگان کے ماڈلز دیکھیں"
   },
   "webhooks": {
     "title": "ویب ہکس",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "شراکت دار کا لنک",
     "dismissAriaLabel": "بند کریں"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models کیٹلاگ میں سوچنے کی سطح کی مختلف صورتوں (مثلاً -low، -medium، -high) کی تخلیق غیر فعال کریں۔"
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models کیٹلاگ میں سوچنے کی سطح کی مختلف صورتوں (مثلاً -low، -medium، -high) کی تخلیق غیر فعال کریں۔",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "ان ای سے روانے کے پتے کے مطابق کوٹا گنے جانے والے فراہم کنندگان کے لیے، اُس پول کے رکن کو جس کا مشاہدہ شدہ روانہ پتہ حال میں مسترد کیے گئے رکن کے برابر ہے، صحت مند رکنوں کے بالکل نیچے رکھیں۔ صرف ترتیب، کبھی خارج نہیں کیا جاتا۔ اس کے لیے PROXY_SKIP_RECENTLY_FAILED درکار ہے، جو وہ پڑھتا ہے اس کا مستندہ سignal فراہم کرتا ہے۔ طے شدہ طور پر بند: انتخاب کا ترتیب بالکل عام گردش ہے۔"
 }

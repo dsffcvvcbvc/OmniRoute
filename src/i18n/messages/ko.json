@@ -1321,7 +1321,9 @@
       "open": "열기",
       "close": "닫기"
     },
-    "noResults": "결과가 없습니다"
+    "noResults": "결과가 없습니다",
+    "modelCatalog": "모델 카탈로그",
+    "modelCatalogSubtitle": "제공업체별 모델 둘러보기"
   },
   "webhooks": {
     "title": "웹훅",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "파트너 링크",
     "dismissAriaLabel": "닫기"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models 카탈로그에서 사고 수준 변형(예: -low, -medium, -high)이 생성되지 않도록 설정합니다."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models 카탈로그에서 사고 수준 변형(예: -low, -medium, -high)이 생성되지 않도록 설정합니다.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "쿼터가 출발지 주소별로 계산되는 제공업체의 경우, 최근 거부된 구성원과 관측된 출발지 주소가 같은 풀 구성원을 정상 구성원 바로 아래에 배치합니다. 순서만 바꾸며 제외하지는 않습니다. 자신이 읽는 거부 신호를 생성하는 PROXY_SKIP_RECENTLY_FAILED가 필요합니다. 기본값은 꺼짐이며 선택 순서는 일반 회전과 완전히 동일합니다."
 }

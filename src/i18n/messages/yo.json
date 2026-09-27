@@ -1321,7 +1321,9 @@
       "open": "ṣí",
       "close": "pa"
     },
-    "noResults": "Kò sí àbájáde"
+    "noResults": "Kò sí àbájáde",
+    "modelCatalog": "Ìwé àkójọ Ọ̀pọ̀rọ̀",
+    "modelCatalogSubtitle": "Wo àwọn ọ̀pọ̀rọ̀ nípa àwọn olùpèsè"
   },
   "webhooks": {
     "title": "Àwọn Webhook",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Ìjápọ̀ aláṣiṣẹ́pọ̀",
     "dismissAriaLabel": "Pa á tì"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Pa ṣíṣẹ̀dá àwọn ẹ̀yà ìpele ìrònú (fún àpẹẹrẹ -low, -medium, -high) nínú àkójọ /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Pa ṣíṣẹ̀dá àwọn ẹ̀yà ìpele ìrònú (fún àpẹẹrẹ -low, -medium, -high) nínú àkójọ /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Fún àwọn olùpèsè tí ìpò ni a ṣe nípa àdírẹ́sì ìsọ̀já, fi ọmọ ẹgbé mìíràn tí ó pín àdírẹ́sì ìsọ̀jà tí a ṣe rí pẹ̀lú ọmọ ẹgbé tí a fagilé láìpẹ́ sísàlẹ̀ níhìn-ẹ̀yìn àwọn ọmọ ẹgbé tí ó dára. Àtòjọ́ nìkan, kì í ṣe yíyọ̀ níǹǹ. Ó nílò PROXY_SKIP_RECENTLY_FAILED, èyí tí ó ń ṣẹ̀dá ìṣàfihan ìdíshì tí ó bá ń ka. Ó ṣé títì ní ọ̀kọ̀: ìṣàtò̀ àyàwò ní tàbí ìyálà tí ó dà bó ṣe."
 }

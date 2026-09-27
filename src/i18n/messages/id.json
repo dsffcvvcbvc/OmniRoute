@@ -1321,7 +1321,9 @@
       "open": "buka",
       "close": "tutup"
     },
-    "noResults": "Tidak ada hasil"
+    "noResults": "Tidak ada hasil",
+    "modelCatalog": "Katalog model",
+    "modelCatalogSubtitle": "Telusuri model dari penyedia"
   },
   "webhooks": {
     "title": "Webhook",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Tautan mitra",
     "dismissAriaLabel": "Tutup"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Nonaktifkan pembuatan varian tingkat pemikiran (misalnya -low, -medium, -high) dalam katalog /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Nonaktifkan pembuatan varian tingkat pemikiran (misalnya -low, -medium, -high) dalam katalog /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Untuk penyedia yang kuota-nya dihitung berdasarkan alamat keluar, letakkan anggota pool yang berbagi alamat keluar teramati dengan anggota yang baru ditolak tepat di bawah anggota yang sehat. Hanya urutan, tidak pernah dikeluarkan. Membutuhkan PROXY_SKIP_RECENTLY_FAILED, yang menghasilkan sinyal penolakan yang dibaca. Mati secara bawaan: urutan pemilihan persis rotasi biasa."
 }

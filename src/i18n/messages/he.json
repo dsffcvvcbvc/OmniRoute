@@ -1321,7 +1321,9 @@
       "open": "פתח",
       "close": "סגור"
     },
-    "noResults": "אין תוצאות"
+    "noResults": "אין תוצאות",
+    "modelCatalog": "קטלוג המודלים",
+    "modelCatalogSubtitle": "עיין במודלים של הספקים"
   },
   "webhooks": {
     "title": "וובהוקים",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "קישור שותפים",
     "dismissAriaLabel": "סגירה"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "השבתת היצירה של וריאציות של רמת החשיבה (למשל -low, -medium, -high) בקטלוג /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "השבתת היצירה של וריאציות של רמת החשיבה (למשל -low, -medium, -high) בקטלוג /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "עבור ספקים שהמכסה שלהם מחושבת לפי כתובת יציאה, ממקמים חבר במאגר שחולץ עם כתובת היציאה שנצפתה של חבר שנדחה לאחרונה ממש מתחת לחברים הבריאים. סדר בלבד, לעולם לא השמטה. נדרש PROXY_SKIP_RECENTLY_FAILED, שמפיק את אות הדחייה שהוא קורא. כבורירת מחדל מושבת: סדר הבחירה הוא בדיוק הסבב הפשוט."
 }

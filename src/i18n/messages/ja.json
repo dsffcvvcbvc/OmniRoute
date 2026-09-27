@@ -1321,7 +1321,9 @@
       "open": "開く",
       "close": "閉じる"
     },
-    "noResults": "結果がありません"
+    "noResults": "結果がありません",
+    "modelCatalog": "モデルカタログ",
+    "modelCatalogSubtitle": "プロバイダー横断でモデルを参照"
   },
   "webhooks": {
     "title": "Webhook",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "パートナーリンク",
     "dismissAriaLabel": "閉じる"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/modelsカタログで思考レベルのバリアント（例：-low、-medium、-high）を生成しないようにします。"
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/modelsカタログで思考レベルのバリアント（例：-low、-medium、-high）を生成しないようにします。",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "送信元アドレスでクォータを算出するプロバイダーについて、直前に拒否されたメンバーと同じ観測された送信元アドレスを持つプールメンバーを正常なメンバーのすぐ下に配置します。順序のみで除外はしません。読み取る拒否シグナルを生成する PROXY_SKIP_RECENTLY_FAILED が必要です。デフォルトでは無効で、選択順は通常のローテーションとまったく同じです。"
 }

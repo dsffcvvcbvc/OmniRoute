@@ -1321,7 +1321,9 @@
       "open": "തുറക്കുക",
       "close": "അടയ്ക്കുക"
     },
-    "noResults": "ഫലങ്ങളൊന്നുമില്ല"
+    "noResults": "ഫലങ്ങളൊന്നുമില്ല",
+    "modelCatalog": "മോഡൽ കാറ്റലോഗ്",
+    "modelCatalogSubtitle": "പ്രൈഡറുകളിൽ മോഡലുകൾ കാണുക"
   },
   "webhooks": {
     "title": "വെബ്ഹുക്കുകൾ",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "പങ്കാളി ലിങ്ക്",
     "dismissAriaLabel": "അടയ്ക്കുക"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models കാറ്റലോഗിൽ ചിന്താതല വേരിയന്റുകൾ (ഉദാ. -low, -medium, -high) സൃഷ്ടിക്കുന്നത് പ്രവർത്തനരഹിതമാക്കുക."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models കാറ്റലോഗിൽ ചിന്താതല വേരിയന്റുകൾ (ഉദാ. -low, -medium, -high) സൃഷ്ടിക്കുന്നത് പ്രവർത്തനരഹിതമാക്കുക.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "അഗ്രമണ വിലാസം അനുസരിച്ച് ക്വോട്ട കണക്കാക്കുന്ന പ്രൈഡറുകൾക്ക്, അതിനൊപ്പം കണ്ടെത്തിയ അഗ്രമണ വിലാസം ഒപ്പിച്ചുള്ള പൂൾ അംഗം ആരോഗ്യകരമായ അംഗങ്ങളുടെ തന്നെ താഴെ വേണ്ടി ക്രമീകരിക്കുക. ക്രമീകරණം മാത്രം, ഒരിക്കലും ഒഴിത്തിടരുത്. അത് വായിക്കുന്ന നിരസന സിഗ്നൽ ഉണ്ടാക്കുന്ന PROXY_SKIP_RECENTLY_FAILED ആവശ്യമാണ്. ഡിഫോൾട്ടായി ഓഫ്: തിരഞ്ഞെടുക്കുന്ന ക്രമം കൃത്യമായി സാധാരണ ചുറ്റിമാറ്റമാണ്."
 }

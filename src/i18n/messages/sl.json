@@ -1321,7 +1321,9 @@
       "open": "odpri",
       "close": "zapri"
     },
-    "noResults": "Ni rezultatov"
+    "noResults": "Ni rezultatov",
+    "modelCatalog": "Katalog modelov",
+    "modelCatalogSubtitle": "Prebrskajte modele pri ponudnikih"
   },
   "webhooks": {
     "title": "Spletni kavlji",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "Partnerska povezava",
     "dismissAriaLabel": "Zapri"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Onemogoči ustvarjanje različic ravni razmišljanja (npr. -low, -medium, -high) v katalogu /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Onemogoči ustvarjanje različic ravni razmišljanja (npr. -low, -medium, -high) v katalogu /v1/models.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Za ponudnike, katerih kvota se računa po izhodnem naslovu, člana bazena, ki si deli opaženi izhodni naslov s členom, ki je bil nedavno zavrnjen, postavite neposredno pod zdrave člane. Samo vrstni red — nikoli izločitev. Potrebuje PROXY_SKIP_RECENTLY_FAILED, ki ustvarja signal zavrnitve, ki ga bere. Privzeto izklopljeno: vrstni red izbire je natanko običajna rotacija."
 }

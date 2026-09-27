@@ -1321,7 +1321,9 @@
       "open": "खोलें",
       "close": "बंद करें"
     },
-    "noResults": "कोई परिणाम नहीं"
+    "noResults": "कोई परिणाम नहीं",
+    "modelCatalog": "मॉडल कैटलॉग",
+    "modelCatalogSubtitle": "प्रदाताओं के मॉडल देखें"
   },
   "webhooks": {
     "title": "वेबहुक",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "पार्टनर लिंक",
     "dismissAriaLabel": "बंद करें"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models कैटलॉग में थिंकिंग लेवल वेरिएंट (जैसे -low, -medium, -high) के निर्माण को अक्षम करें।"
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models कैटलॉग में थिंकिंग लेवल वेरिएंट (जैसे -low, -medium, -high) के निर्माण को अक्षम करें।",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "जिन प्रदाताओं का कोटा निकास पते के अनुसार बकवा जाता है, उनके लिए उस पूल सदस्य को जिसका अवलोकित निकास पता हाल में अस्वीकार किए गए सदस्य के समान है, स्वस्थ सदस्यों के ठीक नीचे रखें। केवल क्रम, कभी बहिष्करण नहीं। इसमें PROXY_SKIP_RECENTLY_FAILED चाहिए, जो वह अस्वीकृति संकेत बनाता है जिसे यह पढ़ता है। डिफ़ॉल्ट रूप से बंद: चयन क्रम ठीक वही साधारण चक्रण है।"
 }

@@ -1321,7 +1321,9 @@
       "open": "باز کردن",
       "close": "بستن"
     },
-    "noResults": "هیچ نتیجه‌ای یافت نشد"
+    "noResults": "هیچ نتیجه‌ای یافت نشد",
+    "modelCatalog": "کاتالوگ مدل‌ها",
+    "modelCatalogSubtitle": "مدل‌های ارائه‌دهندگان را مرور کنید"
   },
   "webhooks": {
     "title": "وب هوک ها",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "پیوند شریک",
     "dismissAriaLabel": "بستن"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "تولید گونههای سطح تفکر (برای مثال -low، -medium و -high) را در کاتالوگ /v1/models غیرفعال کنید."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "تولید گونههای سطح تفکر (برای مثال -low، -medium و -high) را در کاتالوگ /v1/models غیرفعال کنید.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "برای ارائه‌دهندگانی که سهمیه‌شان بر پایه نشانی خروجی محاسبه می‌شود، عضوی از استخر را که نشانی خروجی مشاهده‌شده را با عضوی که اخیراً رد شده به اشتراک می‌گذارد درست زیر اعضای سالم رتبه‌بندی کنید. فقط ترتیب، هرگز حذف. به PROXY_SKIP_RECENTLY_FAILED نیاز دارد که سیگنال ردی را تولید می‌کند که می‌خواند. به‌طور پیش‌فرض خاموش: ترتیب انتخاب دقیقاً چرخش ساده است."
 }

@@ -1321,7 +1321,9 @@
       "open": "გახსნა",
       "close": "დახურვა"
     },
-    "noResults": "შედეგები ვერ მოიძებნა"
+    "noResults": "შედეგები ვერ მოიძებნა",
+    "modelCatalog": "მოდელების კატალოგი",
+    "modelCatalogSubtitle": "იხედეთ მოდელები პროვაიდერებში"
   },
   "webhooks": {
     "title": "ვებჰუკები",
@@ -14444,5 +14446,6 @@
     "partnerLinkNote": "პარტნიორის ბმული",
     "dismissAriaLabel": "დახურვა"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "გამორთეთ აზროვნების დონის ვარიანტების (მაგ. -low, -medium, -high) გენერირება /v1/models კატალოგში."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "გამორთეთ აზროვნების დონის ვარიანტების (მაგ. -low, -medium, -high) გენერირება /v1/models კატალოგში.",
+  "featureFlagProxyPoolSharedEgressOrderDescription": "პროვაიდერებისთვის, რომელთა კვოტა გამოსვლის მისამართით ითვლება, შეამკვიდეთ პულის წევრი, რომელიც ამასთან ანახლებთ ახლა უარყოფილი წევრის დათვლად გამოსვლის მისამართს, ზუსტად ჯანსაღწემლებს ქვემოთ. მხოლოდ დალაგება, არასოდეს გამორიცხვა. საჭიროა PROXY_SKIP_RECENTLY_FAILED, რომელიც წარმოადგენს მისი მიერ წაკითხულ უარის სიგნალს. ნაგულისხმევით გათიბული: არჩევის დალაგება ზუსტად ჩვაური როტაციაა."
 }
