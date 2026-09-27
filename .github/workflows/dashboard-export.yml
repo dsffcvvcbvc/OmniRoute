@@ -76,16 +76,23 @@ jobs:
           find out -name '__next._tree.txt' -print -quit | grep -q .
 
       # Size ledger for the artifact. The baseline this branch inherited was
-      # 2,079.1 MiB uncompressed / 627.9 MiB zipped (artifact 10928452044); the
-      # message-catalogue hoist plus the _full prune is what moved it. Kept in the
+      # 2,079.1 MiB uncompressed / 627.9 MiB zipped (artifact 10928452044, run
+      # 36310115490); the message-catalogue hoist plus the _full prune took it to
+      # 181.6 MiB / 39.5 MiB (artifact 10931454380, run 36319252476). Kept in the
       # log so the next size investigation starts from a measured number.
+      #
+      # `routes` counts `*.html`, not `index.html`: the export build runs with
+      # `buildExport=true`, so `subFolders` is false in `next/dist/export/index.js`
+      # and each route is emitted as `<route>.html` beside its `<route>.txt`.
       - name: Report export size
         run: |
           echo "out/ total: $(du -sh out | cut -f1)"
           echo "files:      $(find out -type f | wc -l)"
-          echo "routes:     $(find out -name 'index.html' | wc -l)"
-          du -sh out/_next 2>/dev/null || true
-          du -ch $(find out -name '*.txt') 2>/dev/null | tail -1 || true
+          echo "routes:     $(find out -name '*.html' | wc -l)"
+          echo "rsc .txt:   $(find out -name '*.txt' | wc -l)"
+          echo "_next/static: $(du -sh out/_next/static 2>/dev/null | cut -f1)"
+          echo "documents:  $(du -ch $(find out -name '*.html') 2>/dev/null | tail -1 | cut -f1)"
+          echo "rsc .txt:   $(du -ch $(find out -name '*.txt') 2>/dev/null | tail -1 | cut -f1)"
 
       # next.config.mjs `headers()` is INERT under `output: "export"` — the SPA
       # ships with NO server response headers (no CSP, no frame-ancestors). The
