@@ -437,7 +437,6 @@ export function localeButton(page: Page) {
     .filter({ has: page.locator('img[src*="flagcdn"]') })
     .first();
 }
-
 /** Scripts that carry a specific writing system, e.g. Han, Hiragana, Arabic. */
 export const SCRIPT_PATTERNS = {
   han: /\p{Script=Han}/u,
@@ -447,3 +446,97 @@ export const SCRIPT_PATTERNS = {
 } as const;
 
 export type WrittenScript = keyof typeof SCRIPT_PATTERNS;
+
+/**
+ * What the REAL gateway's native catalog holds, read over HTTP with the same
+ * credential the browser uses.
+ *
+ * The point is the same as `readAdminSnapshot`: a UI assertion about "the model
+ * catalog is populated" is worthless if the count is written into the test. The
+ * comparison is made against what the core actually returns, so an empty page
+ * with an empty gateway passes and an empty page with a populated gateway fails.
+ */
+export type NativeCatalogSnapshot = {
+  reachable: boolean;
+  modelCount: number;
+  providers: string[];
+  /** A provider that actually has models, for a per-provider cross-check. */
+  sampleProvider: string | null;
+  sampleModelId: string | null;
+  sampleDisplayName: string | null;
+};
+
+export async function readNativeCatalog(): Promise<NativeCatalogSnapshot> {
+  const empty: NativeCatalogSnapshot = {
+    reachable: false,
+    modelCount: 0,
+    providers: [],
+    sampleProvider: null,
+    sampleModelId: null,
+    sampleDisplayName: null,
+  };
+  try {
+    const response = await fetch(`${BASE_URL}/admin/v1/models`, {
+      headers: ADMIN_KEY ? { Authorization: `Bearer ${ADMIN_KEY}` } : {},
+    });
+    if (!response.ok) return empty;
+    const body = (await response.json()) as Array<{
+      id?: string;
+      value?: { provider?: string; model_name?: string; display_name?: string };
+    }>;
+    if (!Array.isArray(body)) return empty;
+    const providers = new Set<string>();
+    for (const row of body) {
+      const provider = row?.value?.provider;
+      if (typeof provider === "string" && provider.length > 0) providers.add(provider);
+    }
+    const first = body.find(
+      (row) =>
+        typeof row?.value?.provider === "string" && typeof row?.value?.model_name === "string"
+    );
+    return {
+      reachable: true,
+      modelCount: body.length,
+      providers: [...providers].sort(),
+      sampleProvider: first?.value?.provider ?? null,
+      sampleModelId: first?.value?.model_name ?? null,
+      sampleDisplayName: first?.value?.display_name ?? null,
+    };
+  } catch {
+    return empty;
+  }
+}
+
+/** Same question for the core's health snapshot, and for the unauthenticated liveness probe. */
+export async function readNativeHealth(): Promise<{
+  healthReachable: boolean;
+  healthStatus: string | null;
+  healthModelCount: number;
+  livezStatus: number | null;
+}> {
+  const headers = ADMIN_KEY ? { Authorization: `Bearer ${ADMIN_KEY}` } : {};
+  const result = {
+    healthReachable: false,
+    healthStatus: null,
+    healthModelCount: 0,
+    livezStatus: null,
+  };
+  try {
+    const health = await fetch(`${BASE_URL}/admin/v1/health`, { headers });
+    if (health.ok) {
+      const body = (await health.json()) as { status?: unknown; models?: unknown };
+      result.healthReachable = true;
+      result.healthStatus = typeof body.status === "string" ? body.status : null;
+      result.healthModelCount = Array.isArray(body.models) ? body.models.length : 0;
+    }
+  } catch {
+    // leave healthReachable false — the assertion says so
+  }
+  try {
+    const livez = await fetch(`${BASE_URL}/livez`);
+    result.livezStatus = livez.status;
+  } catch {
+    // leave livezStatus null
+  }
+  return result;
+}

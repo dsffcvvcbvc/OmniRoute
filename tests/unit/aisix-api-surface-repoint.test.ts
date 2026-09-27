@@ -121,7 +121,10 @@ test("R1 the native URL builders address routes that exist in lib.rs", () => {
   assert.match(aisixAdminModelsUrl(), /\/admin\/v1\/models$/);
   assert.match(aisixCombosUrl(), /\/admin\/v1\/combos$/);
   // An absolute URL is never rewritten: the caller is already off-host.
-  assert.equal(resolveAisixRequestUrl("https://elsewhere.test/api/health/ping"), "https://elsewhere.test/api/health/ping");
+  assert.equal(
+    resolveAisixRequestUrl("https://elsewhere.test/api/health/ping"),
+    "https://elsewhere.test/api/health/ping"
+  );
 });
 
 test("R1 /api/health/ping must not be answered by the authenticated health snapshot", () => {
@@ -194,11 +197,7 @@ test("R3 every unsupported domain has a non-empty operator-facing reason", () =>
     for (const surface of [aisixUnsupportedRead, aisixUnsupportedWrite]) {
       const result = surface(domain);
       assert.equal(result.supported, false, `${domain} must be declared unsupported`);
-      assert.equal(
-        typeof result.reason,
-        "string",
-        `${domain} refusal must carry a string reason`
-      );
+      assert.equal(typeof result.reason, "string", `${domain} refusal must carry a string reason`);
       assert.ok(
         (result.reason as string).trim().length > 20,
         `${domain} refusal is too short to explain anything: "${result.reason}"`
@@ -298,7 +297,11 @@ test("R5 a document with no provider or no model id is dropped, not guessed", ()
 
 test("R5 a non-catalog payload yields no rows and is not authoritative", () => {
   for (const payload of [null, undefined, "text/html 404", {}, { error_msg: "nope" }, 42, []]) {
-    assert.deepEqual(parseAisixModelCatalog(payload), [], `payload ${String(payload)} must yield no rows`);
+    assert.deepEqual(
+      parseAisixModelCatalog(payload),
+      [],
+      `payload ${String(payload)} must yield no rows`
+    );
     assert.equal(
       parseAisixProviderModels(payload, "dit").authoritative,
       false,
@@ -377,10 +380,13 @@ test("R5 a flattened bare (unwrapped) document is still understood", () => {
 // ─── R6: the health adapter distinguishes reported-ok from reported-nothing ──
 
 test("R6 the live /admin/v1/health payload is read as healthy", () => {
-  assert.deepEqual(adaptAisixCoreHealth({ status: "ok", models: [{ id: "a", name: "m", health: 0 }] }), {
-    isDegraded: false,
-    reported: true,
-  });
+  assert.deepEqual(
+    adaptAisixCoreHealth({ status: "ok", models: [{ id: "a", name: "m", health: 0 }] }),
+    {
+      isDegraded: false,
+      reported: true,
+    }
+  );
 });
 
 test("R6 a non-ok status token is degradation", () => {

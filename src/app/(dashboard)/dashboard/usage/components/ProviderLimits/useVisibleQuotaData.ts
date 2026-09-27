@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { collectHiddenQuotaModelIds, filterHiddenModelQuotas } from "./utils";
+import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
 
 function getProviderKey(connections: any[]): string {
   const providers = new Set<string>();
@@ -28,8 +29,15 @@ export function useVisibleQuotaData(
     Promise.all(
       providers.map(async (provider) => {
         try {
+          // Repointed at the core's `GET /admin/v1/models` on the AISIX export.
+          // `collectHiddenQuotaModelIds` looks for `isHidden`, which the core's
+          // catalog documents do not carry — so the answer here is "the core
+          // reports no hidden models", and the operator's quota view is not
+          // filtered. That is the honest reading: visibility flags are an
+          // operator-authored Next.js setting with no core counterpart, and a
+          // gateway that cannot know must not pretend to.
           const response = await fetch(
-            `/api/provider-models?provider=${encodeURIComponent(provider)}`
+            resolveAisixRequestUrl(`/api/provider-models?provider=${encodeURIComponent(provider)}`)
           );
           if (!response.ok) return [provider, []] as const;
           const data = await response.json();

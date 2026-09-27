@@ -25,6 +25,7 @@ import {
   getCodexServiceTierLabel,
   providerText,
 } from "../providerPageHelpers";
+import { aisixUnsupportedRead, resolveAisixSurfaceSupport } from "@/shared/utils/aisixEndpoints";
 
 // Shared /api/settings fetch with error-as-value semantics so the loaders
 // below only touch state after the await (no synchronous setState reachable
@@ -34,6 +35,14 @@ async function fetchSettingsPayload(): Promise<{
   data?: Record<string, unknown>;
   message?: string;
 }> {
+  // The gateway has no readable settings collection (its only settings verb,
+  // `POST /admin/v1/resources`, is write-only), so the read is refused here
+  // rather than fired into a 404. `{ok: false}` is what the failing read already
+  // produced, so every loader below reaches the same honest "not loaded" state
+  // without the request.
+  if (!resolveAisixSurfaceSupport("settings", "read").supported) {
+    return { ok: false, message: aisixUnsupportedRead("settings").reason };
+  }
   try {
     const response = await fetch("/api/settings", { cache: "no-store" });
     if (!response.ok) {
