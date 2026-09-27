@@ -971,7 +971,7 @@ function CombosPageContent() {
   const [settingsLoadError, setSettingsLoadError] = useState(false);
   const [compressionLoadError, setCompressionLoadError] = useState(false);
   const [proxyConfigLoadError, setProxyConfigLoadError] = useState(false);
-  // Native combos-write capability (`POST/PUT/DELETE :3001/admin/v1/combos*`):
+  // Native combos-write capability (`POST/PATCH/DELETE :3001/admin/v1/combos*`):
   // `true` once a probe or a mutation proves the core has no such surface.
   // While true, every write refuses BEFORE sending (pre-send gate) and the
   // page shows an explicit banner instead of firing requests into a 404.
