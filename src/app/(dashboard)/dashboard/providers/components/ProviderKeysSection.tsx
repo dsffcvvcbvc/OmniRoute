@@ -13,6 +13,8 @@ import {
   type ProviderKeyWriteOutcome,
 } from "@/shared/utils/aisixProviderKeys";
 import { providerText, type ProviderMessageTranslator } from "../[id]/providerCredentialText";
+import { requestAdminLogin } from "@/shared/utils/aisixAdminAuth";
+import { useAisixSessionEpoch } from "@/shared/hooks/useAisixAdminSession";
 
 /**
  * `missing`  — this gateway build has no `/admin/v1/provider_keys` surface.
@@ -98,6 +100,10 @@ export default function ProviderKeysSection() {
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; message: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AisixProviderKeyEntry | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // A successful exchange bumps the epoch, which re-runs the effect below and
+  // re-reads the collection. Without it the surface would keep showing its
+  // "withheld" 401 state until the operator reloaded the page by hand.
+  const sessionEpoch = useAisixSessionEpoch();
 
   const reload = useCallback(() => {
     setReloadToken((token) => token + 1);
@@ -130,7 +136,7 @@ export default function ProviderKeysSection() {
     return () => {
       cancelled = true;
     };
-  }, [reloadToken]);
+  }, [reloadToken, sessionEpoch]);
 
   const openCreate = () => {
     setForm(EMPTY_FORM);
@@ -325,6 +331,15 @@ export default function ProviderKeysSection() {
           <span className="text-text-main flex-1 min-w-[240px]">
             {text("aisixAdminKeyRequired", "")}
           </span>
+          <Button
+            size="sm"
+            variant="primary"
+            icon="login"
+            onClick={requestAdminLogin}
+            data-testid="provider-keys-sign-in"
+          >
+            {text("adminAuthSignIn", "Sign in")}
+          </Button>
           <Button size="sm" variant="secondary" icon="refresh" onClick={reload}>
             {tCommon("retry")}
           </Button>

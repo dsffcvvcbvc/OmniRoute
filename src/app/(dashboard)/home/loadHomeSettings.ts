@@ -1,4 +1,5 @@
 import { aisixAdminModelsUrl } from "@/shared/utils/aisixEndpoints";
+import { aisixAdminFetch } from "@/shared/utils/aisixAdminAuth";
 
 /**
  * Tri-state home readiness:
@@ -38,7 +39,12 @@ type SettingsPayload = { setupComplete?: unknown } | null;
  * exercised without a network round-trip.
  */
 async function loadNativeAdminSettings(): Promise<SettingsPayload> {
-  const res = await fetch(aisixAdminModelsUrl(), { cache: "no-store" });
+  // Through the shared admin transport for the same reason every other admin
+  // read goes through it. During the static prerender there is no browser and no
+  // cookie, and the transport degrades to exactly the request this made before:
+  // 401 → `!res.ok` → `null` → `"unknown"`, which is what a signed-out or absent
+  // admin plane already meant here.
+  const res = await aisixAdminFetch(aisixAdminModelsUrl(), { cache: "no-store" });
   if (!res.ok) return null;
   return (await res.json().catch(() => null)) as SettingsPayload;
 }

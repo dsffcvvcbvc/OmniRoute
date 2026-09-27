@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "供應商金鑰已更新。閘道回傳了此文件。",
     "providerKeysDeleted": "供應商金鑰已刪除。",
     "providerKeysDeleteTitle": "刪除供應商金鑰",
-    "providerKeysDeleteConfirm": "要刪除供應商金鑰「{name}」嗎？任何仍參照它的模型或透傳路由都會讓閘道以 409 拒絕。"
+    "providerKeysDeleteConfirm": "要刪除供應商金鑰「{name}」嗎？任何仍參照它的模型或透傳路由都會讓閘道以 409 拒絕。",
+    "adminAuthSignIn": "登入"
   },
   "settings": {
     "title": "設定",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "關閉"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "停用在 /v1/models 目錄中產生思考層級變體（例如 -low、-medium、-high）。",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "對依出口位址分桶計算配額的供應商，將與最近遭拒成員共享相同觀測出口位址的集區成員排在健康成員之下。僅調整順序，絕不排除。需要 PROXY_SKIP_RECENTLY_FAILED，它會產生其所讀取的拒絕訊號。預設關閉：選擇順序與一般輪詢完全一致。"
+  "featureFlagProxyPoolSharedEgressOrderDescription": "對依出口位址分桶計算配額的供應商，將與最近遭拒成員共享相同觀測出口位址的集區成員排在健康成員之下。僅調整順序，絕不排除。需要 PROXY_SKIP_RECENTLY_FAILED，它會產生其所讀取的拒絕訊號。預設關閉：選擇順序與一般輪詢完全一致。",
+  "adminAuth": {
+    "title": "登入閘道",
+    "intro": "儀表板會讀取閘道的管理 API。請輸入閘道設定中 admin.admin_keys 內的管理金鑰。",
+    "keyLabel": "管理金鑰",
+    "keyHint": "金鑰只會傳送一次，而且不會儲存在這個瀏覽器中：閘道會設定頁面指令碼無法讀取的 HttpOnly 工作階段 Cookie。",
+    "submit": "登入",
+    "cancel": "取消",
+    "signingIn": "登入中…",
+    "signingOut": "登出中…",
+    "emptyKey": "請輸入管理金鑰。",
+    "wrongKey": "該金鑰未被接受。請檢查閘道設定中的 admin.admin_keys 後再試一次。",
+    "badRequest": "閘道拒絕的是請求本身（400），不是金鑰。這是儀表板的缺陷；請回報。",
+    "forbidden": "閘道以跨來源為由拒絕了這個請求（403）。由同一個閘道提供的儀表板不可能產生這種情況；請回報。",
+    "sessionNotKept": "閘道接受了金鑰，但瀏覽器沒有保留工作階段 Cookie，因此儀表板仍處於登出狀態。當閘道在一般 HTTP 連線上將 Cookie 標記為 Secure 時就會如此：請在管理監聽器上設定 admin.tls，或改以 HTTPS 提供儀表板。",
+    "unreachable": "閘道沒有回應。請確認它正在執行，然後再試一次。",
+    "signedIn": "已登入閘道。",
+    "lifetimeNote": "工作階段最長持續 8 小時，並保存在閘道行程中，因此會在下次重新啟動或部署時結束。屆時會再次要求輸入金鑰。",
+    "signOut": "登出",
+    "signInAction": "登入",
+    "endedNote": "你的工作階段已結束。閘道的工作階段最長持續 8 小時，且無法在重新啟動後保留，因此再次要求輸入金鑰是預期行為。"
+  }
 }

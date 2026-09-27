@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Nuashonraitheadh an eochair soláthraithe. Chuir an geatail an doiciméad seo ar ais.",
     "providerKeysDeleted": "Cuadh leata an eochair soláthraithe.",
     "providerKeysDeleteTitle": "Scrios an eochair soláthraithe",
-    "providerKeysDeleteConfirm": "Scrios an eochair soláthraithe \"{name}\"? Samhail ar bith ar shlíre passthrough a chuireann fós i leata tá, cuirfidh sé an geatail diúlú 409 a thabhairt."
+    "providerKeysDeleteConfirm": "Scrios an eochair soláthraithe \"{name}\"? Samhail ar bith ar shlíre passthrough a chuireann fós i leata tá, cuirfidh sé an geatail diúlú 409 a thabhairt.",
+    "adminAuthSignIn": "Logáil isteach"
   },
   "settings": {
     "title": "Socruithe",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Dún"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Díchumasaigh giniúint leaganacha leibhéil smaointeoireachta (m.sh. -low, -medium, -high) i gcatalóg /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Do sholáraithe ar braitheadh a gcuota de réir an seoladh egressa, socraigh ball den phool a bhfuil an seoladh egressa breathnaithe cé leis le ball diúlaithe le déanaí díreach faoi bhaillí folláin. Ordain amháin, níor athshlonnadh riamh. Teastaíonn PROXY_SKIP_RECENTLY_FAILED, a chruthaitheann an comhartha diúltaigh a léann sé. Aslán díomhaighte: tá ord roghnaíocht díreach an rothaithe simplí."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Do sholáraithe ar braitheadh a gcuota de réir an seoladh egressa, socraigh ball den phool a bhfuil an seoladh egressa breathnaithe cé leis le ball diúlaithe le déanaí díreach faoi bhaillí folláin. Ordain amháin, níor athshlonnadh riamh. Teastaíonn PROXY_SKIP_RECENTLY_FAILED, a chruthaitheann an comhartha diúltaigh a léann sé. Aslán díomhaighte: tá ord roghnaíocht díreach an rothaithe simplí.",
+  "adminAuth": {
+    "title": "Logáil isteach sa ghéata",
+    "intro": "Léann an painéal riarachán admin na géata. Cuir isteach eochair admin ó admin.admin_keys i gconfigúrátiú na géata.",
+    "keyLabel": "Eochair admin",
+    "keyHint": "Seoltaí an eochair faoi amháin agus ní shábháiltear é sa bhrabhsála seo: socraíonn an géata fian phaisiné HttpOnly nach féidir le scripteanna an leathanaigh a léamh.",
+    "submit": "Logáil isteach",
+    "cancel": "Cealaigh",
+    "signingIn": "Ag logáil isteach…",
+    "signingOut": "Ag logáil amach…",
+    "emptyKey": "Cuir isteach an eochair admin.",
+    "wrongKey": "Níor glacadh an eochair sin. Seiceáil admin.admin_keys i gconfigúrátiú na géata agus triail eile as.",
+    "badRequest": "Diúlthaíodh don iarratas féin don gheata (400) — ní don eochair. Is é seo locht sa phainéal; cuir in iúl é le do thoil.",
+    "forbidden": "Diúlthaíodh don iarratas seo mar ó thóin eile (403). Ní féidir le painéal atá á fhreastaláil leis an ngeata seo a chruthú; cuir in iúl é le do thoil.",
+    "sessionNotKept": "Ghlac an geata leis an eochair, ach choinnigh an bhrabhsáil an fian phaisiné sin, dá bhfuil an painéal go fóill logáilte amach. Tarlaíonn sé seo nuair a chuirtear an fian mar Secure thar nasc HTTP neamhchifripthe: socraigh admin.tls ar an gcóisteáisteoir admin nó freastail an painéal thar HTTPS.",
+    "unreachable": "Níor fhreagair an geata. Seiceáil go bhfuil sé ag rith, ansin triail eile as.",
+    "signedIn": "Logáilte isteach sa ghéata.",
+    "lifetimeNote": "Mairfidh an seisiún suas le 8 uair agus coinnítear é i bpróiseas na géata, mar sin críochnaíonn sé ag an gcéad athshocrú nó imscaradh eile. Cuireann tú an eochair arís ag an bpointe sin.",
+    "signOut": "Logáil amach",
+    "signInAction": "Logáil isteach",
+    "endedNote": "D'imigh do sheisiún. Tarlaíonn seisiúin na géata suas le 8 uair agus ní mhaireann siad athshocrú, mar sin tá sé réadúil go ndéanfar an eochair a iaradh arís."
+  }
 }

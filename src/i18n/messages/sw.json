@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Ufunguo wa mtoa umesasishwa. Kituo kilirudisha hati hili.",
     "providerKeysDeleted": "Ufunguo wa mtoa umefutwa.",
     "providerKeysDeleteTitle": "Ondoa ufunguo wa mtoa",
-    "providerKeysDeleteConfirm": "Ondoa ufunguo wa mtoa \"{name}\"? Mfano wowote au njia ya passthrough bado inarejelea hii itafanya kituo kukataa kwa 409."
+    "providerKeysDeleteConfirm": "Ondoa ufunguo wa mtoa \"{name}\"? Mfano wowote au njia ya passthrough bado inarejelea hii itafanya kituo kukataa kwa 409.",
+    "adminAuthSignIn": "Ingia"
   },
   "settings": {
     "title": "Mipangilio",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Funga"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Zima uundaji wa vibadala vya kiwango cha kufikiri (k.m. -low, -medium, -high) katika katalogi ya /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Kwa wanaotoa ambao kila yao inahesabiwa kwa anwani ya kutoka, weka mwanachama wa kundi anayeshiriki anwani ya kutoka iliyotazama na mwanachama aliyekataliwa hivi karibuni tu chini ya wanachama walio wazima. Mpangilio tu, kamwe haukitengwa. Inahitaji PROXY_SKIP_RECENTLY_FAILED, ambacho hutoa ishara ya kukataliwa inayosoma. Imezimwa kwa chaguo-msingi: mpangilio wa uteuzi ni hasa mzunguko wa kawaida."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Kwa wanaotoa ambao kila yao inahesabiwa kwa anwani ya kutoka, weka mwanachama wa kundi anayeshiriki anwani ya kutoka iliyotazama na mwanachama aliyekataliwa hivi karibuni tu chini ya wanachama walio wazima. Mpangilio tu, kamwe haukitengwa. Inahitaji PROXY_SKIP_RECENTLY_FAILED, ambacho hutoa ishara ya kukataliwa inayosoma. Imezimwa kwa chaguo-msingi: mpangilio wa uteuzi ni hasa mzunguko wa kawaida.",
+  "adminAuth": {
+    "title": "Ingia kwenye langaza",
+    "intro": "Dashibodi inasoma API ya msimamizi ya langaza. Weka ufunguo wa msimamizi kutoka admin.admin_keys katika mipangilio ya langaza.",
+    "keyLabel": "Ufunguo wa msimamizi",
+    "keyHint": "Ufunguo hutumwa mara moja na huhifadhiwi katika kivinjari hiki: langaza huweka kuki ya kifurushi cha HttpOnly ambacho msimbo wa ukurasa hauwezi kusoma.",
+    "submit": "Ingia",
+    "cancel": "Ghairi",
+    "signingIn": "Inaingia…",
+    "signingOut": "Inatoka…",
+    "emptyKey": "Weka ufunguo wa msimamizi.",
+    "wrongKey": "Ufunguo huo haukukubaliwa. Angalia admin.admin_keys katika mipangilio ya langaza, kisha jaribu tena.",
+    "badRequest": "Langaza imekataa ombi lenyewe (400) — si ufunguo. Huu ni hitilafu ya dashibodi; tafadhali ripoti.",
+    "forbidden": "Langaza imekataa ombi hili kama likatoka asili nyingine (403). Dashibodi inayohudumishwa na langaza hiyo hiyo haiwezi kufanya hivyo; tafadhali ripoti.",
+    "sessionNotKept": "Langaza imekubali ufunguo, lakini kivinjari hiki hakihifadhi kuki ya kifurushi, hivyo dashibodi bado iko nje. Hii hutokea langaza ikitaja kuki kuwa Secure juu ya muunganisho wa HTTP wa kawaida: weka admin.tls kwenye msikilizaji wa msimamizi, au tumia dashibodi kupitia HTTPS.",
+    "unreachable": "Langaza haijajibu. Thibitisha inaendelea kufanya kazi, kisha jaribu tena.",
+    "signedIn": "Umeingia kwenye langaza.",
+    "lifetimeNote": "Kifurushi hufuata saa 8 na kuhifadhiwa katika mchakato wa langaza, hivyo hukoma wakati wa kuwasha upya au kusanidiwa upya. Wakati huo ufunguo utaombwa tena.",
+    "signOut": "Toka",
+    "signInAction": "Ingia",
+    "endedNote": "Kifurushi chako kimekwisha. Vifurushi vya langaza hufuata saa 8 na havikuhusu kuwasha upya, hivyo kuombwa ufunguo tena ni jambo linalotarajiwa."
+  }
 }

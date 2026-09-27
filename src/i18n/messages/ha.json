@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "An sabunta maƙwucin masu saƙaɗo. Ƙafa yaƙi yaƙin wannan takardar.",
     "providerKeysDeleted": "An soke maƙwucin masu saƙaɗo.",
     "providerKeysDeleteTitle": "Ƙara maƙwucin masu saƙaɗo",
-    "providerKeysDeleteConfirm": "Ƙara maƙwucin masu saƙaɗo \"{name}\"? Idan ko waniƙo ko passthrough hanya da ke nuna shi kuma, zai saƙaɗo ka karɓi tare da 409."
+    "providerKeysDeleteConfirm": "Ƙara maƙwucin masu saƙaɗo \"{name}\"? Idan ko waniƙo ko passthrough hanya da ke nuna shi kuma, zai saƙaɗo ka karɓi tare da 409.",
+    "adminAuthSignIn": "Shiga"
   },
   "settings": {
     "title": "Saituna",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Yi watsi"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Kashe samar da nau'ikan matakan tunani (misali -low, -medium, -high) a cikin kundin /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Ga wa masu saƙaɗo da aka lissafi da adireshin fita, sanya wani memba da ke buya wanda yake ɗauke da adireshin fita da aka gani tare da memba da aka yi maga da kwanan nan, kawai kadan a karkashin memba masu lafiya. Sadar ne kawai, ba a sake yin tafiɓa ba. Yana buƙatar PROXY_SKIP_RECENTLY_FAILED, wanda ke ƙirƙirar alamar yin maga da yake karanta. An rufe shi ta tsoari: tsarin zaɓi shi ne gexacta jimawa na al'ada."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Ga wa masu saƙaɗo da aka lissafi da adireshin fita, sanya wani memba da ke buya wanda yake ɗauke da adireshin fita da aka gani tare da memba da aka yi maga da kwanan nan, kawai kadan a karkashin memba masu lafiya. Sadar ne kawai, ba a sake yin tafiɓa ba. Yana buƙatar PROXY_SKIP_RECENTLY_FAILED, wanda ke ƙirƙirar alamar yin maga da yake karanta. An rufe shi ta tsoari: tsarin zaɓi shi ne gexacta jimawa na al'ada.",
+  "adminAuth": {
+    "title": "Shiga cikin gateway",
+    "intro": "Dashboard ɗin yana karɗi admin API ɗin gateway. Shigar da admin key daga admin.admin_keys a cikin sanya gateway.",
+    "keyLabel": "Mabuɗin Admini",
+    "keyHint": "Ana aika key sau ɗaya kuma ba a taɓa adana shi a wannan mai bincike ba: gateway yana saita HttpOnly session cookie da shirin shafi ba za su iya karanta ba.",
+    "submit": "Shiga",
+    "cancel": "SFAFA",
+    "signingIn": "Ana shiga…",
+    "signingOut": "Ana fita…",
+    "emptyKey": "Shigar da admin key.",
+    "wrongKey": "Ba a karɓi wannan key ba. Duba admin.admin_keys a cikin sanya gateway, sannan sake gwadawa.",
+    "badRequest": "Gateway ya ɗi kuma ya sanya buƙatar da kanta (400) — ba key ba. Wannan kuskuren dashboard ne; ka faɗa mana.",
+    "forbidden": "Gateway ya ɗi wannan buƙatar a matsayin wata asal da banza (403). Dashboard da wannan gaske ke sashi ba za ya iya yin haka ba; ka faɗa mana.",
+    "sessionNotKept": "Gateway ya karɓi key amma bai zaɓe waƙƙe cookie na zaman ba, don haka dashboard har yanzu ba a shigar da shi ba. Wannan yana farawa lokacin da gateway yake nuna cookie a Secure a kan haɗin HTTP marar siri: saita admin.tls a kan mai sauraron gaban ko kuma hidda dashboard a kan HTTPS.",
+    "unreachable": "Gateway bai amsa ba. Ka tabbata yana aiki, sannan sake gwadawa.",
+    "signedIn": "An shiga cikin gateway.",
+    "lifetimeNote": "Zaman yana tsawawa har zuwa 8 awa kuma ana adana shi a cikin tsarin gateway, don haka yana ƙarewa a sake farawa ko sabunta na gaba. A wannan lokacin za a nemi key kuma.",
+    "signOut": "Fita",
+    "signInAction": "Shiga",
+    "endedNote": "Zaman ɗinka ya ƙare. Zaman gateway yana tsawawa har zuwa 8 awa kuma ba ya tsawaba sake farawa ba, saboda haka nemin key kuma abin da a sani ne."
+  }
 }

@@ -6598,7 +6598,8 @@
     "providerKeysDeleted": "Ewela ụdịnaya nchọọcha.",
     "providerKeysDeleteTitle": "Ewula ụdịnaya nchọọcha",
     "providerKeysDeleteConfirm": "Igbu ụdịnaya nchọọcha \"{name}\"? Ụdị ọ bụla ma ọ bụ ụzọ passthrough nke ka na-ezigharị ya bụ́ ga-abanye ụgbọ site na 409.",
-    "providerKeysNotPersisted": "A appliedị na memorie mana ABỌGHỊ ebe e debere dịka: faịlụ ahụ okwu nwere ahụnwere ọzọ dị ma igbu ụdịnaya otu nwere ike ịmegharị ya. Ị ga-akpọta mgbe a na-ebugharị ụzọ — jiri POST /admin/v1/resources."
+    "providerKeysNotPersisted": "A appliedị na memorie mana ABỌGHỊ ebe e debere dịka: faịlụ ahụ okwu nwere ahụnwere ọzọ dị ma igbu ụdịnaya otu nwere ike ịmegharị ya. Ị ga-akpọta mgbe a na-ebugharị ụzọ — jiri POST /admin/v1/resources.",
+    "adminAuthSignIn": "Banye"
   },
   "settings": {
     "title": "Ntọala",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Mechie"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Gbanyụọ imepụta ụdị ọkwa echiche dị iche iche (dịka -low, -medium, -high) na katalọgụ /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Maka ndị na-eme ka ego ha dị site na nke mmadị, bughị akụkụ nkeoke ọzọ na nke e nwere naanị ya na nke a na-atụ ọ dịka anyị mere n'oge na-adịghị Anyị, nke ka n'okpuru ndị ọzọ dị ọtụtịtụ. Naanị ọrụdụ, ịkwaghị akụkụ ọ bụla. Ọ chọrọ PROXY_SKIP_RECENTLY_FAILED, nke na-akpọta akara njọ ọ na-agbanye. Akpọchiri site na ntọala: usoro nhọọ bụ nke akuko kọ dịka ọ dị."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Maka ndị na-eme ka ego ha dị site na nke mmadị, bughị akụkụ nkeoke ọzọ na nke e nwere naanị ya na nke a na-atụ ọ dịka anyị mere n'oge na-adịghị Anyị, nke ka n'okpuru ndị ọzọ dị ọtụtịtụ. Naanị ọrụdụ, ịkwaghị akụkụ ọ bụla. Ọ chọrọ PROXY_SKIP_RECENTLY_FAILED, nke na-akpọta akara njọ ọ na-agbanye. Akpọchiri site na ntọala: usoro nhọọ bụ nke akuko kọ dịka ọ dị.",
+  "adminAuth": {
+    "title": "Banye na gateway",
+    "intro": "Dashboard na-akọta admin API nke gateway. Abanye admin key sitere na admin.admin_keys na nhọọ nke gateway.",
+    "keyLabel": "Ọzọ nlekọta",
+    "keyHint": "A na-ezigharị key otu oge ma a na-echekara ya na browser a: ọtọtụ ụfọdụ ahụ ka nwere HttpOnly nke ahụ edebe edo ga-esiteghị ọzọ.",
+    "submit": "Banye",
+    "cancel": "Hapụ",
+    "signingIn": "Na-anye…",
+    "signingOut": "Na-apụ…",
+    "emptyKey": "Banye admin key.",
+    "wrongKey": "Key ahụ anaghị anabata. Lelee admin.admin_keys na nhọọ nke gateway, gbalịa ọzọ.",
+    "badRequest": "Gbalịrịrịrị ozi ahụ (400) — ọ bụghị key. Nke a bụ njehie nke dashboard; biko gwa anyị aka.",
+    "forbidden": "Gbalịrịrịrị ozi ahụ dịka ọ si ebe ọzọ dị (403). Dashboard nke otu gateway na-enye ahụ enweghị ike ime ya; biko gwa anyị aka.",
+    "sessionNotKept": "Gbalịrịrịrịrị onye ahụ ọbụlagodi akwadoola, mana browser nke ahụ echereghị ọfụma ha, ya mere dashboard ka nọkarịrị n'akụkọ. Nke a na-eme mgbe ọ ga-akpọ ọfụma ahụ dịka Secure na njikọ HTTP na-eme nke ọzọ: ntọọta admin.tls na nchọta ahụ ma ọ bụ gịnị dashboard na HTTPS.",
+    "unreachable": "Gbalịrịrịrịrị ahụ ọ bụghị ọ dụ. Jide ọ na-arị ọrụ, mgbe ahụ gbalịa ọzọ.",
+    "signedIn": "Abanyela na gateway.",
+    "lifetimeNote": "Oge ọfụma na-ehuru awa 8 ma echere ya na usoro nke gateway, ya mere ọ ga-akwụsị mgbe emesịghị ọzọ ma ọ bụ mgbe enye ọzọ. Mgbe ahụ ị ga-ajọrị key ọzọ.",
+    "signOut": "Pụọ",
+    "signInAction": "Banye",
+    "endedNote": "Oge ọfụma gị agwụla. Oge ọfụma nke gateway na-ehuru awa 8 ma agaghị ọ fọdụ mgbe emesịghị, ya mere ịjọ key ọzọ bụ ihe a na-atụ anya."
+  }
 }

@@ -6598,7 +6598,8 @@
     "providerKeysDeleted": "Pakalpojumu sniedzēja atslēga dzēsta.",
     "providerKeysDeleteTitle": "Dzēst pakalpojumu sniedzēja atslēgu",
     "providerKeysDeleteConfirm": "Dzēst pakalpojumu sniedzēja atslēgu „{name}“? Jebkurš modelis vai caurlaidzes maršruts, kas joprojām to atsaucas, liek vārtiem atbilst ar 409.",
-    "providerKeysNotPersisted": "Pielietots atmiņā, bet NAV saglabāts diskā: resursu failā ir rindas, ko viena atsevišķa atslēgas ierakstīšana nevar atsaukt. Tiks zaudēts pēc pārlādēšanas — izmantojiet POST /admin/v1/resources."
+    "providerKeysNotPersisted": "Pielietots atmiņā, bet NAV saglabāts diskā: resursu failā ir rindas, ko viena atsevišķa atslēgas ierakstīšana nevar atsaukt. Tiks zaudēts pēc pārlādēšanas — izmantojiet POST /admin/v1/resources.",
+    "adminAuthSignIn": "Pieteikties"
   },
   "settings": {
     "title": "Iestatījumi",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Aizvērt"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Atspējot domāšanas līmeņu variantu (piem., -low, -medium, -high) ģenerēšanu /v1/models katalogā.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Tiem pakalpojumu sniedzējiem, kuru kvota tiek aprēķināta pēc izejas adreses, baseino dalībnieku, kas dalās novērotā izejas adresē ar nesenāci atteigtu dalībnieku, novieto tieši zem veselajiem dalībniekiem. Tikai kārtojums — nekad neizslēdz. Nepieciešams PROXY_SKIP_RECENTLY_FAILED, kas ģenerē lasīmo atteikuma signālu. Pēc noklusējuma izslēgts: atlases kārtojums ir tieši parasta rotācija."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Tiem pakalpojumu sniedzējiem, kuru kvota tiek aprēķināta pēc izejas adreses, baseino dalībnieku, kas dalās novērotā izejas adresē ar nesenāci atteigtu dalībnieku, novieto tieši zem veselajiem dalībniekiem. Tikai kārtojums — nekad neizslēdz. Nepieciešams PROXY_SKIP_RECENTLY_FAILED, kas ģenerē lasīmo atteikuma signālu. Pēc noklusējuma izslēgts: atlases kārtojums ir tieši parasta rotācija.",
+  "adminAuth": {
+    "title": "Pieteikties vārtiem",
+    "intro": "Pārvaldes panelis lasa vārtu administrācijas API. Ievadiet administratora atslēgu no admin.admin_keys vārtu konfigurācijā.",
+    "keyLabel": "Administratora atslēga",
+    "keyHint": "Atslēga tiek sūtīta tikai vienu reizi un netiek saglabāta šajā pārlūkā: vārti iestata HttpOnly sesijas sīkfailu, ko lapas skripti nevar nolasīt.",
+    "submit": "Pieteikties",
+    "cancel": "Atcelt",
+    "signingIn": "Notiek pieteikšanās…",
+    "signingOut": "Notiek izrakstīšanās…",
+    "emptyKey": "Ievadiet administratora atslēgu.",
+    "wrongKey": "Šī atslēga netika pieņemta. Pārbaudiet admin.admin_keys vārtu konfigurācijā un mēģiniet vēlreiz.",
+    "badRequest": "Vārti noraidīja pašu pieprasījumu (400), nevis atslēgu. Tā ir pārvaldes paneļa kļūda; lūdzu, ziņojiet par to.",
+    "forbidden": "Vārti noraidīja šo pieprasījumu kā nākšņu no cita avota (403). Šo patu vārtu apkalpojams pārvaldes panelis to nevar radīt; lūdzu, ziņojiet par to.",
+    "sessionNotKept": "Vārti atslēgu pieņēma, bet pārlūks neturēja sesijas sīkfailu, tāpēc pārvaldes panelis joprojām nav pieteicies. Tas notiek, kad vārti atzīmē sīkfailu kā Secure pār vienkāršu HTTP savienojumu: iestatiet admin.tls uz administrācijas klausītāju vai apkalpojiet pārvaldes paneli pāri HTTPS.",
+    "unreachable": "Vārti neatbildēja. Pārbaudiet, vai tie darbojas, un mēģiniet vēlreiz.",
+    "signedIn": "Pieteikties vārtiem.",
+    "lifetimeNote": "Sesija ilgst līdz 8 stundām un tiek glabāta vārtu procesā, tāpēc tā beidzas pēc nākamās pārstartēšanas vai izvietošanas. Tad atslēga tiks pieprasīta vēlreiz.",
+    "signOut": "Iziet",
+    "signInAction": "Pieteikties",
+    "endedNote": "Jūsu sesija ir beigusies. Vārtu sesijas ilgst līdz 8 stundām un neiztur pārstartēšanu, tāpēc atslēgas atkārtota pieprasīšana ir sagaidāma."
+  }
 }

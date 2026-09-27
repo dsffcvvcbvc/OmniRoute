@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Ġi aġġornat il-ċewwa tal-fornitur. Il-gateway rreġa dan id-dokument.",
     "providerKeysDeleted": "Il-ċewwa tal-fornitur tqiefer.",
     "providerKeysDeleteTitle": "Qief il-ċewwa tal-fornitur",
-    "providerKeysDeleteConfirm": "Qief il-ċewwa tal-fornitur \"{name}\"? Kwalunkull mudell jew rotta ta' pass-through li għadha xorta jirreferenzjaha se l-gateway jirrifjuta bi 409."
+    "providerKeysDeleteConfirm": "Qief il-ċewwa tal-fornitur \"{name}\"? Kwalunkull mudell jew rotta ta' pass-through li għadha xorta jirreferenzjaha se l-gateway jirrifjuta bi 409.",
+    "adminAuthSignIn": "Idħol"
   },
   "settings": {
     "title": "Issettjar",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Agħlaq"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Itfi l-ġenerazzjoni ta’ varjanti tal-livell ta’ ħsieb (eż. -low, -medium, -high) fil-katalgu /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Għall-fornituri li l-kwota tagħhom titkompja skont l-indirizz tal-ħruġ, qiegħed membru tal-pool li jqassam l-indirizz tal-ħruġ osservat ma' membru rrifjutat danament bħal taħt i-membri sani. Ordni biss — qatt esklussjoni. Teħtieġ PROXY_SKIP_RECENTLY_FAILED, li jipproduxi s-sinjal tar-rifju li jaqra. Mux off bil-default: l-ordni tal-għażla huwa eżatt ir-rotazzjoni ordinarja."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Għall-fornituri li l-kwota tagħhom titkompja skont l-indirizz tal-ħruġ, qiegħed membru tal-pool li jqassam l-indirizz tal-ħruġ osservat ma' membru rrifjutat danament bħal taħt i-membri sani. Ordni biss — qatt esklussjoni. Teħtieġ PROXY_SKIP_RECENTLY_FAILED, li jipproduxi s-sinjal tar-rifju li jaqra. Mux off bil-default: l-ordni tal-għażla huwa eżatt ir-rotazzjoni ordinarja.",
+  "adminAuth": {
+    "title": "Idħol fil-gateway",
+    "intro": "Il-pannell tal-kontroll jqizza l-API tal-amministrazzjoni tal-gateway. Daħħal ċieft ta' amministratur minn admin.admin_keys fil-konfigurazzjoni tal-gateway.",
+    "keyLabel": "Ċieft tal-amministrazzjoni",
+    "keyHint": "Iċ-ċieft jintbagħet raza waħda u ma jinteswax f'dan il-browser: il-gateway jistabbilja cookie ta' sesjoni HttpOnly li l-skripts tal-paġna ma jistaxx jikrishu.",
+    "submit": "Idħol",
+    "cancel": "Annulla",
+    "signingIn": "Qed tidħol…",
+    "signingOut": "Qed titħejja…",
+    "emptyKey": "Daħħal iċ-ċieft tal-amministrazzjoni.",
+    "wrongKey": "Iċ-ċieft ma ġie accettat. Ara admin.admin_keys fil-konfigurazzjoni tal-gateway u proba mill-ġdid.",
+    "badRequest": "Il-gateway rrifuża t-talba tagħha (400) — mhux iċ-ċieft. Dan huwa difett tal-pannell; jekk jogħġun, irriportah.",
+    "forbidden": "Il-gateway rrifuża din it-talba bħal ħaġa li ġejja minn oriġini differenti (403). Pannell li jintserve lilu l-istess gateway ma jista' jgħaliex hekk; jekk jogħġun, irriportah.",
+    "sessionNotKept": "Il-gateway aċċetta iċ-ċieft, imma l-browser ma żammax il-cookie tas-sessjoni, għalhekk il-pannell għadha barra. Dan isseħġ meta l-gateway tikmarka l-cookie bħala Secure fuq konnessjoni HTTP ċarra: istaħġġġ admin.tls fuq il-listenner tal-amministrazzjoni, jew servedil il-pannell fuq HTTPS.",
+    "unreachable": "Il-gateway ma wieġebx. Check jik qed jaħre, u mbagħad proba mill-ġdid.",
+    "signedIn": "Inti żgħirt fil-gateway.",
+    "lifetimeNote": "Sessjoni tipgħa sa 8 sigħat u tinżażżen fil-proċess tal-gateway, għalhekk titleta fuq ir-restart jew it-tiżnin li jmiss. F'dak il-ħin se titlom l-ċieft mill-ġdid.",
+    "signOut": "Ħorġi",
+    "signInAction": "Idħol",
+    "endedNote": "Is-sessjoni tiegħek ħaretet. Is-sessjonijiet tal-gateway jgħixu sa 8 sigħat u ma juxxiviżux restart, għalhekk huwa normali li l-ċieft jitlom mill-ġdid."
+  }
 }

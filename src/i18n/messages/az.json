@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Təchizatçı açarı yeniləndi. Şəbəkə bu sənədi qaytardı.",
     "providerKeysDeleted": "Təchizatçı açarı silindi.",
     "providerKeysDeleteTitle": "Təchizatçı açarını sil",
-    "providerKeysDeleteConfirm": "\"{name}\" təchizatçı açarı silinsin? Hələ istinad edən model və ya passthrough marşrutu şəbəkəni 409 ilə rəzb etməyə məcbur edər."
+    "providerKeysDeleteConfirm": "\"{name}\" təchizatçı açarı silinsin? Hələ istinad edən model və ya passthrough marşrutu şəbəkəni 409 ilə rəzb etməyə məcbur edər.",
+    "adminAuthSignIn": "Daxil ol"
   },
   "settings": {
     "title": "Parametrlər",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Bağla"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models kataloqunda düşünmə səviyyəsi variantlarının (məsələn, -low, -medium, -high) yaradılmasını deaktiv edin.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Kvota hesabı çıxış ünvanına görə hesablanan təchizatçılar üçün eyni müşahidə olunmuş çıxış ünvanını bölüşən hovuz üzvünü sağlam üzvlərdən bir az aşağıda sıralayın. Yalnız sıra — heç vaxt tamamen çıxarılmaz. Oxuduğu rədd siqnalını yaradan PROXY_SKIP_RECENTLY_FAILED tələb edir. Standart olaraq söndürülüb: seçim sırası tam olaraq sadə dövüngüdür."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Kvota hesabı çıxış ünvanına görə hesablanan təchizatçılar üçün eyni müşahidə olunmuş çıxış ünvanını bölüşən hovuz üzvünü sağlam üzvlərdən bir az aşağıda sıralayın. Yalnız sıra — heç vaxt tamamen çıxarılmaz. Oxuduğu rədd siqnalını yaradan PROXY_SKIP_RECENTLY_FAILED tələb edir. Standart olaraq söndürülüb: seçim sırası tam olaraq sadə dövüngüdür.",
+  "adminAuth": {
+    "title": "Qapıya daxil ol",
+    "intro": "İdarəetmə paneli qapının admin API-sini oxuyur. Qapı konfiqurasiyasındakı admin.admin_keys dəyərindən birini daxil edin.",
+    "keyLabel": "Admin açarı",
+    "keyHint": "Açar yalnız bir dəfə göndərilir və bu brauzerdə saxlanılmır: qapı səhifə skriptlərinin oxuya bilmədiyi HttpOnly sessiya çəki qoyur.",
+    "submit": "Daxil ol",
+    "cancel": "Ləğv et",
+    "signingIn": "Daxil olunur…",
+    "signingOut": "Çıxılır…",
+    "emptyKey": "Admin açarını daxil edin.",
+    "wrongKey": "Bu açar qəbul edilmədi. Qapı konfiqurasiyasındakı admin.admin_keys siyahısını yoxlayın və yenidən cəhd edin.",
+    "badRequest": "Qapı öz sorğusunu (400) rəzb etdi — açar deyil. Bu panel qüsuru; xahiş edirik bildirin.",
+    "forbidden": "Qapı bu sorğunu mənşə baxımından fərqli (403) saydı. Eyni qapının verdiyi panel bunu yarada bilməz; xahiş edirik bildirin.",
+    "sessionNotKept": "Qapı açarı qəbul etdi, lakin brauzer sessiya çəkini saxlamadı, ona görə panel hələ də çıxış deyil. Bu, qapı çəki düz HTTP bağlantısı üzərində Secure işarələdiqdə baş verir: idarəetmə dinləyicisində admin.tls təyin edin və ya paneli HTTPS ilə verin.",
+    "unreachable": "Qapı cavab vermədi. İşlədiyini yoxlayın, sonra yenidən cəhd edin.",
+    "signedIn": "Qapıya daxil olundu.",
+    "lifetimeNote": "Sessiya 8 saatə qədər davam edir və qapı prosesində saxlanılır, ona görə növbəti yenidən başlatma və ya yayımda bitir. O zaman açar yenidən tələb olunacaq.",
+    "signOut": "Çıx",
+    "signInAction": "Daxil ol",
+    "endedNote": "Sessiyanız bitdi. Qapı sessiyaları 8 saatə qədər davam edir və yenidən başlatmadan sağ qalmır, ona görə açarın yenidən tələb olunması gözlənilir."
+  }
 }

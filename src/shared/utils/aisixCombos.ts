@@ -65,13 +65,19 @@
  *
  * ## Authentication
  *
- * The admin plane is key-gated. This client sends `credentials: "include"` on
- * every request so a same-origin cookie session authenticates it unchanged, and
- * attaches `Authorization: Bearer <adminKey>` when the caller supplies one —
- * which is what an ingress in front of `:3001` does, and what the integration
- * suite does to reach a real gateway. With neither, the gateway answers 401 and
- * `fetchCombos` reports that status rather than an empty list, so the page can
- * NAME the missing admin key instead of drawing an empty table.
+ * The admin plane is key-gated. This client holds no credential of its own and
+ * builds no header: it passes `adminKey` through to the shared admin transport
+ * (`aisixAdminAuth`), which sends `credentials: "include"` on every request so a
+ * same-origin cookie session authenticates it unchanged, and attaches
+ * `Authorization: Bearer <adminKey>` only when a caller supplied one — which is
+ * what an ingress in front of `:3001` does, and what the integration suite does
+ * to reach a real gateway. The browser login path supplies no key: it exchanges
+ * the key once (`POST /admin/v1/auth/session`) and the cookie does the rest.
+ *
+ * With no credential the gateway answers 401 and `fetchCombos` reports that
+ * status rather than an empty list, so the page can NAME the missing session
+ * instead of drawing an empty table. A 401 on a read or a write also raises the
+ * one global signed-out signal, so every admin surface moves together.
  *
  * This module never throws.
  */
@@ -83,7 +89,7 @@ import {
   isAisixMissingEndpointStatus,
   type AisixJsonResult,
 } from "./aisixEndpoints";
-import { fetchWithTimeout } from "./fetchTimeout";
+import { aisixAdminFetch } from "./aisixAdminAuth";
 
 // ─── the accepted contract ───────────────────────────────────────────────
 
@@ -394,8 +400,7 @@ export async function fetchDirectModelNames(
   options: AisixComboRequestOptions = {}
 ): Promise<string[] | null> {
   const result: AisixJsonResult = await fetchAisixJson(aisixAdminModelsUrl(), {
-    credentials: "include",
-    ...authHeader(options),
+    adminKey: options.adminKey,
   });
   // A failed read is `null`, never `[]`: the form must fall back to the server
   // rather than refuse every draft against a catalog it never received.
@@ -436,8 +441,7 @@ export async function fetchCombos(
   options: AisixComboRequestOptions = {}
 ): Promise<CombosReadResult> {
   const result: AisixJsonResult = await fetchAisixJson(aisixCombosUrl(), {
-    credentials: "include",
-    ...authHeader(options),
+    adminKey: options.adminKey,
   });
   if (!result.ok) {
     return { combos: [], missing: result.missing, status: result.status, error: result.error };
@@ -660,15 +664,6 @@ function parseDeleteResult(body: unknown): { id: string; version: number } | nul
   return { id, version: toCount(body.version) };
 }
 
-/**
- * `Authorization` when the caller supplied a key, nothing otherwise — so a
- * same-origin cookie session authenticates the request unchanged.
- */
-function authHeader(options: AisixComboRequestOptions): Record<string, string> {
-  const key = options.adminKey?.trim();
-  return key ? { Authorization: `Bearer ${key}` } : {};
-}
-
 async function sendWrite(
   url: string,
   method: string,
@@ -678,14 +673,18 @@ async function sendWrite(
 ): Promise<ComboWriteOutcome> {
   let response: Response;
   try {
-    response = await fetchWithTimeout(url, {
+    // The shared admin transport owns `credentials: "include"`, the
+    // `Authorization`-only-when-a-key-was-supplied rule, and the 401 that
+    // raises the one signed-out signal. A write refused for want of a session
+    // must move the whole dashboard to signed-out exactly like a read does —
+    // that is the reason this client is routed through the chokepoint rather
+    // than calling `fetchWithTimeout` itself.
+    response = await aisixAdminFetch(url, {
       method,
-      headers: { "Content-Type": "application/json", ...authHeader(options) },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-      // Cookie-ready: a same-origin admin session authenticates this unchanged.
-      credentials: "include",
+      adminKey: options.adminKey,
       timeoutMs: WRITE_TIMEOUT_MS,
-      fetchFn: globalThis.fetch as typeof fetch,
     });
   } catch (error) {
     return {

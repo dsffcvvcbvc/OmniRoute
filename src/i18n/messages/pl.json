@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Zaktualizowano klucz dostawcy. Brama zwróciła ten dokument.",
     "providerKeysDeleted": "Usunięto klucz dostawcy.",
     "providerKeysDeleteTitle": "Usuń klucz dostawcy",
-    "providerKeysDeleteConfirm": "Usunąć klucz dostawcy „{name}”? Każdy model lub trasa passthrough, która nadal go wskazuje, zmusi bramę do odpowiedzi 409."
+    "providerKeysDeleteConfirm": "Usunąć klucz dostawcy „{name}”? Każdy model lub trasa passthrough, która nadal go wskazuje, zmusi bramę do odpowiedzi 409.",
+    "adminAuthSignIn": "Zaloguj się"
   },
   "settings": {
     "title": "Ustawienia",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Zamknij"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Wyłącz generowanie wariantów poziomu rozumowania (np. -low, -medium, -high) w katalogu /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Dla dostawców, których limit rozliczany jest według adresu wychodzącego, umieść członka puli, który dzieli zaobserwowany adres wychodzący z niedawno odrzuconym członkiem, tuż pod zdrowymi członkami. Tylko kolejność — nigdy wykluczenie. Wymaga PROXY_SKIP_RECENTLY_FAILED, który generuje odczytywany sygnał odrzucenia. Domyślnie wyłączone: kolejność wyboru to dokładnie zwykła rotacja."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Dla dostawców, których limit rozliczany jest według adresu wychodzącego, umieść członka puli, który dzieli zaobserwowany adres wychodzący z niedawno odrzuconym członkiem, tuż pod zdrowymi członkami. Tylko kolejność — nigdy wykluczenie. Wymaga PROXY_SKIP_RECENTLY_FAILED, który generuje odczytywany sygnał odrzucenia. Domyślnie wyłączone: kolejność wyboru to dokładnie zwykła rotacja.",
+  "adminAuth": {
+    "title": "Zaloguj się do bramy",
+    "intro": "Panel odczytuje API administracyjną bramy. Wprowadź klucz administracyjny z admin.admin_keys w konfiguracji bramy.",
+    "keyLabel": "Klucz administracyjny",
+    "keyHint": "Klucz jest wysyłany raz i nie jest zapisywany w tej przeglądarce: brama ustawia ciasteczko sesji HttpOnly, którego skrypty strony nie mogą odczytać.",
+    "submit": "Zaloguj się",
+    "cancel": "Anuluj",
+    "signingIn": "Logowanie…",
+    "signingOut": "Wylogowywanie…",
+    "emptyKey": "Wprowadź klucz administracyjny.",
+    "wrongKey": "Ten klucz nie został przyjęty. Sprawdź admin.admin_keys w konfiguracji bramy i spróbuj ponownie.",
+    "badRequest": "Brama odrzuciła samo żądanie (400) — nie klucz. To jest wada panelu; zgłoś ją.",
+    "forbidden": "Brama odrzuciła to żądanie jako pochodzące z innego pochodzenia (403). Panel obsługiwany przez tę samą bramę nie może tego wytworzyć; zgłoś to.",
+    "sessionNotKept": "Brama przyjęła klucz, ale przeglądarka nie zachowała ciasteczka sesji, więc panel jest nadal wylogowany. Dzieje się tak, gdy brama oznacza ciasteczko jako Secure przy zwykłym połączeniu HTTP: ustaw admin.tls na nasłuchu administracyjnym lub podawaj panel przez HTTPS.",
+    "unreachable": "Brama nie odpowiedziała. Sprawdź, czy działa, i spróbuj ponownie.",
+    "signedIn": "Zalogowano do bramy.",
+    "lifetimeNote": "Sesja trwa do 8 godzin i jest przechowywana w procesie bramy, więc kończy się przy następnym restarcie lub wdrożeniu. Wtedy klucz zostanie poproszony ponownie.",
+    "signOut": "Wyloguj się",
+    "signInAction": "Zaloguj się",
+    "endedNote": "Twoja sesja dobiegła końca. Sesje bramy trwają do 8 godzin i nie przetrwają restartu, więc ponowne poproszenie o klucz jest oczekiwane."
+  }
 }

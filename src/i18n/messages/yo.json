@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Ṣàtúnṣe ọ̀rọ̀ ìwé àtúnṣe òkè kíta wa nísàlẹ̀. Gateway bá padàlà àwọn ìwé àkójọ yìí.",
     "providerKeysDeleted": "A ti pa àtúnṣe ọ̀rọ̀ ìwé àtúnṣe òkè kíta wa nísàlẹ̀.",
     "providerKeysDeleteTitle": "Pa àtúnṣe ọ̀rọ̀ ìwé àtúnṣe òkè kíta wa nísàlẹ̀",
-    "providerKeysDeleteConfirm": "Pa àtúnṣe ọ̀rọ̀ ìwé àtúnṣe òkè kíta wa nísàlẹ̀ \"{name}\"? Ọ̀kọ́ tàbí ọ̀nà ìkọjá ọ̀nà passthrough tí ó tún tún yí sí ní 409 ní bá jẹ́ kí ànáwọn gateway sọ ọ́ yí padàlà."
+    "providerKeysDeleteConfirm": "Pa àtúnṣe ọ̀rọ̀ ìwé àtúnṣe òkè kíta wa nísàlẹ̀ \"{name}\"? Ọ̀kọ́ tàbí ọ̀nà ìkọjá ọ̀nà passthrough tí ó tún tún yí sí ní 409 ní bá jẹ́ kí ànáwọn gateway sọ ọ́ yí padàlà.",
+    "adminAuthSignIn": "Wọlé"
   },
   "settings": {
     "title": "Àwọn Ààtò",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Pa á tì"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Pa ṣíṣẹ̀dá àwọn ẹ̀yà ìpele ìrònú (fún àpẹẹrẹ -low, -medium, -high) nínú àkójọ /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Fún àwọn olùpèsè tí ìpò ni a ṣe nípa àdírẹ́sì ìsọ̀já, fi ọmọ ẹgbé mìíràn tí ó pín àdírẹ́sì ìsọ̀jà tí a ṣe rí pẹ̀lú ọmọ ẹgbé tí a fagilé láìpẹ́ sísàlẹ̀ níhìn-ẹ̀yìn àwọn ọmọ ẹgbé tí ó dára. Àtòjọ́ nìkan, kì í ṣe yíyọ̀ níǹǹ. Ó nílò PROXY_SKIP_RECENTLY_FAILED, èyí tí ó ń ṣẹ̀dá ìṣàfihan ìdíshì tí ó bá ń ka. Ó ṣé títì ní ọ̀kọ̀: ìṣàtò̀ àyàwò ní tàbí ìyálà tí ó dà bó ṣe."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Fún àwọn olùpèsè tí ìpò ni a ṣe nípa àdírẹ́sì ìsọ̀já, fi ọmọ ẹgbé mìíràn tí ó pín àdírẹ́sì ìsọ̀jà tí a ṣe rí pẹ̀lú ọmọ ẹgbé tí a fagilé láìpẹ́ sísàlẹ̀ níhìn-ẹ̀yìn àwọn ọmọ ẹgbé tí ó dára. Àtòjọ́ nìkan, kì í ṣe yíyọ̀ níǹǹ. Ó nílò PROXY_SKIP_RECENTLY_FAILED, èyí tí ó ń ṣẹ̀dá ìṣàfihan ìdíshì tí ó bá ń ka. Ó ṣé títì ní ọ̀kọ̀: ìṣàtò̀ àyàwò ní tàbí ìyálà tí ó dà bó ṣe.",
+  "adminAuth": {
+    "title": "Wọle sí ọ̀nà",
+    "intro": "Àkérè èyàn-èyàn panel yìí ka àdìrè ìtumọ̀ ìṣàkọ ní àdíré àdènà ọ̀nà. Tẹ ọ̀kọ́ ìṣàkọ̀ rẹ̀ láti inú admin.admin_keys nínú ètò àdènà ọ̀nà.",
+    "keyLabel": "Ọ̀kọ́ ìṣàkọ̀",
+    "keyHint": "A fi ọ̀kọ́ náà ránṣẹ́ ẹ̀kọ́ àti kì í wà lọ́wọ́ nínú aṣàwákiri yìí: àdènà ọ̀nà ń ṣètò cookie ìjókòó HttpOnly tí àkọ́kọ́ ojú-ìwé kò lè kà.",
+    "submit": "Wọlé",
+    "cancel": "Fagilé",
+    "signingIn": "Ń wọlé…",
+    "signingOut": "Ń jáde…",
+    "emptyKey": "Tẹ ọ̀kọ́ ìṣàkọ̀ rẹ̀.",
+    "wrongKey": "A kò gba ọ̀kọ́ náà. Ṣàyẹ̀wò admin.admin_keys nínú ètò àdènà ọ̀nà kí o sì tún ṣe.",
+    "badRequest": "Àdènà ọ̀nà ti dá àwọn ìbéèrè rẹ̀ fún un nìkan (400) — kì í bá ṣe ọ̀kọ́ náà. Èyí jẹ́ ìṣàṣe panel; jọ̀wọ́ dáreport.",
+    "forbidden": "Àdènà ọ̀nà ti dá ìbéèrè yìí dájú pé ó wá láti orísun mìíràn (403). Panel tí ọ̀nà náà pẹ̀lú kò lè ṣe èyí; jọ̀wọ́ dáreport.",
+    "sessionNotKept": "Àdènà ọ̀nà gba ọ̀kọ́ náà, ṣùgbọ́n ẹyọn kò dá cookie ìjókòó rẹ̀ pamọ́, nítorí náà panel bẹ̀rẹ̀ sí ìta. Èyí ṣẹlẹ̀ nígbà tí àdènà ọ̀nà bá fi àmì ìka ọ̀nà HTTP kọ́ o sí àdíré àdènà ọ̀nà tàbí ní ọ̀nà tí a pè lórí ọ̀nà ọ̀nà: tẹ̀ àtúnṣe ètò wà nínú ìgbọ́ àdènà ọ̀nà, tàbí ṣe àfihàn pẹ̀lú HTTPS.",
+    "unreachable": "Àdènà ọ̀nà kò dá àhọ. Ṣàyẹ̀wò bóyá ó ń ṣiṣẹ́, lẹ́yìn náà tún gbìyànjú.",
+    "signedIn": "A wọlé sí àdènà ọ̀nà.",
+    "lifetimeNote": "Ìjókòó lè sùgbon 8 wákàtí, wọ́n sì wà nínú ìṣẹ́ àdènà ọ̀nà, nítorí náà ó ń parí nígbà tí ẹ̀tàn ọ̀nà tún gbẹ̀rẹ̀ tàbí nígbà ìṣán ẹ̀tàn. Nígbà náà ọ̀kọ́ náà máa tún béèrè.",
+    "signOut": "Jáde",
+    "signInAction": "Wọlé",
+    "endedNote": "Ìjókòó rẹ ti parí. Ìjókòó àdènà ọ̀nà lè sùgbon 8 wákàtí kò kọjá ẹ̀tàn ọ̀nà, nítorí náà ìtànṣeí ọ̀kọ́ nígbà ẹ̀kàn jẹ́ ìdájú."
+  }
 }

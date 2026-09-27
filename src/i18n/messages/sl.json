@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Ključ ponudnika je bil posodobljen. Prehod je vrnil ta dokument.",
     "providerKeysDeleted": "Ključ ponudnika je bil izbrisan.",
     "providerKeysDeleteTitle": "Izbriši ključ ponudnika",
-    "providerKeysDeleteConfirm": "Izbriši ključ ponudnika „{name}“? Vsak model ali pot skozi, ki ga še vedno sklicuje, bo prehod odgovoril z 409."
+    "providerKeysDeleteConfirm": "Izbriši ključ ponudnika „{name}“? Vsak model ali pot skozi, ki ga še vedno sklicuje, bo prehod odgovoril z 409.",
+    "adminAuthSignIn": "Prijava"
   },
   "settings": {
     "title": "Nastavitve",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Zapri"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Onemogoči ustvarjanje različic ravni razmišljanja (npr. -low, -medium, -high) v katalogu /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Za ponudnike, katerih kvota se računa po izhodnem naslovu, člana bazena, ki si deli opaženi izhodni naslov s členom, ki je bil nedavno zavrnjen, postavite neposredno pod zdrave člane. Samo vrstni red — nikoli izločitev. Potrebuje PROXY_SKIP_RECENTLY_FAILED, ki ustvarja signal zavrnitve, ki ga bere. Privzeto izklopljeno: vrstni red izbire je natanko običajna rotacija."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Za ponudnike, katerih kvota se računa po izhodnem naslovu, člana bazena, ki si deli opaženi izhodni naslov s členom, ki je bil nedavno zavrnjen, postavite neposredno pod zdrave člane. Samo vrstni red — nikoli izločitev. Potrebuje PROXY_SKIP_RECENTLY_FAILED, ki ustvarja signal zavrnitve, ki ga bere. Privzeto izklopljeno: vrstni red izbire je natanko običajna rotacija.",
+  "adminAuth": {
+    "title": "Prijava v prehod",
+    "intro": "Nadzorna plošča bere skrbniški API prehoda. Vnesite skrbniški ključ iz admin.admin_keys v konfiguraciji prehoda.",
+    "keyLabel": "Skrbniški ključ",
+    "keyHint": "Ključ se pošlje enkrat in v tem brskalniku ni shranjen: prehod nastavi piškotko seje HttpOnly, ki je skripti strani ne morejo prebrati.",
+    "submit": "Prijava",
+    "cancel": "Prekliči",
+    "signingIn": "Prijavljanje…",
+    "signingOut": "Odjavljanje…",
+    "emptyKey": "Vnesite skrbniški ključ.",
+    "wrongKey": "Tega ključa ni bilo mogoče sprejeti. Preverite admin.admin_keys v konfiguraciji prehoda in poskusite znova.",
+    "badRequest": "Prehod je zavrnil samo zahtevo (400) — ne ključa. To je napaka nadzorne plošče; prosimo, sporočite.",
+    "forbidden": "Prehod je zavrnil to zahtevo kot zahtevo iz drugega izvora (403). Plošča, ki jo streže isti prehod, tega ne more povzročiti; prosimo, sporočite.",
+    "sessionNotKept": "Prehod je ključ sprejel, brskalnik pa piškotke seje ni shranil, zato je nadzorna plošča še vedno odjavljena. To se zgodi, ko prehod piškotko označi kot Secure prekratkega povezave HTTP: nastavite admin.tls na skrbniškem poslušalniku ali strežite ploščo prek HTTPS.",
+    "unreachable": "Prehod ni odgovoril. Preverite, ali teče, in poskusite znova.",
+    "signedIn": "Prijavljeni v prehod.",
+    "lifetimeNote": "Seja traja do 8 ur in je shranjena v procesu prehoda, zato se konča ob naslednjem zagonu ali namestitvi. Tedaj boste znova naprošeni za ključ.",
+    "signOut": "Odjava",
+    "signInAction": "Prijava",
+    "endedNote": "Vaša seja se je končala. Seje prehoda trajajo do 8 ur in ne preživijo zagona, zato je ponovna zahteva za ključ pričakovana."
+  }
 }

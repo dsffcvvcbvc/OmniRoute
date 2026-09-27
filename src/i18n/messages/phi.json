@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Na-update ang provider key. Ibinalikha ng gateway ang dokumento na ito.",
     "providerKeysDeleted": "Binura ang provider key.",
     "providerKeysDeleteTitle": "Burahin ang provider key",
-    "providerKeysDeleteConfirm": "Burahin ang provider key na \"{name}\"? Ang kahit anong modelo o passthrough route na tumutukoy pa rin dito ay gagawing tumanggi ang gateway na may 409."
+    "providerKeysDeleteConfirm": "Burahin ang provider key na \"{name}\"? Ang kahit anong modelo o passthrough route na tumutukoy pa rin dito ay gagawing tumanggi ang gateway na may 409.",
+    "adminAuthSignIn": "Mag-log in"
   },
   "settings": {
     "title": "Mga setting",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Isara"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Huwag paganahin ang pagbuo ng mga variant ng antas ng pag-iisip (hal. -low, -medium, -high) sa katalogong /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Para sa mga provider na binibilang ang quota ayon sa egress address, ilagay ang miyembrong pool na nagbabahagi ng minag-obserbaheng egress address ng miyembrong t-initanggihan kamakailan sa ilalim mismo ng mga malusog na miyembro. Pagkakasunod-sunod lamang, hindi kailanman tinatanggal. Kailangan ang PROXY_SKIP_RECENTLY_FAILED, na lumilikha ng signal ng pagtanggal na binabasa nito. Naka-off sa default: ang pagkakasunod-sunod ng pagpili ay eksaktong ang karaniwang pag-ikot."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Para sa mga provider na binibilang ang quota ayon sa egress address, ilagay ang miyembrong pool na nagbabahagi ng minag-obserbaheng egress address ng miyembrong t-initanggihan kamakailan sa ilalim mismo ng mga malusog na miyembro. Pagkakasunod-sunod lamang, hindi kailanman tinatanggal. Kailangan ang PROXY_SKIP_RECENTLY_FAILED, na lumilikha ng signal ng pagtanggal na binabasa nito. Naka-off sa default: ang pagkakasunod-sunod ng pagpili ay eksaktong ang karaniwang pag-ikot.",
+  "adminAuth": {
+    "title": "Mag-log in sa gateway",
+    "intro": "Binabasa ng dashboard ang admin API ng gateway. Ilagay ang admin key mula sa admin.admin_keys sa configuration ng gateway.",
+    "keyLabel": "Susi ng administrator",
+    "keyHint": "Ise-isang beses lamang ipinapadala ang key at hindi itinatago sa browser na ito: ang gateway ay nagtatakda ng HttpOnly session cookie na hindi mababasa ng mga script ng pahina.",
+    "submit": "Mag-log in",
+    "cancel": "Kanselahin",
+    "signingIn": "Nagsa-log in…",
+    "signingOut": "Nagsa-log out…",
+    "emptyKey": "Ilagay ang admin key.",
+    "wrongKey": "Hindi tinanggap ang key na iyon. Suriin ang admin.admin_keys sa configuration ng gateway at subukan muli.",
+    "badRequest": "Inutos ng gateway ang kanyang sariling kahilingan (400) — hindi ang key. Ito ay isang bug ng dashboard; pakisabi.",
+    "forbidden": "Itinanggi ng gateway ang kahilingang ito bilang nagmumula sa ibang pinagmulan (403). Hindi magagawa ito ng dashboard na inihahain ng parehong gateway; pakisabi.",
+    "sessionNotKept": "Tinanggap ng gateway ang key ngunit hindi itinatago ng browser ang session cookie, kaya nananatiling naka-log out ang dashboard. Nangyayari ito kapag tinatakdaan ng gateway ang cookie bilang Secure sa plain-HTTP na koneksyon: itakda ang admin.tls sa admin listener, o ihatid ang dashboard sa HTTPS.",
+    "unreachable": "Hindi sumagot ang gateway. Tiyakin na tumatakbo ito, pagkatapos ay subukan muli.",
+    "signedIn": "Naka-log in sa gateway.",
+    "lifetimeNote": "Umaabot sa 8 oras ang isang session at itinatago sa proseso ng gateway, kaya nagtatapos ito sa susunod na restart o deployment. Sa oras na iyon, hihingiin muli ang key.",
+    "signOut": "Mag-log out",
+    "signInAction": "Mag-log in",
+    "endedNote": "Tapos na ang iyong session. Umaabot sa 8 oras ang mga session ng gateway at hindi survive ang restart, kaya normal na hihingiin muli ang key."
+  }
 }

@@ -42,6 +42,7 @@ import ProviderConnectionPermissionList, {
 import RoutingEntryLink from "@/shared/components/routing/RoutingEntryLink";
 import { ALL_COMBOS_ACCESS_RULE } from "@/shared/constants/comboAccess";
 import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
+import { aisixAdminFetch } from "@/shared/utils/aisixAdminAuth";
 import {
   aisixProviderKeysItemUrl,
   aisixProviderKeysUrl,
@@ -608,7 +609,7 @@ export default function ApiManagerPageClient() {
     const timeout = window.setTimeout(() => controller.abort(), 10_000);
     void (async () => {
       try {
-        const res = await fetch(aisixProviderKeysUrl(), { signal: controller.signal });
+        const res = await aisixAdminFetch(aisixProviderKeysUrl(), { signal: controller.signal });
         if (cancelled) return;
         if (isAisixMissingEndpointStatus(res.status)) setNativeKeysWrite("missing");
         else if (res.ok) setNativeKeysWrite("supported");
@@ -638,7 +639,10 @@ export default function ApiManagerPageClient() {
     const legacy = id ? `/api/keys/${encodeURIComponent(id)}` : "/api/keys";
     if (nativeKeysWrite !== "missing") {
       try {
-        const res = await fetch(id ? aisixProviderKeysItemUrl(id) : aisixProviderKeysUrl(), init);
+        const res = await aisixAdminFetch(
+          id ? aisixProviderKeysItemUrl(id) : aisixProviderKeysUrl(),
+          init
+        );
         if (!isAisixMissingEndpointStatus(res.status)) return res;
         setNativeKeysWrite("missing");
       } catch {

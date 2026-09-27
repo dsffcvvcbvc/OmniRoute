@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Sağlayıcı anahtarı güncellendi. Ağ geçidi bu belgeyi döndürdü.",
     "providerKeysDeleted": "Sağlayıcı anahtarı silindi.",
     "providerKeysDeleteTitle": "Sağlayıcı anahtarını sil",
-    "providerKeysDeleteConfirm": "\"{name}\" sağlayıcı anahtarı silinsin mi? Hâlâ buna başvuran bir model veya passthrough rotası, ağ geçidinin 409 ile reddetmesine yol açar."
+    "providerKeysDeleteConfirm": "\"{name}\" sağlayıcı anahtarı silinsin mi? Hâlâ buna başvuran bir model veya passthrough rotası, ağ geçidinin 409 ile reddetmesine yol açar.",
+    "adminAuthSignIn": "Oturum aç"
   },
   "settings": {
     "title": "Ayarlar",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Kapat"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models kataloğunda düşünme düzeyi varyantlarının (ör. -low, -medium, -high) oluşturulmasını devre dışı bırakın.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Kotası çıkış adresine göre hesaplanan sağlayıcılar için, gözlenen çıkış adresini son reddedilen üyeyle paylaşan havuz üyesini sağlıklı üyelerin hemen altına yerleştirin. Yalnızca sıralama — asla çıkarma değil. Okuduğu ret sinyalini üreten PROXY_SKIP_RECENTLY_FAILED gerektirir. Varsayılan olarak kapalı: seçim sırası tam olarak sıradan rotasyondur."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Kotası çıkış adresine göre hesaplanan sağlayıcılar için, gözlenen çıkış adresini son reddedilen üyeyle paylaşan havuz üyesini sağlıklı üyelerin hemen altına yerleştirin. Yalnızca sıralama — asla çıkarma değil. Okuduğu ret sinyalini üreten PROXY_SKIP_RECENTLY_FAILED gerektirir. Varsayılan olarak kapalı: seçim sırası tam olarak sıradan rotasyondur.",
+  "adminAuth": {
+    "title": "Ağ geçidine oturum aç",
+    "intro": "Panel, ağ geçidinin yönetim API'sini okur. Ağ geçidi yapılandırmasındaki admin.admin_keys içinden bir yönetici anahtarı girin.",
+    "keyLabel": "Yönetici anahtarı",
+    "keyHint": "Anahtar yalnızca bir kez gönderilir ve bu tarayıcıda saklanmaz: ağ geçidi, sayfa betiklerinin okuyamadığı bir HttpOnly oturum çerezi ayarlar.",
+    "submit": "Oturum aç",
+    "cancel": "İptal",
+    "signingIn": "Oturum açılıyor…",
+    "signingOut": "Oturum kapatılıyor…",
+    "emptyKey": "Yönetici anahtarını girin.",
+    "wrongKey": "Bu anahtar kabul edilmedi. Ağ geçidi yapılandırmasındaki admin.admin_keys değerini denetleyip yeniden deneyin.",
+    "badRequest": "Ağ geçidi isteğin kendisini reddetti (400) — anahtarı değil. Bu panelin bir kusurudur; lütfen bildirin.",
+    "forbidden": "Ağ geçidi bu isteği farklı bir kaynaktan gelen istek olarak reddetti (403). Aynı ağ geçidinin sunduğu bir panel bunu üretemez; lütfen bildirin.",
+    "sessionNotKept": "Ağ geçidi anahtarı kabul etti, ancak tarayıcı oturum çerezini saklamadı; bu yüzden panel hâlâ oturum dışı. Ağ geçidi çerezi düz HTTP bağlantısı üzerinde Secure olarak işaretlediğinde bu olur: yönetim dinleyicisine admin.tls ayarlayın ya da paneli HTTPS üzerinden sunun.",
+    "unreachable": "Ağ geçidi yanıt vermedi. Çalıştığını denetleyin, sonra yeniden deneyin.",
+    "signedIn": "Ağ geçidine oturum açıldı.",
+    "lifetimeNote": "Bir oturum en fazla 8 saat sürer ve ağ geçidinin sürecinde tutulur, bu yüzden sonraki yeniden başlatmada veya dağıtımda biter. O noktada anahtar yeniden istenir.",
+    "signOut": "Oturumu kapat",
+    "signInAction": "Oturum aç",
+    "endedNote": "Oturumunuz sona erdi. Ağ geçidi oturumları en fazla 8 saat sürer ve yeniden başlatmayı atlatamaz, bu yüzden anahtarın yeniden istenmesi beklenen bir durumdur."
+  }
 }

@@ -32,107 +32,20 @@
  */
 
 import { fetchWithTimeout } from "@/shared/utils/fetchTimeout";
+import {
+  aisixAdminFetch,
+  classifyAisixAdminStatus,
+  isAisixAdminUrl,
+  type AisixAdminFailureKind,
+  type AisixAdminRequestOptions,
+} from "./aisixAdminAuth";
+import { getAisixAdminBase, getAisixDataBase, getAisixMetricsBase } from "./aisixTransportBase";
 
-/** Native ports, kept in one place so the runtime-host derivation stays honest. */
-const AISIX_ADMIN_PORT = 3001;
-const AISIX_METRICS_PORT = 9090;
-const AISIX_DATA_PORT = 3000;
-
-const AISIX_ADMIN_FALLBACK = `http://127.0.0.1:${AISIX_ADMIN_PORT}`;
-const AISIX_METRICS_FALLBACK = `http://127.0.0.1:${AISIX_METRICS_PORT}`;
-const AISIX_DATA_FALLBACK = `http://127.0.0.1:${AISIX_DATA_PORT}`;
-
-/**
- * Hosts for which `127.0.0.1` in the browser IS the AISIX host. Only these may
- * use the loopback fallbacks / explicit `NEXT_PUBLIC_AISIX_*` defaults; see
- * `resolveAisixBase`.
- */
-const LOOPBACK_HOSTNAMES = new Set(["", "localhost", "127.0.0.1", "::1", "[::1]", "0.0.0.0"]);
-
-function readPublicEnv(name: string): string | undefined {
-  try {
-    const value = (process.env as Record<string, string | undefined>)[name];
-    if (typeof value === "string" && value.trim().length > 0) return value.trim();
-    return undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function stripTrailingSlash(base: string): string {
-  return base.length > 1 ? base.replace(/\/+$/, "") : base;
-}
-
-/**
- * Hostname the SPA itself was served from, or `null` during SSR/prerender (no
- * `window`). A static export is served BY the AISIX binary, so this is the
- * authoritative answer to "where does AISIX live for THIS browser?" — and on a
- * LAN/tailscale host `127.0.0.1` would point at the operator's own machine.
- */
-function readWindowHostname(): string | null {
-  try {
-    if (typeof window === "undefined") return null;
-    const hostname = window.location?.hostname;
-    return typeof hostname === "string" && hostname.trim().length > 0 ? hostname.trim() : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Scheme the SPA itself was served with, or `null` during SSR/prerender (no
- * `window`). An `https:` page fetching an `http:` core is blocked by the
- * browser as mixed content, so LAN bases inherit the page scheme instead of
- * hardcoding `http:` — the loopback/SSR fallbacks below stay plain HTTP
- * (loopback is trustworthy and never mixed-content-blocked).
- */
-function readWindowProtocol(): string | null {
-  try {
-    if (typeof window === "undefined") return null;
-    const protocol = window.location?.protocol;
-    return protocol === "https:" || protocol === "http:" ? protocol : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Resolution order for a native base:
- *   1. non-loopback `window.location.hostname` → `<page-scheme>://<host>:<port>`.
- *      The SPA was served by AISIX, so its own host is the native host. This
- *      wins over the env vars on purpose: an env var baked at build time cannot
- *      know the deployment hostname of a static bundle. The scheme is inherited
- *      from the page so an `https:` dashboard does not get mixed-content-blocked
- *      against its own core.
- *   2. `NEXT_PUBLIC_AISIX_*` override.
- *   3. `http://127.0.0.1:<port>` (loopback browser, or SSR/prerender).
- *
- * The Rust core serves its three planes as plain HTTP; only the scheme of a
- * same-host base follows the page — explicit env overrides are used verbatim.
- */
-function resolveAisixBase(envName: string, port: number, loopbackFallback: string): string {
-  const hostname = readWindowHostname();
-  if (hostname && !LOOPBACK_HOSTNAMES.has(hostname.toLowerCase())) {
-    const scheme = readWindowProtocol() ?? "http:";
-    return `${scheme}//${hostname}:${port}`;
-  }
-  return stripTrailingSlash(readPublicEnv(envName) ?? loopbackFallback);
-}
-
-/** Native admin base (`:3001`): models, provider keys, resources writes. */
-export function getAisixAdminBase(): string {
-  return resolveAisixBase("NEXT_PUBLIC_AISIX_ADMIN", AISIX_ADMIN_PORT, AISIX_ADMIN_FALLBACK);
-}
-
-/** Native metrics base (`:9090`): status/models, metrics. */
-export function getAisixMetricsBase(): string {
-  return resolveAisixBase("NEXT_PUBLIC_AISIX_METRICS", AISIX_METRICS_PORT, AISIX_METRICS_FALLBACK);
-}
-
-/** Native data-plane base (`:3000`): OpenAI-compatible `/v1/*`. */
-export function getAisixDataBase(): string {
-  return resolveAisixBase("NEXT_PUBLIC_AISIX_DATA", AISIX_DATA_PORT, AISIX_DATA_FALLBACK);
-}
+// The three native bases are resolved in `aisixTransportBase` and re-exported
+// here, so the URL inventory below stays the single place a caller looks and
+// the base resolution stays a leaf both `aisixEndpoints` and `aisixAdminAuth`
+// can import without importing each other.
+export { getAisixAdminBase, getAisixDataBase, getAisixMetricsBase };
 
 /** `GET` models catalog — native replacement for `/api/provider-nodes`. */
 export function aisixAdminModelsUrl(): string {
@@ -364,35 +277,96 @@ export interface AisixJsonResult {
   /** HTTP status, or `0` when the request never produced a response. */
   status: number;
   error: string | null;
+  /**
+   * How a non-2xx answer is classified, or `null` for 2xx and for statuses that
+   * are not a credential problem (5xx, network failure). The four kinds are
+   * different operator situations — see `classifyAisixAdminStatus`. Present so
+   * a caller can name the cause without re-deriving it from the status; the
+   * status is still the authoritative field for the existing
+   * `status === 401 || status === 403` checks.
+   */
+  failure: AisixAdminFailureKind | null;
+  /**
+   * The gateway's `{"error_msg": "…"}` envelope on a refusal, or `null`. Read
+   * tolerantly: it is an extra detail beside the classification, never the
+   * classification itself.
+   */
+  errorMsg: string | null;
 }
 
 const AISIX_JSON_READ_TIMEOUT_MS = 15_000;
 
+/** The `{"error_msg": "…"}` envelope, or `null`. Never throws on an unreadable body. */
+async function readAisixErrorMsg(response: Response): Promise<string | null> {
+  try {
+    const payload: unknown = await response.json();
+    if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+      const value = (payload as Record<string, unknown>).error_msg;
+      if (typeof value === "string" && value.trim().length > 0) return value;
+    }
+  } catch {
+    // A refusal with no readable envelope is still a refusal.
+  }
+  return null;
+}
+
 export async function fetchAisixJson(
   url: string,
-  init: RequestInit = {},
+  init: AisixAdminRequestOptions = {},
   timeoutMs: number = AISIX_JSON_READ_TIMEOUT_MS
 ): Promise<AisixJsonResult> {
   try {
-    const response = await fetchWithTimeout(url, {
-      ...init,
-      timeoutMs,
-      fetchFn: globalThis.fetch as typeof fetch,
-    });
+    // Through the shared admin transport when the URL is on the admin base, so
+    // the cookie, the header policy and the 401 → signed-out signal are decided
+    // in ONE place and every caller inherits all three. The `:9090`/`:3000`/Next
+    // `/api/*` URLs keep the plain path: they are unauthenticated surfaces, and
+    // their 401s have nothing to do with a gateway session.
+    const onAdminPlane = isAisixAdminUrl(url);
+    const response = onAdminPlane
+      ? await aisixAdminFetch(url, { ...init, timeoutMs })
+      : await fetchWithTimeout(url, {
+          ...init,
+          timeoutMs,
+          fetchFn: globalThis.fetch as typeof fetch,
+        });
     const status = response.status;
     if (isAisixMissingEndpointStatus(status)) {
-      return { data: null, ok: false, missing: true, status, error: null };
+      return {
+        data: null,
+        ok: false,
+        missing: true,
+        status,
+        error: null,
+        failure: classifyAisixAdminStatus(status),
+        errorMsg: await readAisixErrorMsg(response),
+      };
     }
     if (!response.ok) {
-      return { data: null, ok: false, missing: false, status, error: `HTTP ${status}` };
+      return {
+        data: null,
+        ok: false,
+        missing: false,
+        status,
+        error: `HTTP ${status}`,
+        failure: classifyAisixAdminStatus(status),
+        errorMsg: await readAisixErrorMsg(response),
+      };
     }
     // `:9090/metrics` answers Prometheus text; a blind `.json()` on it rejects.
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("application/json") && !contentType.includes("+json")) {
-      return { data: null, ok: false, missing: false, status, error: "non_json_body" };
+      return {
+        data: null,
+        ok: false,
+        missing: false,
+        status,
+        error: "non_json_body",
+        failure: null,
+        errorMsg: null,
+      };
     }
     const data = await response.json();
-    return { data, ok: true, missing: false, status, error: null };
+    return { data, ok: true, missing: false, status, error: null, failure: null, errorMsg: null };
   } catch (error) {
     return {
       data: null,
@@ -400,6 +374,8 @@ export async function fetchAisixJson(
       missing: false,
       status: 0,
       error: error instanceof Error ? error.message : "request_failed",
+      failure: null,
+      errorMsg: null,
     };
   }
 }

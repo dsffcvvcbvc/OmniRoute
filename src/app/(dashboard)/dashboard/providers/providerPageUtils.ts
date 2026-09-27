@@ -23,6 +23,11 @@ import {
   aisixProviderKeysUrl,
 } from "@/shared/utils/aisixEndpoints";
 import {
+  aisixAdminFetch,
+  classifyAisixAdminStatus,
+  isAisixAdminUrl,
+} from "@/shared/utils/aisixAdminAuth";
+import {
   parseProviderDisplayModePreference,
   type ProviderDisplayMode,
 } from "./providerPageStorage";
@@ -653,6 +658,16 @@ export interface ProviderPageData {
    * cards render no chip instead of a "loaded, nothing known" state.
    */
   openRouterProviderStats: OpenRouterProviderStatsEntry[] | null;
+  /**
+   * The admin plane refused to answer (401/403) — there is no usable session.
+   *
+   * Distinct from `connections: []`, and it has to be: an empty array reads on
+   * this page as "this gateway has no providers configured", which is a claim
+   * about the operator's gateway that a 401 cannot support. The caller renders
+   * a withheld state instead of an empty list, so the truth stays "not
+   * answered" rather than becoming "none".
+   */
+  adminDenied: boolean;
 }
 
 /** Mirrors ProviderPopularityEntry from src/lib/catalog/openrouterProviderStats.ts (kept local to avoid a server-only import from a client component). */
@@ -704,10 +719,26 @@ export async function loadProviderPageData(
   fetchImpl: typeof fetch = globalThis.fetch as typeof fetch,
   timeoutMs: number = PROVIDER_PAGE_FETCH_TIMEOUT_MS
 ): Promise<ProviderPageData> {
+  // Admin-plane reads go through the shared transport so their 401 raises the
+  // one global signed-out signal; the metrics plane stays on the plain path
+  // (it is unauthenticated, and its status says nothing about a session).
+  let adminDenied = false;
+
   const safeJson = async (url: string, init?: RequestInit): Promise<any | null> => {
     try {
-      const res = await fetchWithTimeout(url, { ...init, timeoutMs, fetchFn: fetchImpl });
-      if (!res.ok) return null;
+      const options = { ...init, timeoutMs, fetchFn: fetchImpl };
+      const res = isAisixAdminUrl(url)
+        ? await aisixAdminFetch(url, options)
+        : await fetchWithTimeout(url, options);
+      if (!res.ok) {
+        // 401/403 on an admin read is a missing session, not an empty
+        // collection. Recorded here so the page can withhold the list instead of
+        // drawing it as empty.
+        if (isAisixAdminUrl(url) && classifyAisixAdminStatus(res.status) !== null && res.status !== 404 && res.status !== 405) {
+          adminDenied = true;
+        }
+        return null;
+      }
       return await res.json();
     } catch {
       // Timeout/abort/network error → degrade to the default; never hang.
@@ -751,5 +782,6 @@ export async function loadProviderPageData(
     blockedProviders: null,
     settings: null,
     openRouterProviderStats: openRouterStats,
+    adminDenied,
   };
 }

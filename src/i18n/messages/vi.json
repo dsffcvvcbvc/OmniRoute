@@ -6599,7 +6599,8 @@
     "providerKeysUpdated": "Khóa nhà cung cấp đã được cập nhật. Gateway trả về tài liệu này.",
     "providerKeysDeleted": "Đã xóa khóa nhà cung cấp.",
     "providerKeysDeleteTitle": "Xóa khóa nhà cung cấp",
-    "providerKeysDeleteConfirm": "Xóa khóa nhà cung cấp \"{name}\"? Bất kỳ mô hình hay tuyến passthrough nào vẫn tham chiếu tới nó sẽ khiến gateway từ chối với 409."
+    "providerKeysDeleteConfirm": "Xóa khóa nhà cung cấp \"{name}\"? Bất kỳ mô hình hay tuyến passthrough nào vẫn tham chiếu tới nó sẽ khiến gateway từ chối với 409.",
+    "adminAuthSignIn": "Đăng nhập"
   },
   "settings": {
     "title": "Cài đặt",
@@ -14507,5 +14508,26 @@
     "partnerLinkNote": "Liên kết đối tác",
     "dismissAriaLabel": "Đóng"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Tắt tính năng tạo biến thể cấp độ suy nghĩ (ví dụ: -low, -medium, -high) trong danh mục /v1/models."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Tắt tính năng tạo biến thể cấp độ suy nghĩ (ví dụ: -low, -medium, -high) trong danh mục /v1/models.",
+  "adminAuth": {
+    "title": "Đăng nhập vào cổng kết nối",
+    "intro": "Bảng điều khiển đọc API quản trị của cổng kết nối. Nhập một khóa quản trị từ admin.admin_keys trong cấu hình của cổng kết nối.",
+    "keyLabel": "Khóa quản trị",
+    "keyHint": "Khóa chỉ được gửi một lần và không được lưu trong trình duyệt này: cổng kết nối đặt một cookie phiên HttpOnly mà các script của trang không đọc được.",
+    "submit": "Đăng nhập",
+    "cancel": "Hủy",
+    "signingIn": "Đang đăng nhập…",
+    "signingOut": "Đang đăng xuất…",
+    "emptyKey": "Nhập khóa quản trị.",
+    "wrongKey": "Khóa đó không được chấp nhận. Hãy kiểm tra admin.admin_keys trong cấu hình của cổng kết nối rồi thử lại.",
+    "badRequest": "Cổng kết nối từ chối chính yêu cầu (400) — không phải khóa. Đây là lỗi của bảng điều khiển; vui lòng báo lại.",
+    "forbidden": "Cổng kết nối từ chối yêu cầu này vì đến từ nguồn gốc khác (403). Một bảng điều khiển do chính cổng kết nối đó phục vụ không thể tạo ra điều này; vui lòng báo lại.",
+    "sessionNotKept": "Cổng kết nối đã chấp nhận khóa, nhưng trình duyệt không giữ lại cookie phiên, nên bảng điều khiển vẫn chưa đăng nhập. Điều này xảy ra khi cổng kết nối đánh dấu cookie là Secure trên kết nối HTTP thường: hãy đặt admin.tls trên bộ lắng nghe quản trị, hoặc phục vụ bảng điều khiển qua HTTPS.",
+    "unreachable": "Cổng kết nối không phản hồi. Hãy kiểm tra xem nó có đang chạy không, rồi thử lại.",
+    "signedIn": "Đã đăng nhập vào cổng kết nối.",
+    "lifetimeNote": "Phiên kéo dài tối đa 8 giờ và được giữ trong tiến trình của cổng kết nối, nên nó kết thúc ở lần khởi động lại hoặc triển khai kế tiếp. Lúc đó khóa sẽ được hỏi lại.",
+    "signOut": "Đăng xuất",
+    "signInAction": "Đăng nhập",
+    "endedNote": "Phiên của bạn đã kết thúc. Phiên của cổng kết nối kéo dài tối đa 8 giờ và không sống sót qua việc khởi động lại, nên việc khóa được hỏi lại là điều đã được lường trước."
+  }
 }

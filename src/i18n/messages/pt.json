@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Chave de fornecedor atualizada. O gateway devolveu este documento.",
     "providerKeysDeleted": "Chave de fornecedor eliminada.",
     "providerKeysDeleteTitle": "Eliminar chave de fornecedor",
-    "providerKeysDeleteConfirm": "Eliminar a chave de fornecedor \"{name}\"? Qualquer modelo ou rota de passagem que ainda a referencie fará o gateway recusar com 409."
+    "providerKeysDeleteConfirm": "Eliminar a chave de fornecedor \"{name}\"? Qualquer modelo ou rota de passagem que ainda a referencie fará o gateway recusar com 409.",
+    "adminAuthSignIn": "Iniciar sessão"
   },
   "settings": {
     "title": "Configurações",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Dispensar"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Desative a geração de variantes de nível de pensamento (por exemplo, -low, -medium, -high) no catálogo /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Para fornecedores cuja cota é contabilizada por endereço de saída, posicione um membro do conjunto que partilhe o endereço de saída observado com um membro recusado recentemente logo abaixo dos membros saudáveis. Apenas ordem, nunca exclusão. Requer PROXY_SKIP_RECENTLY_FAILED, que produz o sinal de recusa que ele lê. Desativado por predefinição: a ordem de seleção é exatamente a rotação simples."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Para fornecedores cuja cota é contabilizada por endereço de saída, posicione um membro do conjunto que partilhe o endereço de saída observado com um membro recusado recentemente logo abaixo dos membros saudáveis. Apenas ordem, nunca exclusão. Requer PROXY_SKIP_RECENTLY_FAILED, que produz o sinal de recusa que ele lê. Desativado por predefinição: a ordem de seleção é exatamente a rotação simples.",
+  "adminAuth": {
+    "title": "Iniciar sessão no gateway",
+    "intro": "O painel lê a API de administração do gateway. Introduza uma chave de administração de admin.admin_keys na configuração do gateway.",
+    "keyLabel": "Chave de administração",
+    "keyHint": "A chave é enviada uma vez e não é guardada neste navegador: o gateway define um cookie de sessão HttpOnly que os scripts da página não conseguem ler.",
+    "submit": "Iniciar sessão",
+    "cancel": "Cancelar",
+    "signingIn": "A iniciar sessão…",
+    "signingOut": "A terminar sessão…",
+    "emptyKey": "Introduza a chave de administração.",
+    "wrongKey": "Essa chave não foi aceite. Verifique admin.admin_keys na configuração do gateway e tente novamente.",
+    "badRequest": "O gateway rejeitou o próprio pedido (400) — não a chave. É um defeito do painel; por favor, comunique.",
+    "forbidden": "O gateway rejeitou este pedido por vir de outra origem (403). Um painel servido pelo mesmo gateway não pode produzir isso; por favor, comunique.",
+    "sessionNotKept": "O gateway aceitou a chave, mas o navegador não guardou o cookie de sessão, pelo que o painel continua sem sessão. Isto acontece quando o gateway marca o cookie como Secure sobre uma ligação HTTP simples: configure admin.tls no listener de administração ou sirva o painel por HTTPS.",
+    "unreachable": "O gateway não respondeu. Verifique se está em execução e tente novamente.",
+    "signedIn": "Sessão iniciada no gateway.",
+    "lifetimeNote": "Uma sessão dura até 8 horas e é guardada no processo do gateway, pelo que termina na próxima reinicialização ou publicação. Nessa altura, voltará a ser pedida a chave.",
+    "signOut": "Terminar sessão",
+    "signInAction": "Iniciar sessão",
+    "endedNote": "A sua sessão terminou. As sessões do gateway duram até 8 horas e não sobrevivem a uma reinicialização, pelo que voltar a pedir a chave é o comportamento esperado."
+  }
 }

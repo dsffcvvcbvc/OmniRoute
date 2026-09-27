@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Clave de proveedor actualizada. La pasarela devolvió este documento.",
     "providerKeysDeleted": "Se eliminó la clave de proveedor.",
     "providerKeysDeleteTitle": "Eliminar clave de proveedor",
-    "providerKeysDeleteConfirm": "¿Eliminar la clave de proveedor «{name}»? Cualquier modelo o ruta de paso que aún la referencie hará que la pasarela rechace con 409."
+    "providerKeysDeleteConfirm": "¿Eliminar la clave de proveedor «{name}»? Cualquier modelo o ruta de paso que aún la referencie hará que la pasarela rechace con 409.",
+    "adminAuthSignIn": "Iniciar sesión"
   },
   "settings": {
     "title": "Configuración",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Cerrar"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Desactiva la generación de variantes del nivel de razonamiento (p. ej., -low, -medium, -high) en el catálogo /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Para los proveedores cuya cuota se agrupa por dirección de salida, coloca a un miembro del grupo que comparta la dirección de salida observada con un miembro rechazado recientemente justo por debajo de los miembros sanos. Solo orden, nunca exclusión. Requiere PROXY_SKIP_RECENTLY_FAILED, que produce la señal de rechazo que lee. Desactivado por defecto: el orden de selección es exactamente la rotación simple."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Para los proveedores cuya cuota se agrupa por dirección de salida, coloca a un miembro del grupo que comparta la dirección de salida observada con un miembro rechazado recientemente justo por debajo de los miembros sanos. Solo orden, nunca exclusión. Requiere PROXY_SKIP_RECENTLY_FAILED, que produce la señal de rechazo que lee. Desactivado por defecto: el orden de selección es exactamente la rotación simple.",
+  "adminAuth": {
+    "title": "Iniciar sesión en la pasarela",
+    "intro": "El panel lee la API de administración de la pasarela. Introduce una clave de administración de admin.admin_keys en la configuración de la pasarela.",
+    "keyLabel": "Clave de administración",
+    "keyHint": "La clave se envía una vez y no se guarda en este navegador: la pasarela establece una cookie de sesión HttpOnly que los scripts de la página no pueden leer.",
+    "submit": "Iniciar sesión",
+    "cancel": "Cancelar",
+    "signingIn": "Iniciando sesión…",
+    "signingOut": "Cerrando sesión…",
+    "emptyKey": "Introduce la clave de administración.",
+    "wrongKey": "Esa clave no fue aceptada. Revisa admin.admin_keys en la configuración de la pasarela e inténtalo de nuevo.",
+    "badRequest": "La pasarela rechazó la propia solicitud (400), no la clave. Es un defecto del panel; por favor, comunícalo.",
+    "forbidden": "La pasarela rechazó esta solicitud por ser de otro origen (403). Un panel servido por la misma pasarela no puede producir eso; por favor, comunícalo.",
+    "sessionNotKept": "La pasarela aceptó la clave, pero el navegador no conservó la cookie de sesión, así que el panel sigue sin sesión. Esto ocurre cuando la pasarela marca la cookie como Secure sobre una conexión HTTP sin cifrar: configura admin.tls en el escuchador de administración o sirve el panel por HTTPS.",
+    "unreachable": "La pasarela no respondió. Comprueba que está en marcha e inténtalo de nuevo.",
+    "signedIn": "Sesión iniciada en la pasarela.",
+    "lifetimeNote": "Una sesión dura hasta 8 horas y se guarda en el proceso de la pasarela, así que termina con el próximo reinicio o despliegue. Entonces se te volverá a pedir la clave.",
+    "signOut": "Cerrar sesión",
+    "signInAction": "Iniciar sesión",
+    "endedNote": "Tu sesión ha terminado. Las sesiones de la pasarela duran hasta 8 horas y no sobreviven a un reinicio, así que que se vuelva a pedir la clave es lo esperado."
+  }
 }

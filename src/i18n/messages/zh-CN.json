@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "提供商密钥已更新。网关返回了此文档。",
     "providerKeysDeleted": "提供商密钥已删除。",
     "providerKeysDeleteTitle": "删除提供商密钥",
-    "providerKeysDeleteConfirm": "要删除提供商密钥“{name}”吗？任何仍引用它的模型或透传路由都会让网关以 409 拒绝。"
+    "providerKeysDeleteConfirm": "要删除提供商密钥“{name}”吗？任何仍引用它的模型或透传路由都会让网关以 409 拒绝。",
+    "adminAuthSignIn": "登录"
   },
   "settings": {
     "title": "设置",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "关闭"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "禁用在 /v1/models 目录中生成思考级别变体（例如 -low、-medium、-high）。",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "对按出口地址分桶计算配额的提供商，将与最近被拒成员共享相同观测出口地址的池成员排在健康成员之下。仅调整顺序，绝不排除。需要 PROXY_SKIP_RECENTLY_FAILED，它会生成其所读取的拒绝信号。默认关闭：选择顺序与普通轮询完全一致。"
+  "featureFlagProxyPoolSharedEgressOrderDescription": "对按出口地址分桶计算配额的提供商，将与最近被拒成员共享相同观测出口地址的池成员排在健康成员之下。仅调整顺序，绝不排除。需要 PROXY_SKIP_RECENTLY_FAILED，它会生成其所读取的拒绝信号。默认关闭：选择顺序与普通轮询完全一致。",
+  "adminAuth": {
+    "title": "登录网关",
+    "intro": "仪表板读取网关的管理 API。请输入网关配置中 admin.admin_keys 里的管理密钥。",
+    "keyLabel": "管理密钥",
+    "keyHint": "密钥只发送一次，并且不会保存在此浏览器中：网关会设置一个页面脚本无法读取的 HttpOnly 会话 Cookie。",
+    "submit": "登录",
+    "cancel": "取消",
+    "signingIn": "正在登录…",
+    "signingOut": "正在退出…",
+    "emptyKey": "请输入管理密钥。",
+    "wrongKey": "该密钥未被接受。请检查网关配置中的 admin.admin_keys 后重试。",
+    "badRequest": "网关拒绝的是请求本身（400），而不是密钥。这是仪表板的缺陷；请反馈给我们。",
+    "forbidden": "网关以跨源请求为由拒绝了此请求（403）。由同一个网关提供的仪表板不可能产生这种情况；请反馈给我们。",
+    "sessionNotKept": "网关接受了密钥，但浏览器没有保留会话 Cookie，因此仪表板仍处于未登录状态。当网关在普通 HTTP 连接上把 Cookie 标记为 Secure 时就会这样：请在管理监听器上配置 admin.tls，或改用 HTTPS 提供仪表板。",
+    "unreachable": "网关没有响应。请确认它正在运行，然后重试。",
+    "signedIn": "已登录网关。",
+    "lifetimeNote": "会话最长持续 8 小时，并保存在网关进程内，因此会在下次重启或重新部署时结束。到那时会再次要求输入密钥。",
+    "signOut": "退出登录",
+    "signInAction": "登录",
+    "endedNote": "你的会话已结束。网关会话最长持续 8 小时，且无法在重启后保留，因此再次要求输入密钥是预期行为。"
+  }
 }

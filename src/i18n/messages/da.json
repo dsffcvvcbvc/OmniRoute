@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Udbudernøglen er opdateret. Gatewayen returnerede dette dokument.",
     "providerKeysDeleted": "Udbudernøglen blev slettet.",
     "providerKeysDeleteTitle": "Slet udbydernøgle",
-    "providerKeysDeleteConfirm": "Slet udbydernøglen \"{name}\"? Enhver model eller passthrough-rute, der stadig henviser til den, får gatewayen til at svare 409."
+    "providerKeysDeleteConfirm": "Slet udbydernøglen \"{name}\"? Enhver model eller passthrough-rute, der stadig henviser til den, får gatewayen til at svare 409.",
+    "adminAuthSignIn": "Log ind"
   },
   "settings": {
     "title": "Indstillinger",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Luk"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Deaktivér genereringen af varianter af tænkeniveau (f.eks. -low, -medium, -high) i /v1/models-kataloget.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "For udbydere, hvis kvote tælles efter udgangsadresse, placeres et poolmedlem, der deler den observerede udgangsadresse med et nyligt afvist medlem, lige under de sunde medlemmer. Kun rækkefølge — aldrig udeladelse. Kræver PROXY_SKIP_RECENTLY_FAILED, som producerer det afvisningssignal, den læser. Slået fra som standard: rækkefølgen for valg er præcis den almindelige rotation."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "For udbydere, hvis kvote tælles efter udgangsadresse, placeres et poolmedlem, der deler den observerede udgangsadresse med et nyligt afvist medlem, lige under de sunde medlemmer. Kun rækkefølge — aldrig udeladelse. Kræver PROXY_SKIP_RECENTLY_FAILED, som producerer det afvisningssignal, den læser. Slået fra som standard: rækkefølgen for valg er præcis den almindelige rotation.",
+  "adminAuth": {
+    "title": "Log ind på gatewayen",
+    "intro": "Dashboardet læser gatewayens admin-API. Indtast admin-nøglen fra admin.admin_keys i gatewayens konfiguration.",
+    "keyLabel": "Admin-nøgle",
+    "keyHint": "Nøglen sendes én gang og gemmes ikke i denne browser: gatewayen sætter en HttpOnly-session-cookie, som sideens scripts ikke kan læse.",
+    "submit": "Log ind",
+    "cancel": "Annuller",
+    "signingIn": "Logger ind…",
+    "signingOut": "Logger ud…",
+    "emptyKey": "Indtast admin-nøglen.",
+    "wrongKey": "Nøglen blev ikke accepteret. Tjek admin.admin_keys i gatewayens konfiguration, og prøv igen.",
+    "badRequest": "Gatewayen afviste selve anmodningen (400) — ikke nøglen. Det er en fejl i dashboardet; meld det venligst.",
+    "forbidden": "Gatewayen afviste anmodningen som kommende fra en anden oprindelse (403). Et dashboard, der serveres af den samme gateway, kan ikke gøre det; meld det venligst.",
+    "sessionNotKept": "Gatewayen accepterede nøglen, men browseren beholdt ikke session-cookien, så dashboardet er stadig logget ud. Det sker, når gatewayen markerer cookien Secure over en almindelig HTTP-forbindelse: sæt admin.tls på admin-lytteren, eller server dashboardet over HTTPS.",
+    "unreachable": "Gatewayen svarede ikke. Tjek at den kører, og prøv igen.",
+    "signedIn": "Logget ind på gatewayen.",
+    "lifetimeNote": "En session varer op til 8 timer og ligger i gatewayens proces, så den slutter ved næste genstart eller udrulning. Så bliver nøglen bedt om igen.",
+    "signOut": "Log ud",
+    "signInAction": "Log ind",
+    "endedNote": "Din session sluttede. Gatewayens sessioner varer op til 8 timer og overlever ikke en genstart, så det er forventeligt, at nøglen bliver bedt om igen."
+  }
 }
