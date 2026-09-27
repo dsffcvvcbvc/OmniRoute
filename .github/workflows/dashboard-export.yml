@@ -44,6 +44,16 @@ jobs:
         run: |
           ls -la out/ | head -20
           test -f out/index.html
+          # The two agent-card documents are the whole point of keeping
+          # `/.well-known` inside the export build: CI and the AISIX native core
+          # read them as files off the deployed directory. They live in a
+          # dot-directory, so they are exactly what the next step's
+          # `include-hidden-files` flag exists to preserve — assert they were
+          # actually emitted, so a future config change cannot quietly drop the
+          # discovery surface while the artifact still uploads green.
+          test -f out/.well-known/agent.json
+          test -f out/.well-known/agent-card.json
+          test -f out/manifest.webmanifest
 
       # next.config.mjs `headers()` is INERT under `output: "export"` — the SPA
       # ships with NO server response headers (no CSP, no frame-ancestors). The
@@ -67,3 +77,9 @@ jobs:
           name: omniroute-dashboard-out
           path: out/
           retention-days: 7
+          # upload-artifact@v4 defaults `include-hidden-files` to FALSE, so the
+          # artifact silently drops every dot-path. `out/.well-known/` — the
+          # agent card CI and the AISIX core read as a file — was produced by
+          # the build and then thrown away by the uploader (run #8 shipped an
+          # artifact with zero dotfiles). Keep them.
+          include-hidden-files: true
