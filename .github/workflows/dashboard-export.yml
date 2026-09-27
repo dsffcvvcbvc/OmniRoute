@@ -55,6 +55,38 @@ jobs:
           test -f out/.well-known/agent-card.json
           test -f out/manifest.webmanifest
 
+      # AGENT.md §3.3 — `scripts/build/pruneExportFullSegments.mjs` deletes the
+      # `__next._full.txt` RSC segments during `build:export` (they are a
+      # byte-identical duplicate of `<route>.txt` that the client router never
+      # requests — `grep -rn "_full" node_modules/next/dist/{client,shared}/` is
+      # 0 hits). The script itself fails the build if the installed Next ever
+      # starts referencing the segment, or if a `_full` is no longer identical to
+      # its route payload. This step is the other half: it proves the prune
+      # actually ran in THIS artifact, so a silently-disabled prune cannot ship a
+      # silently-inflated one.
+      - name: Assert the _full segment prune ran
+        run: |
+          if find out -name '__next._full.txt' -print -quit | grep -q .; then
+            echo "::error::__next._full.txt survived the export prune — artifact is ~473 MiB larger than it needs to be"
+            find out -name '__next._full.txt' | head
+            exit 1
+          fi
+          # The load-bearing sibling must still be there: the client router
+          # 404s (and rejects the route cache entry) without __next._tree.txt.
+          find out -name '__next._tree.txt' -print -quit | grep -q .
+
+      # Size ledger for the artifact. The baseline this branch inherited was
+      # 2,079.1 MiB uncompressed / 627.9 MiB zipped (artifact 10928452044); the
+      # message-catalogue hoist plus the _full prune is what moved it. Kept in the
+      # log so the next size investigation starts from a measured number.
+      - name: Report export size
+        run: |
+          echo "out/ total: $(du -sh out | cut -f1)"
+          echo "files:      $(find out -type f | wc -l)"
+          echo "routes:     $(find out -name 'index.html' | wc -l)"
+          du -sh out/_next 2>/dev/null || true
+          du -ch $(find out -name '*.txt') 2>/dev/null | tail -1 || true
+
       # next.config.mjs `headers()` is INERT under `output: "export"` — the SPA
       # ships with NO server response headers (no CSP, no frame-ancestors). The
       # operator serving `out/` owns them. This assert pins that contract: the

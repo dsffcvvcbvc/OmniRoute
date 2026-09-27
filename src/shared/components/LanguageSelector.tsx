@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { LANGUAGES } from "@/i18n/config";
 import type { Locale } from "@/i18n/config";
 import { useLocale } from "next-intl";
-import { persistLocale } from "@/shared/lib/persistLocale";
+import { setClientLocale } from "@/i18n/localeChange";
+import { isAisixSpaExport } from "@/shared/utils/aisixEndpoints";
 
 function CountryFlag({ emoji, alt }: { emoji: string; alt: string }) {
   const [error, setError] = useState(false);
@@ -57,9 +58,16 @@ export default function LanguageSelector() {
       return;
     }
 
-    persistLocale(code);
+    setClientLocale(code);
     setOpen(false);
-    router.refresh();
+    // AGENT.md §3.3 — in the AISIX static SPA export there is no server to
+    // re-render: every route's RSC payload is a build-time artifact of
+    // DEFAULT_LOCALE, so `router.refresh()` would re-download the same English
+    // payload and the selection would silently do nothing. There the catalogue
+    // swap is driven client-side by `setClientLocale` (see SpaIntlProvider).
+    // A `output: "standalone"` server negotiates the locale per request from
+    // the cookie this just wrote, so it still needs the refresh.
+    if (!isAisixSpaExport()) router.refresh();
   };
 
   return (

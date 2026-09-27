@@ -19,6 +19,7 @@ import {
   stubDashboardPages,
   restoreDashboardPages,
 } from "./backendOnlyPages.mjs";
+import { pruneExportFullSegments, resolveExportOutDir } from "./pruneExportFullSegments.mjs";
 
 export { shouldBuildStandalone } from "./backendOnlyPages.mjs";
 
@@ -438,6 +439,24 @@ export async function main() {
     await resetStandaloneOutput(projectRoot);
 
     const result = await runNextBuild();
+
+    // AGENT.md §3.3 — `out/` is finished the moment `next build` exits 0, so the
+    // export-only post-processing belongs here rather than in the CI workflow:
+    // `npm run build:export` then produces the same artifact locally and in CI,
+    // and the guards below fail the BUILD (not just one pipeline). Runs only on
+    // the export profile — the `output: "standalone"` build has no segment
+    // files and no client router fetching them.
+    if (result.code === 0 && process.env.OMNIROUTE_EXPORT === "1") {
+      const outDir = resolveExportOutDir(process.env);
+      const pruned = await pruneExportFullSegments({ projectRoot, outDir });
+      if (pruned.removed > 0) {
+        console.log(
+          `[build-next-isolated] Export prune — removed ${pruned.removed} unreferenced ` +
+            `__next._full.txt duplicates (${(pruned.bytes / 1048576).toFixed(1)} MiB)`
+        );
+      }
+    }
+
     const standaloneDir = path.join(distDir, "standalone");
     if (result.code === 0 && (await exists(standaloneDir)) && shouldBuildStandalone()) {
       try {

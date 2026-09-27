@@ -413,6 +413,100 @@ const EXCLUDED_DYNAMIC_ROUTES = [
   "src/app/docs/[...slug]/page.tsx",
 ];
 
+test("the export build never hands the message catalogue to a Client Component", () => {
+  // AGENT.md §3.3 — the ~1.9 GiB payload bug.
+  //
+  // `<NextIntlClientProvider messages={…}>` rendered by a SERVER component is a
+  // prop crossing the RSC boundary, so the whole next-intl tree is re-serialized
+  // into the flight payload of every prerendered route. Measured on artifact
+  // `10928452044`: a single 690,493-byte English catalogue row was byte-identical
+  // across 359 of 360 inspected `<route>.txt` files, plus 515.6 MiB of the same
+  // bytes inside the `<route>.html` `self.__next_f` script bodies.
+  //
+  // The fix is structural — the catalogue reaches the provider as an IMPORT inside
+  // a Client Component, because an import between two Client Components is never
+  // serialized while a Server-Component prop always is. Re-adding a `messages`
+  // prop is a one-line change that costs 1.9 GiB in CI minutes, so it has to fail
+  // HERE, statically, instead. Each assertion below names the exact edit it
+  // catches and fails on its own.
+  const layout = fs.readFileSync(path.join(APP_DIR, "layout.tsx"), "utf8");
+  const providerSource = fs.readFileSync(
+    path.join(REPO_ROOT, "src", "i18n", "SpaIntlProvider.tsx"),
+    "utf8"
+  );
+
+  assert.match(
+    layout,
+    /isAisixSpaExport\(\)/,
+    'src/app/layout.tsx must branch on the SPA export marker — the `output:"standalone"`\n' +
+      "build keeps server-negotiated messages per request, the static export cannot."
+  );
+  assert.match(
+    layout,
+    /isSpaExport\s*\?[\s\S]{0,200}?<SpaIntlProvider\s+locale=\{locale\}>/,
+    "the export branch must render <SpaIntlProvider locale={locale}>, the component that\n" +
+      "owns the catalogue itself"
+  );
+  assert.doesNotMatch(
+    layout,
+    /<SpaIntlProvider[^>]*\smessages=/,
+    "<SpaIntlProvider> must not receive a `messages` prop — that is precisely the\n" +
+      "RSC-boundary serialization this provider exists to avoid."
+  );
+  assert.match(
+    providerSource,
+    /^"use client";/m,
+    "src/i18n/SpaIntlProvider.tsx must be a Client Component: that is what keeps the\n" +
+      "catalogue out of the flight payload."
+  );
+  assert.match(
+    providerSource,
+    /import enCatalog from "@\/i18n\/messages\/en\.json"/,
+    "the provider must import the catalogue as a module, so the server render pass and\n" +
+      "hydration both resolve it synchronously (no Suspense, no untranslated flash)."
+  );
+  assert.doesNotMatch(
+    providerSource,
+    /next-intl\/server|next\/headers|@\/i18n\/request/,
+    "the provider must not reach the request config: it pulls `next/headers` into the\n" +
+      "CLIENT graph, which cannot be resolved and would fail the export build."
+  );
+});
+
+test("both locale writers drive the client channel and skip the server-only refresh in the export", () => {
+  // `persistLocale()` + `router.refresh()` is the ONLY contract a
+  // `output: \"standalone\"` server can honour: there is a server to re-render. A
+  // static export has none, so `router.refresh()` re-downloads the very same
+  // English payload and the selection silently does nothing. Both writers must
+  // therefore announce the locale on the client and skip the refresh when the
+  // bundle is the SPA.
+  for (const relPath of [
+    "src/shared/components/LanguageSelector.tsx",
+    "src/shared/components/LocaleAutoDetect.tsx",
+  ]) {
+    const src = fs.readFileSync(path.join(REPO_ROOT, relPath), "utf8");
+
+    assert.match(
+      src,
+      /setClientLocale\(/,
+      `${relPath} must write the locale through setClientLocale() (cookie + localStorage\n` +
+        "plus the client catalogue swap), not through persistLocale() alone."
+    );
+    assert.doesNotMatch(
+      src,
+      /import\s*\{[^}]*persistLocale[^}]*\}\s*from/,
+      `${relPath} must go through setClientLocale(); a bare persistLocale() leaves the\n` +
+        "rendered catalogue on the old locale."
+    );
+    assert.match(
+      src,
+      /isAisixSpaExport\(\)/,
+      `${relPath} must consult isAisixSpaExport() to decide whether router.refresh() is\n` +
+        "meaningful — in the export it re-fetches an identical payload."
+    );
+  }
+});
+
 test("the i18n request config resolves a locale without entering the request scope when exporting", () => {
   // `src/i18n/request.ts` backs `getLocale()` / `getMessages()` /`getTranslations()`,
   // and the ROOT layout calls all three — so this module runs for every page the

@@ -3,7 +3,9 @@ import { ThemeProvider } from "@/shared/components/ThemeProvider";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getLocale, getTranslations } from "next-intl/server";
 import { RTL_LOCALES } from "@/i18n/config";
-import { normalizeComplianceEventTypes } from "@/i18n/request";
+import { normalizeComplianceEventTypes } from "@/i18n/catalog";
+import { SpaIntlProvider } from "@/i18n/SpaIntlProvider";
+import { isAisixSpaExport } from "@/shared/utils/aisixEndpoints";
 import { getRootLayoutSettings } from "@/lib/db/rootLayoutSettings";
 import type { Viewport } from "next";
 import { PwaRegister } from "@/shared/components/PwaRegister";
@@ -50,8 +52,35 @@ export async function generateMetadata() {
 export default async function RootLayout({ children }) {
   const locale = await getLocale();
   const t = await getTranslations("sidebar");
-  const messages = normalizeComplianceEventTypes((await getMessages()) as Record<string, unknown>);
+  // AGENT.md §3.3 — the AISIX SPA export must NOT hand the catalogue to a
+  // Client Component. `messages` is a prop crossing the RSC boundary, so it is
+  // re-serialized into the flight payload of every prerendered route (measured:
+  // a 690,493-byte EN catalogue row byte-identical across 359 of 360 inspected
+  // `<route>.txt` files, plus 515.6 MiB of the same bytes inside the
+  // `<route>.html` script bodies — ~1.9 GiB of a 2.03 GiB artifact). In this
+  // build `SpaIntlProvider` imports the catalogue as a client-side module
+  // instead, so it is downloaded once as a content-hashed chunk and never
+  // serialized per route.
+  //
+  // `OMNIROUTE_EXPORT` is OR-ed in because it is the raw build-env the export
+  // script sets and is always readable server-side, while the
+  // `NEXT_PUBLIC_AISIX_SPA_EXPORT` marker depends on `next.config.mjs`'s `env`
+  // inlining reaching the server compilation. A silent "neither" here would
+  // ship the un-hoisted 2 GiB artifact, so the two independent signals are both
+  // honoured. The `output: "standalone"` build sets neither and is unchanged.
+  const isSpaExport = isAisixSpaExport() || process.env.OMNIROUTE_EXPORT === "1";
+  const messages = isSpaExport
+    ? undefined
+    : normalizeComplianceEventTypes((await getMessages()) as Record<string, unknown>);
   const isRtl = RTL_LOCALES.includes(locale as (typeof RTL_LOCALES)[number]);
+
+  const app = (
+    <BasePathNetworkProvider>
+      <PwaRegister />
+      <LocaleAutoDetect />
+      <ThemeProvider>{children}</ThemeProvider>
+    </BasePathNetworkProvider>
+  );
 
   return (
     <html lang={locale} dir={isRtl ? "rtl" : "ltr"} suppressHydrationWarning>
@@ -136,13 +165,13 @@ export default async function RootLayout({ children }) {
         >
           {t("skipToContent")}
         </a>
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <BasePathNetworkProvider>
-            <PwaRegister />
-            <LocaleAutoDetect />
-            <ThemeProvider>{children}</ThemeProvider>
-          </BasePathNetworkProvider>
-        </NextIntlClientProvider>
+        {isSpaExport ? (
+          <SpaIntlProvider locale={locale}>{app}</SpaIntlProvider>
+        ) : (
+          <NextIntlClientProvider locale={locale} messages={messages}>
+            {app}
+          </NextIntlClientProvider>
+        )}
       </body>
     </html>
   );
