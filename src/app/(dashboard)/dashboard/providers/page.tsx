@@ -59,6 +59,7 @@ const ImportProvidersFromFileModal = dynamic(
 );
 import NoAuthProvidersSection from "./components/NoAuthProvidersSection";
 import PresetProvidersSection from "./components/PresetProvidersSection";
+import ProviderKeysSection from "./components/ProviderKeysSection";
 import HighlightableProviderCard from "./components/HighlightableProviderCard";
 import ProviderCountBadge from "./components/ProviderCountBadge";
 import ProviderSummaryCard from "./components/ProviderSummaryCard";
@@ -1848,6 +1849,15 @@ function ProvidersPageContent() {
             by `:3001/admin/v1/preset_providers`, not by the local catalog, and
             degrades to its own honest empty state when the core has no catalog. */}
         <PresetProvidersSection connections={connections} />
+
+        {/* Upstream credentials the gateway stores and dispatches with, managed
+            through `GET|POST /admin/v1/provider_keys` and
+            `GET|PATCH|DELETE /admin/v1/provider_keys/:id`. A component of this
+            page rather than its own route: the static export inventory
+            (tests/unit/dashboard-spa-static-export.test.ts) pins the set of
+            dynamic-segment routes, and a CRUD surface that reads its collection
+            at runtime has no honest `generateStaticParams()`. */}
+        <ProviderKeysSection />
 
         <AddCompatibleProviderModal
           isOpen={showAddCompatibleModal}
