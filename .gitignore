@@ -111,6 +111,9 @@ open-sse/test/*
 test-results/
 playwright-report/
 blob-report/
+# The AISIX dashboard-SPA suite's own scrubbed JSON evidence. It describes a
+# live deployment, so it is a run artefact, never a tracked file.
+aisix-spa-evidence/
 /cloud/
 .tmp/
 
