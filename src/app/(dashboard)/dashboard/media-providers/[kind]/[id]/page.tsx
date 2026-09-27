@@ -16,7 +16,18 @@ interface PageProps {
  * Individual provider page for a media-service provider.
  * Validates both kind and id; 404 if either is unknown or the provider
  * does not declare the requested kind.
+ *
+ * AGENT.md §3.3: `output: "export"` refuses a dynamic segment with no
+ * `generateStaticParams()` (Next E1452). The full set IS derivable from
+ * `AI_PROVIDERS` × `MEDIA_KINDS`, but it is a several-hundred-page cross
+ * product, and each page would be emitted only to be fetched-and-discarded by
+ * a client that renders a single provider's live state. Declaring the route
+ * dynamic states the truth — it is a per-provider deep link with no
+ * build-time representation — instead of inflating the export with hundreds
+ * of placeholder shells. The `output: "standalone"` build is unaffected.
  */
+export const dynamic = "force-dynamic";
+
 export default async function MediaProviderDetailPage({ params }: PageProps) {
   const { kind, id } = await params;
 

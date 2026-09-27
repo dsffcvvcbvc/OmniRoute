@@ -1,5 +1,21 @@
 import type { MetadataRoute } from "next";
 
+/**
+ * AGENT.md §3.3: `output: "export"` throws E301 ("export const dynamic =
+ * "force-static"/export const revalidate not configured on route
+ * /manifest.webmanifest") for a metadata route that is not static-gen enabled.
+ *
+ * `app/manifest.ts` is compiled by `next-metadata-route-loader` into a Route
+ * Handler (`GET /manifest.webmanifest`). The loader re-exports every named
+ * export of this file except `default`, so this config reaches the route
+ * module and satisfies the export gate.
+ *
+ * It is also simply true: the manifest below is a compile-time constant — it
+ * reads no request, no database and no environment. The Web App Manifest is a
+ * static discovery document by specification.
+ */
+export const dynamic = "force-static";
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "OmniRoute AI 网关",

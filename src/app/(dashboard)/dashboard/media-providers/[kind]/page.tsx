@@ -17,7 +17,16 @@ interface PageProps {
  *
  * Lists all AI providers that declare the given serviceKind.
  * Returns 404 for unknown kinds.
+ *
+ * AGENT.md §3.3: `output: "export"` refuses a dynamic segment with no
+ * `generateStaticParams()` (Next E1452). The media kinds are a build-time
+ * literal union, so the complete parameter list is available at build time —
+ * one page per kind that really exists, no placeholders.
  */
+export function generateStaticParams() {
+  return MEDIA_KINDS.map((kind) => ({ kind }));
+}
+
 export default async function MediaProviderKindPage({ params }: PageProps) {
   const { kind } = await params;
 

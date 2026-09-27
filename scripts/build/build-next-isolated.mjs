@@ -81,6 +81,17 @@ export function getTransientBuildPaths(rootDir = projectRoot, env = process.env)
       backupPath: path.join(backupRoot, "embed"),
     });
 
+    // The docs full-text search endpoint. It is a GET Route Handler, so E301
+    // applies — but it cannot honestly be marked static-gen: it answers a
+    // per-request `?query=`, and force-static would bake ONE build-time response
+    // (an empty index) into out/ instead of a working search. The rest of the
+    // docs tree stays in the export build; only the request handler moves.
+    paths.push({
+      label: "docs full-text search API (per-request, not exportable)",
+      sourcePath: path.join(rootDir, "src", "app", "docs", "api"),
+      backupPath: path.join(backupRoot, "docs-api"),
+    });
+
     // Root-level server endpoints with no static representation. Each is
     // force-dynamic BY DESIGN (E278) or per-request (E301) — and that design
     // is load-bearing for the live server, so flipping them to force-static to

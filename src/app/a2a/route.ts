@@ -18,6 +18,26 @@ import { A2A_SKILL_HANDLERS, executeA2ATaskWithState } from "@/lib/a2a/taskExecu
 import { getSettings } from "@/lib/db/settings";
 import { authenticateA2ARequest, resolveA2AOwner } from "@/lib/a2a/authenticate";
 
+/**
+ * AGENT.md §3.3: this endpoint is per-request BY CONSTRUCTION — it authenticates
+ * the bearer token, dispatches a JSON-RPC method and (for `message/stream`)
+ * returns an open SSE stream. There is nothing here to cache and no static
+ * representation of it, so it declares `revalidate = 0`.
+ *
+ * That is also what unblocks the SPA export build, and it is the only segment
+ * config available here. `/a2a` exports only POST/OPTIONS, so it is exempt
+ * from the E301 static-gen gate — which meant `next build` scheduled it for
+ * prerendering, where the route module then aborts with E582 ("Route is
+ * configured with methods that cannot be statically generated"). With
+ * `revalidate = 0` the export build never schedules it and never emits a bogus
+ * `out/a2a` artifact. (`dynamic = "force-dynamic"` is NOT an option: Next
+ * rejects that outright on a Route Handler under `output: "export"` — E278.)
+ *
+ * This is a no-op for the `output: "standalone"` build, which is what serves
+ * this endpoint: a POST-only JSON-RPC route was already rendered per request.
+ */
+export const revalidate = 0;
+
 // ============ A2A v1.0 ↔ v0.3 compatibility layer ============
 // A2A 1.0 renamed the JSON-RPC methods (message/send → SendMessage,
 // message/stream → SendStreamingMessage) and changed the synchronous
