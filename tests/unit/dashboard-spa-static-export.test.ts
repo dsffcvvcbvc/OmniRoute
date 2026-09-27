@@ -434,6 +434,48 @@ test("the export locale resolver loads the default-locale message tree with no r
   );
 });
 
+test("the agent-card base URL never reads the request origin when exporting (Next E575)", async () => {
+  // Under `output: "export"` Next pins a Route Handler's dynamic mode to
+  // `error` and passes a request proxy that THROWS on `nextUrl.origin`. Both
+  // agent-card routes are `force-static` and DO prerender, so an unguarded read
+  // here aborts the very first page of the export (run #6 died on
+  // `/.well-known/agent-card.json` with exactly that error).
+  const source = fs.readFileSync(path.join(REPO_ROOT, "src", "lib", "wellKnown.ts"), "utf8");
+  const guard = source.indexOf('process.env.OMNIROUTE_EXPORT === "1"');
+  const read = source.indexOf("request?.nextUrl?.origin");
+
+  assert.notStrictEqual(guard, -1, "src/lib/wellKnown.ts must guard on OMNIROUTE_EXPORT=1");
+  assert.ok(
+    guard < read,
+    "The OMNIROUTE_EXPORT guard must come before the `request.nextUrl.origin` read.\n" +
+      `Found the guard at offset ${guard} and the read at offset ${read}.`
+  );
+
+  // Behavioural half: with the export profile set and a request whose origin
+  // read would throw, the resolver must return the build-time base URL.
+  const previous = { export: process.env.OMNIROUTE_EXPORT, base: process.env.OMNIROUTE_BASE_URL };
+  process.env.OMNIROUTE_EXPORT = "1";
+  delete process.env.OMNIROUTE_BASE_URL;
+  try {
+    const { getBaseUrl } = await import("../../src/lib/wellKnown.ts");
+    const hostileRequest = {
+      get nextUrl(): never {
+        throw new Error("nextUrl.origin is not readable under output: export (E575)");
+      },
+    };
+    assert.strictEqual(getBaseUrl(hostileRequest as never), "http://localhost:20128");
+
+    // An explicit build-time override still wins.
+    process.env.OMNIROUTE_BASE_URL = "https://gateway.example.com";
+    assert.strictEqual(getBaseUrl(hostileRequest as never), "https://gateway.example.com");
+  } finally {
+    if (previous.export === undefined) delete process.env.OMNIROUTE_EXPORT;
+    else process.env.OMNIROUTE_EXPORT = previous.export;
+    if (previous.base === undefined) delete process.env.OMNIROUTE_BASE_URL;
+    else process.env.OMNIROUTE_BASE_URL = previous.base;
+  }
+});
+
 test("the inventory of dynamic-segment pages in the export build is still accurate", () => {
   const prerendered = [];
   const declared = [];

@@ -17,9 +17,11 @@ import { getBaseUrl } from "@/lib/wellKnown";
 // AGENT.md §3.3: `output: "export"` refuses any Route Handler that is not
 // static-gen enabled (Next E301). The card is a pure discovery document with no
 // per-request state, so it prerenders to `out/.well-known/agent.json`.
-// `getBaseUrl()` and `getFleetSkills()` are both build-safe by construction:
-// the former falls back to OMNIROUTE_BASE_URL / the default local origin when
-// there is no request, and the latter returns `[]` when the hub is unset.
+// `getFleetSkills()` returns `[]` when the hub is unset, and `getBaseUrl()`
+// resolves a build-time origin under `OMNIROUTE_EXPORT=1` — it must not read
+// `request`, because the export build hands the handler a proxy that throws on
+// `nextUrl.origin` (Next E575). On the live server both still see the real
+// request.
 export const dynamic = "force-static";
 
 const PACKAGE_VERSION = process.env.npm_package_version || "1.8.1";

@@ -20,7 +20,11 @@ import { getBaseUrl } from "@/lib/wellKnown";
 // static-gen enabled (Next E301). The v1.0 card is a pure discovery document
 // with no per-request state, so it prerenders to
 // `out/.well-known/agent-card.json` — see the v0.3 card in ./agent.json/route.ts
-// for why the request-less `getBaseUrl()`/`getFleetSkills()` calls are safe.
+// for why the `getBaseUrl()`/`getFleetSkills()` calls are safe with no request.
+// The `request` argument is still threaded through for the live server, where
+// the card advertises the origin it was actually fetched from; `getBaseUrl()`
+// never reads it under `OMNIROUTE_EXPORT=1`, because the export build hands the
+// handler a proxy that throws on `nextUrl.origin` (Next E575).
 export const dynamic = "force-static";
 
 const PACKAGE_VERSION = process.env.npm_package_version || "1.8.1";
