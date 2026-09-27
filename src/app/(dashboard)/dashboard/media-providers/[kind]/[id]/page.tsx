@@ -17,16 +17,30 @@ interface PageProps {
  * Validates both kind and id; 404 if either is unknown or the provider
  * does not declare the requested kind.
  *
- * AGENT.md §3.3: `output: "export"` refuses a dynamic segment with no
- * `generateStaticParams()` (Next E1452). The full set IS derivable from
- * `AI_PROVIDERS` × `MEDIA_KINDS`, but it is a several-hundred-page cross
- * product, and each page would be emitted only to be fetched-and-discarded by
- * a client that renders a single provider's live state. Declaring the route
- * dynamic states the truth — it is a per-provider deep link with no
- * build-time representation — instead of inflating the export with hundreds
- * of placeholder shells. The `output: "standalone"` build is unaffected.
+ * AGENT.md §3.3: `output: "export"` hard-fails on a dynamic route with no
+ * `generateStaticParams()` (Next E1452) and, at the export phase, on a page
+ * declared `force-dynamic` — there is no runtime server to render it. The
+ * complete parameter set IS known at build time, so this returns it rather
+ * than a placeholder: exactly the (kind, provider) pairs this page's own
+ * validation below accepts, derived from the same `AI_PROVIDERS` ×
+ * `MEDIA_KINDS` inputs and the same `resolveProviderServiceKinds` union the
+ * listing page filters on. That is 163 pairs, so the `notFound()` guards stay
+ * as the live-server contract for a hand-typed unknown id rather than
+ * prerender-time behaviour.
  */
-export const dynamic = "force-dynamic";
+export function generateStaticParams() {
+  return MEDIA_KINDS.flatMap((kind) =>
+    Object.values(AI_PROVIDERS)
+      .filter((provider) => {
+        const entry = provider as Record<string, unknown> & {
+          id: string;
+          serviceKinds?: string[];
+        };
+        return resolveProviderServiceKinds(entry.id, entry.serviceKinds).includes(kind);
+      })
+      .map((provider) => ({ kind, id: (provider as { id: string }).id }))
+  );
+}
 
 export default async function MediaProviderDetailPage({ params }: PageProps) {
   const { kind, id } = await params;

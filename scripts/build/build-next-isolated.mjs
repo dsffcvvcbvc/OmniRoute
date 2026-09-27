@@ -81,16 +81,53 @@ export function getTransientBuildPaths(rootDir = projectRoot, env = process.env)
       backupPath: path.join(backupRoot, "embed"),
     });
 
-    // The docs full-text search endpoint. It is a GET Route Handler, so E301
-    // applies — but it cannot honestly be marked static-gen: it answers a
-    // per-request `?query=`, and force-static would bake ONE build-time response
-    // (an empty index) into out/ instead of a working search. The rest of the
-    // docs tree stays in the export build; only the request handler moves.
+    // The docs site. It is a SERVER feature end to end and has no static form:
+    // `docs/[...slug]` is `force-dynamic` by design (it renders per request so
+    // the docs stay Bun-build-safe) and reads the locale cookie, while
+    // `docs/api/search` is a GET Route Handler answering a per-request
+    // `?query=` — marking it `force-static` would bake one empty build-time
+    // response into out/ instead of a working search. Together they are the
+    // same "no static representation" case as the API surface above, and the
+    // export build moves the tree aside. AISIX serves the real docs on its own
+    // port.
     paths.push({
-      label: "docs full-text search API (per-request, not exportable)",
-      sourcePath: path.join(rootDir, "src", "app", "docs", "api"),
-      backupPath: path.join(backupRoot, "docs-api"),
+      label: "docs site (force-dynamic + per-request search API, not exportable)",
+      sourcePath: path.join(rootDir, "src", "app", "docs"),
+      backupPath: path.join(backupRoot, "docs"),
     });
+
+    // Deep links whose parameter is unknowable at build time, so no honest
+    // `generateStaticParams()` exists. `output: "export"` hard-fails on a
+    // dynamic route without one (Next E1452) and, at the export phase, on a
+    // page declared `force-dynamic` (no runtime server to render it). A
+    // placeholder list would emit one shell per placeholder and 404 every real
+    // id in the static host, so the route is moved aside instead:
+    //   - combos/[id]: a row in the operator's own database.
+    //   - plugins/[name]/config: an operator-installed plugin, runtime registry.
+    //   - connect/codex/[token]: a single-use share token, one page per token
+    //     would be both unbounded and a credential in the artifact.
+    // Every other dynamic route in the export build DOES return its real
+    // parameter list (CLI_TOOLS, MEDIA_KINDS, AI_PROVIDERS) and is prerendered.
+    for (const [label, relative] of [
+      [
+        "combo deep link (runtime database id, not exportable)",
+        ["(dashboard)", "dashboard", "combos", "[id]"],
+      ],
+      [
+        "plugin config deep link (runtime plugin registry, not exportable)",
+        ["(dashboard)", "dashboard", "plugins", "[name]", "config"],
+      ],
+      [
+        "Codex connect share link (single-use token, not exportable)",
+        ["connect", "codex", "[token]"],
+      ],
+    ]) {
+      paths.push({
+        label,
+        sourcePath: path.join(rootDir, "src", "app", ...relative),
+        backupPath: path.join(backupRoot, ...relative.map((s) => s.replace(/[\[\]()]/g, "_"))),
+      });
+    }
 
     // Root-level server endpoints with no static representation. Each is
     // force-dynamic BY DESIGN (E278) or per-request (E301) — and that design

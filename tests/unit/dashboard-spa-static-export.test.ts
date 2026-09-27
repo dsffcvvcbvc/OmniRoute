@@ -202,13 +202,34 @@ test("every metadata file convention in the export build is static-gen enabled (
   );
 });
 
-test("every dynamic-segment page in the export build declares how it is resolved (Next E1452)", () => {
-  // `output: "export"` refuses a dynamic segment that is neither given a
-  // `generateStaticParams()` nor declared uncacheable. `force-dynamic` is the
-  // declaration that matters: Next normalises it to `revalidate: 0` for the
-  // export, which removes the page from the prerender schedule instead of
-  // aborting the whole build. This is also how the pre-existing
-  // `docs/[...slug]` and `connect/codex/[token]` pages stay in the export build.
+test("no page the export build loads is declared force-dynamic", () => {
+  // The mirror of the E278 rule for Route Handlers, and the one that cost run
+  // #7: Next's export phase hard-aborts on it —
+  //   'Page with `dynamic = "force-dynamic"` couldn\'t be exported.
+  //   `output: "export"` requires all pages be renderable statically because
+  //   there is no runtime server to dynamically render routes…'
+  // Every page in the export build must therefore be prerenderable: a dynamic
+  // segment needs a real `generateStaticParams()`, and a route that genuinely
+  // cannot be prerendered belongs in getTransientBuildPaths() instead.
+  const offenders = APP_SOURCE.filter((file) => path.basename(file).startsWith("page."))
+    .filter((file) => !isExcludedFromExport(file))
+    .filter((file) => DYNAMIC_CONFIG.exec(fs.readFileSync(file, "utf8"))?.[1] === "force-dynamic")
+    .map(rel);
+
+  assert.deepEqual(
+    offenders,
+    [],
+    "A force-dynamic page cannot be exported (Next aborts the export phase).\n" +
+      "Either return the REAL parameter set from generateStaticParams(), or move the\n" +
+      "route into getTransientBuildPaths() in scripts/build/build-next-isolated.mjs."
+  );
+});
+
+test("every dynamic-segment page the export build loads has a real parameter list (Next E1452)", () => {
+  // `output: "export"` refuses a dynamic segment that has no
+  // `generateStaticParams()` — and there is no "just mark it dynamic" escape:
+  // `dynamic = "force-dynamic"` trips the export-phase abort instead. So a
+  // dynamic route is either in this build with an honest list, or out of it.
   const offenders = [];
   for (const file of APP_SOURCE) {
     if (!path.basename(file).startsWith("page.")) continue;
@@ -217,9 +238,7 @@ test("every dynamic-segment page in the export build declares how it is resolved
     if (!ANY_DYNAMIC_SEGMENT.test(path.relative(APP_DIR, p).split(path.sep).join("/"))) continue;
 
     const src = fs.readFileSync(file, "utf8");
-    const dynamic = DYNAMIC_CONFIG.exec(src)?.[1];
-    const resolved = /export\s+(?:async\s+)?function\s+generateStaticParams\b/.test(src);
-    if (!resolved && dynamic !== "force-dynamic" && !REVALIDATE_CONFIG.test(src)) {
+    if (!/export\s+(?:async\s+)?function\s+generateStaticParams\b/.test(src)) {
       offenders.push(rel(file));
     }
   }
@@ -228,9 +247,9 @@ test("every dynamic-segment page in the export build declares how it is resolved
     offenders,
     [],
     'output:"export" hard-fails on a dynamic segment with no generateStaticParams()\n' +
-      "(Next E1452). Either return the REAL parameter set (a build-time constant\n" +
-      "list, as the CLI-tool and media-kind pages do) or declare the route\n" +
-      '`dynamic = "force-dynamic"` when the parameter is a runtime id.'
+      "(Next E1452). Return the REAL parameter set — a build-time constant list, as\n" +
+      "the CLI-tool, media-provider and provider pages do — or, when the id is a\n" +
+      "runtime value, move the route into getTransientBuildPaths()."
   );
 });
 
@@ -344,26 +363,26 @@ test("every client component reading useSearchParams sits behind a Suspense boun
 });
 
 /**
- * Every dynamic-segment page in the export build, and HOW it is resolved.
+ * Every dynamic-segment route, split by how the static export resolves it.
  *
  * Next documents "Dynamic Routes without `generateStaticParams()`" as
- * unsupported under `output: "export"`. There are exactly two honest ways out,
- * and every route below takes one of them.
+ * unsupported under `output: "export"`, and there is no third option: a page
+ * declared `force-dynamic` is rejected just as hard, at the export phase
+ * ("Page with `dynamic = "force-dynamic"` couldn't be exported"), because the
+ * output format has no runtime server. So each route below is in one group or
+ * the other.
  *
- * PRERENDERED — the parameter is a small build-time CONSTANT, so the page
- * returns the real list. `CLI_TOOLS` and `MEDIA_KINDS` are literal registries,
- * so each emitted page corresponds to a target that really exists: no
- * placeholder ids, and no real id 404s against the prerendered set.
+ * PRERENDERED — the parameter set is a build-time CONSTANT, so the page returns
+ * the real list and every emitted page corresponds to a target that genuinely
+ * exists. No placeholder ids, and no real id missing from `out/`.
  *
- * DYNAMIC — the parameter is a runtime identifier (a database row, an
- * operator-installed plugin, a one-time share token) or a cross product far too
- * large to be worth emitting. There is no honest list to return, so the page
- * declares `dynamic = "force-dynamic"`, which Next normalises to
- * `revalidate: 0` for the export and keeps it off the prerender schedule. The
- * route is then simply absent from `out/` — a real, reported limitation of the
- * static bundle, not a build failure. Giving these a `generateStaticParams()`
- * would be worse than leaving them out: a placeholder list emits an HTML page
- * per placeholder and 404s every real id in the static host.
+ * EXCLUDED — the parameter is a runtime value (a database row, an
+ * operator-installed plugin, a single-use share token) or the page is
+ * request-scoped by design, so there is no honest list to return. Those trees
+ * move aside for the export build; see `getTransientBuildPaths()` in
+ * scripts/build/build-next-isolated.mjs. The routes are a real, reported gap in
+ * the static bundle — not a silent stub — and the `output: "standalone"` build,
+ * which is what actually serves them, is untouched.
  *
  * This is an inventory, not an endorsement. It is asserted so that ADDING a
  * tenth dynamic route fails here — pinned to one group or the other — instead
@@ -375,16 +394,22 @@ const PRERENDERED_DYNAMIC_ROUTES = [
   "src/app/(dashboard)/dashboard/cli-agents/[id]/page.tsx",
   // 26 code tools, from the same registry.
   "src/app/(dashboard)/dashboard/cli-code/[id]/page.tsx",
+  // 163 (kind, provider) pairs, from `MEDIA_KINDS` x `AI_PROVIDERS`.
+  "src/app/(dashboard)/dashboard/media-providers/[kind]/[id]/page.tsx",
   // 10 media kinds, from the `MediaKind` literal union.
   "src/app/(dashboard)/dashboard/media-providers/[kind]/page.tsx",
+  // 358 providers, from the `AI_PROVIDERS` catalog.
+  "src/app/(dashboard)/dashboard/providers/[id]/page.tsx",
 ];
 
-const DYNAMIC_DECLARED_ROUTES = [
+const EXCLUDED_DYNAMIC_ROUTES = [
+  // A row in the operator's own database.
   "src/app/(dashboard)/dashboard/combos/[id]/page.tsx",
-  "src/app/(dashboard)/dashboard/media-providers/[kind]/[id]/page.tsx",
+  // An operator-installed plugin, from the runtime plugin registry.
   "src/app/(dashboard)/dashboard/plugins/[name]/config/page.tsx",
-  "src/app/(dashboard)/dashboard/providers/[id]/page.tsx",
+  // A single-use share token.
   "src/app/connect/codex/[token]/page.tsx",
+  // The docs site is force-dynamic by design and reads the locale cookie.
   "src/app/docs/[...slug]/page.tsx",
 ];
 
@@ -476,40 +501,44 @@ test("the agent-card base URL never reads the request origin when exporting (Nex
   }
 });
 
-test("the inventory of dynamic-segment pages in the export build is still accurate", () => {
+test("the inventory of dynamic-segment routes is still accurate", () => {
   const prerendered = [];
-  const declared = [];
+  const notPrerendered = [];
 
   for (const file of walk(APP_DIR)) {
     if (!path.basename(file).startsWith("page.")) continue;
     if (!/\.(ts|tsx)$/.test(file)) continue;
-    const p = path.resolve(file);
-    if (isExcludedFromExport(p)) continue;
-    if (!ANY_DYNAMIC_SEGMENT.test(path.relative(APP_DIR, p).split(path.sep).join("/"))) continue;
+    const relative = path.relative(APP_DIR, path.resolve(file)).split(path.sep).join("/");
+    if (!ANY_DYNAMIC_SEGMENT.test(relative)) continue;
 
-    const src = fs.readFileSync(file, "utf8");
-    if (/export\s+(?:async\s+)?function\s+generateStaticParams\b/.test(src))
+    const p = path.resolve(file);
+    if (isExcludedFromExport(p)) {
+      notPrerendered.push(rel(file));
+    } else if (
+      /export\s+(?:async\s+)?function\s+generateStaticParams\b/.test(fs.readFileSync(file, "utf8"))
+    ) {
       prerendered.push(rel(file));
-    else declared.push(rel(file));
+    }
   }
 
   assert.deepEqual(
     prerendered.sort(),
     [...PRERENDERED_DYNAMIC_ROUTES].sort(),
-    "The set of PRERENDERED dynamic-segment pages changed. A new one is a fresh\n" +
-      'output:"export" obligation — give it a real generateStaticParams() and list\n' +
-      "it here, or move it to DYNAMIC_DECLARED_ROUTES with a reason.\n" +
-      "A REMOVED one means it is no longer in the export build (moved into\n" +
-      "getTransientBuildPaths(), or its segment became static) — drop it here."
+    "The set of PRERENDERED dynamic-segment routes changed. A new one is a fresh\n" +
+      'output:"export" obligation — give it a real generateStaticParams() and list it\n' +
+      "here, or move it to EXCLUDED_DYNAMIC_ROUTES with a reason.\n" +
+      "A REMOVED one means it is now excluded from the export build (or its segment\n" +
+      "became static) — move it to the other list and update the comment above."
   );
 
   assert.deepEqual(
-    declared.sort(),
-    [...DYNAMIC_DECLARED_ROUTES].sort(),
-    "The set of dynamic-segment pages DECLARED dynamic changed. A new one is a\n" +
-      'fresh output:"export" blocker (Next E1452) — it needs a real\n' +
-      'generateStaticParams() or an explicit `dynamic = "force-dynamic"`.\n' +
+    notPrerendered.sort(),
+    [...EXCLUDED_DYNAMIC_ROUTES].sort(),
+    "The set of dynamic-segment routes EXCLUDED from the export build changed.\n" +
+      'A route that is neither prerendered nor excluded is a fresh output:"export"\n' +
+      "blocker (Next E1452) — it needs a real generateStaticParams(), or its tree\n" +
+      "needs to be in getTransientBuildPaths().\n" +
       "A REMOVED one means someone gave it a generateStaticParams(); move it to\n" +
-      "PRERENDERED_DYNAMIC_ROUTES and update the comment above."
+      "PRERENDERED_DYNAMIC_ROUTES."
   );
 });

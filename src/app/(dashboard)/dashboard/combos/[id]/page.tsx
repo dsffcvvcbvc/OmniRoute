@@ -1,15 +1,17 @@
 import ComboControlCenterClient from "../ComboControlCenterClient";
 
 /**
- * AGENT.md §3.3: `output: "export"` refuses a dynamic segment with no
- * `generateStaticParams()` (Next E1452). A combo id names a row in the
- * operator's own database, so there is no build-time list to return — a
- * placeholder list would emit one shell per placeholder and 404 every real
- * combo. Declaring the route dynamic says plainly that this deep link has no
- * static representation; the `output: "standalone"` build is unaffected.
+ * A combo id names a row in the operator's own database, so this deep link has
+ * no build-time parameter list: `output: "export"` refuses a dynamic route with
+ * no `generateStaticParams()` (Next E1452) and, at the export phase, refuses a
+ * `force-dynamic` page outright — a placeholder list would emit one shell per
+ * placeholder and 404 every real combo.
+ *
+ * The export build therefore moves this route aside (see
+ * `getTransientBuildPaths()` in scripts/build/build-next-isolated.mjs) rather
+ * than pretending a static shell exists for it. The `output: "standalone"`
+ * build — what actually serves it — is untouched.
  */
-export const dynamic = "force-dynamic";
-
 export default async function ComboControlCenterPage({
   params,
 }: {

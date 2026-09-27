@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { AI_PROVIDERS } from "@/shared/constants/providers";
 import ProviderDetailPageClient from "./ProviderDetailPageClient";
 
 // Thin route wrapper — all logic lives in ProviderDetailPageClient (Issue #3501,
@@ -9,14 +10,16 @@ import ProviderDetailPageClient from "./ProviderDetailPageClient";
 // need a Suspense boundary above them for `output: "export"`. The page itself
 // is a server component with no server-rendered markup to fall back to.
 //
-// `dynamic = "force-dynamic"` states the second half of the same truth: the
-// provider id is resolved entirely at runtime, so this deep link has no
-// build-time representation — `output: "export"` rejects a dynamic segment
-// with no `generateStaticParams()` (Next E1452), and a placeholder list would
-// emit one shell per placeholder and 404 every real id. The
-// `output: "standalone"` build, which is what actually serves this route, is
-// unaffected.
-export const dynamic = "force-dynamic";
+// The dynamic segment needs the second half of that contract as well:
+// `output: "export"` hard-fails on a dynamic route with no
+// `generateStaticParams()` (Next E1452) and, at the export phase, on a page
+// declared `force-dynamic` (there is no runtime server to render it). The
+// honest list exists here: `AI_PROVIDERS` is the build-time provider catalog
+// and every id in it is a page the live server really serves, so prerendering
+// one shell per provider is accurate — no placeholders, no real id missing.
+export function generateStaticParams() {
+  return Object.values(AI_PROVIDERS).map((provider) => ({ id: provider.id }));
+}
 
 export default function ProviderDetailPage() {
   return (
