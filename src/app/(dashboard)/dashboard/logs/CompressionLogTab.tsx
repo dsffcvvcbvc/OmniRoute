@@ -3,6 +3,11 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/shared/components";
 import { useTranslations } from "next-intl";
+import {
+  fetchAisixJson,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
 
 interface CompressionStats {
   originalTokens: number;
@@ -27,21 +32,63 @@ export default function CompressionLogTab() {
   const t = useTranslations("logs");
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [readError, setReadError] = useState<string | null>(null);
+  // Compression stats are attached to Next.js-only call-log rows, so the AISIX
+  // gateway has nothing to read here. Previously the 404 landed in a
+  // `.catch(() => {})` and the tab rendered "no compression events", which
+  // reads as a healthy empty state rather than a missing subsystem.
+  const logsRead = resolveAisixSurfaceSupport("logs", "read");
+  const logsSupported = logsRead.supported;
 
   useEffect(() => {
-    fetch("/api/logs?filter=compressed&limit=50")
-      .then((r) => (r.ok ? r.json() : []))
-      .then((data) => {
-        setLogs(Array.isArray(data) ? data : []);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+    if (!logsSupported) return;
+    let alive = true;
+    void (async () => {
+      const result = await fetchAisixJson(
+        resolveAisixRequestUrl("/api/logs?filter=compressed&limit=50")
+      );
+      if (!alive) return;
+      if (!result.ok) {
+        setReadError(`${t("compressionLogEmpty")} (${result.error})`);
+        setLogs([]);
+      } else {
+        const data = result.data;
+        setLogs(Array.isArray(data) ? (data as LogEntry[]) : []);
+      }
+      setLoading(false);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [logsSupported, t]);
 
-  if (loading) {
+  // Derived from the build-time support flag: a gateway with no call-log store
+  // has nothing to load, so the tab must not sit in its loading state.
+  const unavailableReason = !logsSupported ? logsRead.reason : readError;
+  const isLoading = logsSupported && loading;
+
+  if (isLoading) {
     return (
       <Card className="p-6">
         <p className="text-sm text-text-muted">{t("loading")}</p>
+      </Card>
+    );
+  }
+
+  if (unavailableReason) {
+    return (
+      <Card className="p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="material-symbols-outlined text-blue-500 text-[20px]">compress</span>
+          <h3 className="text-lg font-semibold">{t("compressionLogTitle")}</h3>
+        </div>
+        <div
+          role="status"
+          data-testid="compression-log-unavailable"
+          className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-200"
+        >
+          {unavailableReason}
+        </div>
       </Card>
     );
   }

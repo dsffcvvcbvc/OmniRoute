@@ -162,6 +162,57 @@ test("getTransientBuildPaths only moves _tasks when explicitly enabled", () => {
   );
 });
 
+// AGENT.md §3.3: `output: "export"` hard-fails on any Route Handler that is not
+// static-gen enabled (Next E301), and outright rejects `force-dynamic` (E278).
+// These are the moves that keep the export build from ever loading them — the
+// CI `Dashboard SPA Export` job was dying on E301 at
+// `/.well-known/agent.json` and would have died again on every one of them.
+test("getTransientBuildPaths moves the unexportable server surface aside for export builds", () => {
+  const paths = getTransientBuildPaths("/repo", { OMNIROUTE_EXPORT: "1" });
+  const moved = paths.map((entry) => path.relative("/repo", entry.sourcePath));
+
+  assert.ok(
+    moved.includes(path.join("src", "app", "api")),
+    "the ~721 live API route handlers must be moved: a request handler can never be static"
+  );
+  for (const endpoint of ["healthz", "livez", "readyz", "authorize"]) {
+    assert.ok(
+      moved.includes(path.join("src", "app", endpoint)),
+      `${endpoint} must be moved: force-dynamic probes (E278) and the loopback OAuth callback (E301, writes the DB) have no static form`
+    );
+  }
+  assert.ok(
+    moved.includes(
+      path.join(
+        "src",
+        "app",
+        "(dashboard)",
+        "dashboard",
+        "providers",
+        "services",
+        "[name]",
+        "embed"
+      )
+    ),
+    "the embedded-service reverse proxy must keep being moved"
+  );
+});
+
+test("getTransientBuildPaths never moves these aside outside an export build", () => {
+  for (const env of [{}, { OMNIROUTE_BUILD_MOVE_TASKS: "1" }]) {
+    const moved = getTransientBuildPaths("/repo", env).map((entry) =>
+      path.relative("/repo", entry.sourcePath)
+    );
+    for (const sourcePath of [path.join("src", "app", "api"), path.join("src", "app", "healthz")]) {
+      assert.equal(
+        moved.includes(sourcePath),
+        false,
+        `${sourcePath} must survive a normal/standalone build — only the export build drops it`
+      );
+    }
+  }
+});
+
 test("pruneStandaloneArtifacts removes traced _tasks from standalone output", async () => {
   await withTempDir(async (tempDir) => {
     // Layer 1 moved the Next distDir default to .build/next.

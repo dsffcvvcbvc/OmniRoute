@@ -12,6 +12,11 @@ import {
   type RadarOfferBenefit,
 } from "@/lib/radar/offersFeedSchema";
 import { Card } from "@/shared/components";
+import {
+  fetchAisixJson,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
 
 interface OffersMeta {
   version: string;
@@ -37,30 +42,52 @@ export default function RadarOffersPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [flagOff, setFlagOff] = useState(false);
   const [error, setError] = useState("");
+  // Partner offers are served from the Next.js-only Radar feed cache keyed by a
+  // supporter key; the AISIX gateway has neither the feed nor the key store.
+  const offersRead = resolveAisixSurfaceSupport("radar", "read");
+  const offersWrite = resolveAisixSurfaceSupport("radar", "write");
+  const offersSupported = offersRead.supported;
 
   const loadOffers = useCallback(async () => {
-    const response = await fetch("/api/radar/offers");
-    if (response.status === 404) {
+    if (!offersSupported) return;
+    const result = await fetchAisixJson(resolveAisixRequestUrl("/api/radar/offers"));
+    if (result.missing) {
       setFlagOff(true);
       return;
     }
-    if (!response.ok) throw new Error("offers_load_failed");
-    const body = (await response.json()) as { offers?: RadarOffer[]; meta?: OffersMeta | null };
+    if (!result.ok) throw new Error(result.error || "offers_load_failed");
+    const body = (result.data ?? {}) as { offers?: RadarOffer[]; meta?: OffersMeta | null };
     setOffers(Array.isArray(body.offers) ? body.offers : []);
     setMeta(body.meta ?? null);
-  }, []);
+  }, [offersSupported]);
 
   const syncAndLoad = useCallback(async () => {
+    if (!offersWrite.supported) {
+      setError(offersWrite.reason);
+      return;
+    }
     setRefreshing(true);
     setError("");
     try {
-      const response = await fetch("/api/radar/offers/sync", { method: "POST" });
-      if (response.status === 404) {
+      const result = await fetchAisixJson(resolveAisixRequestUrl("/api/radar/offers/sync"), {
+        method: "POST",
+      });
+      if (result.missing) {
         setFlagOff(true);
         return;
       }
-      if (!response.ok) throw new Error("offers_sync_failed");
-      const status = (await response.json()) as { status?: string; reason?: string };
+      if (!result.ok) {
+        // Preserve availability: even when the refresh fails, render the last
+        // verified local cache rather than clearing it.
+        setError(result.error || t("loadFailed"));
+        try {
+          await loadOffers();
+        } catch {
+          // The primary error already explains the failed local read.
+        }
+        return;
+      }
+      const status = (result.data ?? {}) as { status?: string; reason?: string };
       if (status.status === "no_key") {
         setHasSupporterKey(false);
         return;
@@ -74,48 +101,40 @@ export default function RadarOffersPage() {
       ) {
         setError(t("loadFailed"));
       }
-      // Preserve availability: even when refresh fails, render the last
-      // verified local cache rather than clearing it.
       await loadOffers();
-    } catch {
-      setError(t("loadFailed"));
-      try {
-        await loadOffers();
-      } catch {
-        // The primary error already explains the failed local read.
-      }
     } finally {
       setRefreshing(false);
     }
-  }, [loadOffers, t]);
+  }, [loadOffers, t, offersWrite.supported, offersWrite.reason]);
 
   useEffect(() => {
     async function load(): Promise<void> {
-      try {
-        const response = await fetch("/api/radar/settings");
-        if (response.status === 404) {
-          setFlagOff(true);
-          return;
-        }
-        if (!response.ok) throw new Error("settings_load_failed");
-        const settings = (await response.json()) as SettingsPayload;
-        const hasKey = settings.hasSupporterKey === true;
-        setHasSupporterKey(hasKey);
-        setContributorClaimUrl(
-          typeof settings.contributorClaimUrl === "string" ? settings.contributorClaimUrl : null
-        );
-        setSupporterPlansUrl(
-          typeof settings.supporterPlansUrl === "string" ? settings.supporterPlansUrl : null
-        );
-        if (hasKey) await syncAndLoad();
-      } catch {
-        setError(t("loadFailed"));
-      } finally {
+      if (!offersSupported) {
         setLoading(false);
+        return;
       }
+      const result = await fetchAisixJson(resolveAisixRequestUrl("/api/radar/settings"));
+      if (result.missing) {
+        setFlagOff(true);
+        return;
+      }
+      if (!result.ok) {
+        setError(result.error || t("loadFailed"));
+        return;
+      }
+      const settings = (result.data ?? {}) as SettingsPayload;
+      const hasKey = settings.hasSupporterKey === true;
+      setHasSupporterKey(hasKey);
+      setContributorClaimUrl(
+        typeof settings.contributorClaimUrl === "string" ? settings.contributorClaimUrl : null
+      );
+      setSupporterPlansUrl(
+        typeof settings.supporterPlansUrl === "string" ? settings.supporterPlansUrl : null
+      );
+      if (hasKey) await syncAndLoad();
     }
-    void load();
-  }, [syncAndLoad, t]);
+    void load().finally(() => setLoading(false));
+  }, [syncAndLoad, t, offersSupported]);
 
   const activeOffers = useMemo(() => filterActiveRadarOffers(offers, new Date()), [offers]);
 
@@ -139,6 +158,35 @@ export default function RadarOffersPage() {
 
   if (flagOff) notFound();
 
+  if (!offersSupported) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-3">
+          <Link
+            href="/dashboard/radar"
+            className="text-sm text-text-muted hover:text-text-main transition-colors w-fit"
+          >
+            ← {t("backToRadar")}
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold">{t("title")}</h1>
+            <p className="text-sm text-text-muted mt-1">{t("subtitle")}</p>
+          </div>
+        </div>
+        <div
+          role="status"
+          data-testid="radar-offers-unavailable"
+          className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-200"
+        >
+          {offersRead.reason}
+        </div>
+        <Card>
+          <p className="py-8 text-center text-text-muted">{t("empty")}</p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
@@ -157,7 +205,7 @@ export default function RadarOffersPage() {
             <button
               type="button"
               onClick={() => void syncAndLoad()}
-              disabled={refreshing}
+              disabled={refreshing || !offersWrite.supported}
               className="px-4 py-2 text-sm font-medium rounded-lg border border-violet-500 text-violet-400 hover:bg-violet-500/10 transition-colors disabled:opacity-50"
             >
               {refreshing ? t("refreshing") : t("refresh")}

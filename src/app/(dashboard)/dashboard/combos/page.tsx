@@ -90,6 +90,7 @@ import { modelFamily } from "@/lib/combos/invariants";
 import { resolveProviderAlias } from "@omniroute/open-sse/services/providerAlias.ts";
 import { resolveServerErrorMessage } from "@/lib/api/serverErrorMessage";
 import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
+import { aisixCombosUrl, isAisixMissingEndpointStatus } from "@/shared/utils/aisixEndpoints";
 import { useTranslations } from "next-intl";
 
 const ModelSelectModal = dynamic(() => import("@/shared/components/ModelSelectModal"), {
@@ -883,6 +884,11 @@ function CombosPageContent() {
   const [settingsLoadError, setSettingsLoadError] = useState(false);
   const [compressionLoadError, setCompressionLoadError] = useState(false);
   const [proxyConfigLoadError, setProxyConfigLoadError] = useState(false);
+  // Native combos-write capability (`POST/PUT/DELETE :3001/admin/v1/combos*`):
+  // `true` once a probe or a mutation proves the core has no such surface.
+  // While true, every write refuses BEFORE sending (pre-send gate) and the
+  // page shows an explicit banner instead of firing requests into a 404.
+  const [combosWriteMissing, setCombosWriteMissing] = useState(false);
   const [selectedIntelligentComboId, setSelectedIntelligentComboId] = useState<string | null>(null);
   const comboDragIndexRef = useRef<number | null>(null);
   const activeFilter = normalizeIntelligentRoutingFilter(searchParams.get("filter"));
@@ -945,15 +951,44 @@ function CombosPageContent() {
       }
       return [];
     };
+    // Native combos read: `GET :3001/admin/v1/combos` wins when it answers
+    // 2xx with JSON; 404/405 marks combos-write missing (banner + pre-send
+    // refusals below) and falls through to the legacy read. Time-bounded so a
+    // stalled core can never wedge `loading` on `true` forever.
+    const readNativeCombos = async (): Promise<any | null> => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15_000);
+      try {
+        const res = await fetch(aisixCombosUrl(), { signal: controller.signal });
+        if (isAisixMissingEndpointStatus(res.status)) {
+          setCombosWriteMissing(true);
+          return null;
+        }
+        if (!res.ok) return null;
+        const contentType = res.headers.get("content-type") || "";
+        if (!contentType.includes("application/json") && !contentType.includes("+json")) {
+          return null;
+        }
+        return await res.json().catch(() => null);
+      } catch {
+        return null;
+      } finally {
+        clearTimeout(timeout);
+      }
+    };
     try {
-      const [combosData, providersData, metricsData, nodesData] = await Promise.all([
-        safeJson(resolveAisixRequestUrl("/api/combos")),
-        safeJson(resolveAisixRequestUrl("/api/providers")),
-        safeJson(resolveAisixRequestUrl("/api/combos/metrics")),
-        safeJson(resolveAisixRequestUrl("/api/provider-nodes")),
-      ]);
+      const [nativeCombosData, legacyCombosData, providersData, metricsData, nodesData] =
+        await Promise.all([
+          readNativeCombos(),
+          safeJson(resolveAisixRequestUrl("/api/combos")),
+          safeJson(resolveAisixRequestUrl("/api/providers")),
+          safeJson(resolveAisixRequestUrl("/api/combos/metrics")),
+          safeJson(resolveAisixRequestUrl("/api/provider-nodes")),
+        ]);
+      const combosData = nativeCombosData ?? legacyCombosData;
 
-      if (combosData) setCombos((combosData.combos || []).filter((c) => !c.isHidden));
+      if (combosData)
+        setCombos(readList(combosData, ["combos", "data", "items"]).filter((c) => !c.isHidden));
       if (providersData) {
         const active = readList(providersData, ["connections", "data", "keys"]).filter(
           isEligibleActiveConnection
@@ -1020,21 +1055,44 @@ function CombosPageContent() {
       .catch(() => setProxyConfigLoadError(true));
   }, []);
 
+  // Pre-send gate for combos-write: once the core has proved it exposes no
+  // combos-write surface (404/405 on the read or on any mutation below),
+  // refuse BEFORE sending so no further request lands on a 404. Returns true
+  // when the caller must abort. Literals, not t(): the glossary/completeness
+  // gate forbids en-only key additions.
+  const refuseCombosWrite = (action: string): boolean => {
+    if (!combosWriteMissing) return false;
+    notify.error(`Ядро без combos-write: ${action} недоступно на этой сборке ядра.`);
+    return true;
+  };
+
+  // 404/405 on a combos mutation means "no combos-write on this core": arm
+  // the banner, toast loudly, and never fall through to a legacy 404.
+  const markCombosWriteMissing = (action: string) => {
+    setCombosWriteMissing(true);
+    notify.error(`Ядро без combos-write: ${action} недоступно на этой сборке ядра.`);
+  };
+
   const handleCreate = async (data) => {
+    if (refuseCombosWrite("Создание combos")) return;
     try {
-      const res = await fetch(resolveAisixRequestUrl("/api/combos"), {
+      const res = await fetch(aisixCombosUrl(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      if (isAisixMissingEndpointStatus(res.status)) {
+        markCombosWriteMissing("Создание combos");
+        return;
+      }
       if (res.ok) {
         await fetchData();
         setShowCreateModal(false);
         setRecentlyCreatedCombo(data.name?.trim() || "");
         notify.success(t("comboCreated"));
       } else {
-        const err = await res.json();
-        notify.error(err.error?.message || err.error || t("failedCreate"));
+        const err = await res.json().catch(() => null);
+        notify.error(err?.error?.message || err?.error || t("failedCreate"));
       }
     } catch (error) {
       notify.error(t("errorCreating"));
@@ -1042,19 +1100,24 @@ function CombosPageContent() {
   };
 
   const handleUpdate = async (id, data) => {
+    if (refuseCombosWrite("Изменение combos")) return;
     try {
-      const res = await fetch(resolveAisixRequestUrl(`/api/combos/${id}`), {
+      const res = await fetch(aisixCombosUrl(`/${encodeURIComponent(id)}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      if (isAisixMissingEndpointStatus(res.status)) {
+        markCombosWriteMissing("Изменение combos");
+        return;
+      }
       if (res.ok) {
         await fetchData();
         setEditingCombo(null);
         notify.success(t("comboUpdated"));
       } else {
-        const err = await res.json();
-        notify.error(err.error?.message || err.error || t("failedUpdate"));
+        const err = await res.json().catch(() => null);
+        notify.error(err?.error?.message || err?.error || t("failedUpdate"));
       }
     } catch (error) {
       notify.error(t("errorUpdating"));
@@ -1072,8 +1135,13 @@ function CombosPageContent() {
 
   const handleDelete = async (id) => {
     if (!confirm(t("deleteConfirm"))) return;
+    if (refuseCombosWrite("Удаление combos")) return;
     try {
-      const res = await fetch(resolveAisixRequestUrl(`/api/combos/${id}`), { method: "DELETE" });
+      const res = await fetch(aisixCombosUrl(`/${encodeURIComponent(id)}`), { method: "DELETE" });
+      if (isAisixMissingEndpointStatus(res.status)) {
+        markCombosWriteMissing("Удаление combos");
+        return;
+      }
       if (res.ok) {
         setCombos(combos.filter((c) => c.id !== id));
         notify.success(t("comboDeleted"));
@@ -1136,16 +1204,24 @@ function CombosPageContent() {
   };
 
   const handleToggleCombo = async (combo) => {
+    if (refuseCombosWrite("Изменение combos")) return;
     const newActive = combo.isActive === false ? true : false;
     const previousActive = combo.isActive !== false;
     // Optimistic update
     setCombos((prev) => prev.map((c) => (c.id === combo.id ? { ...c, isActive: newActive } : c)));
     try {
-      const res = await fetch(resolveAisixRequestUrl(`/api/combos/${combo.id}`), {
+      const res = await fetch(aisixCombosUrl(`/${encodeURIComponent(combo.id)}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: newActive }),
       });
+      if (isAisixMissingEndpointStatus(res.status)) {
+        setCombos((prev) =>
+          prev.map((c) => (c.id === combo.id ? { ...c, isActive: previousActive } : c))
+        );
+        markCombosWriteMissing("Изменение combos");
+        return;
+      }
       if (!res.ok) {
         // The server rejected the toggle (4xx/5xx). Surface its message instead
         // of silently reverting with a generic toast — never swallow the error.
@@ -1242,6 +1318,10 @@ function CombosPageContent() {
 
     if (fromIndex === null || fromIndex === dropIndex) return;
 
+    // Reorder has no native contract yet, so it stays on the legacy path —
+    // but never fires when combos-write is already known missing.
+    if (refuseCombosWrite("Изменение порядка combos")) return;
+
     const previousCombos = combos;
     const nextCombos = moveArrayItem(combos, fromIndex, dropIndex);
     setCombos(nextCombos);
@@ -1308,6 +1388,17 @@ function CombosPageContent() {
             "settingsUnavailable",
             "Settings service unavailable — showing built-in defaults."
           )}
+        </div>
+      )}
+
+      {/* Native combos-write surface absent on this core build (404/405):
+          creating, editing, toggling and deleting combos is refused up front
+          instead of being sent into a 404. Literal, not t(): the
+          glossary/completeness gate forbids en-only key additions. */}
+      {combosWriteMissing && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-300">
+          Ядро без combos-write — создание, изменение и удаление combos недоступны на этой сборке
+          ядра.
         </div>
       )}
 

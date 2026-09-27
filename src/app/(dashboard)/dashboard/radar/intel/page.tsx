@@ -7,6 +7,11 @@ import { useTranslations } from "next-intl";
 
 import type { RadarIntelFeed } from "@/lib/radar/intelFeedSchema";
 import { Card } from "@/shared/components";
+import {
+  fetchAisixJson,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
 
 interface IntelMeta {
   version: string;
@@ -23,62 +28,101 @@ export default function RadarIntelPage() {
   const [syncing, setSyncing] = useState(false);
   const [flagOff, setFlagOff] = useState(false);
   const [error, setError] = useState("");
+  // The intel feed is Next/SQLite-only — no AISIX counterpart exists, so the
+  // page refuses up front instead of rendering an empty ranking forever.
+  const intelRead = resolveAisixSurfaceSupport("radar", "read");
+  const intelWrite = resolveAisixSurfaceSupport("radar", "write");
+  const intelSupported = intelRead.supported;
 
   const load = useCallback(async () => {
-    const response = await fetch("/api/radar/intel");
-    if (response.status === 404) {
+    if (!intelSupported) {
+      setLoading(false);
+      return;
+    }
+    const result = await fetchAisixJson(resolveAisixRequestUrl("/api/radar/intel"));
+    if (result.missing) {
       setFlagOff(true);
       return;
     }
-    if (!response.ok) throw new Error("intel_load_failed");
-    const body = (await response.json()) as {
+    if (!result.ok) throw new Error(result.error || "intel_load_failed");
+    const body = (result.data ?? {}) as {
       intel?: RadarIntelFeed | null;
       meta?: IntelMeta | null;
     };
     setIntel(body.intel ?? null);
     setMeta(body.meta ?? null);
-  }, []);
+  }, [intelSupported]);
 
   const sync = useCallback(async () => {
+    if (!intelWrite.supported) {
+      setError(intelWrite.reason);
+      return;
+    }
     setSyncing(true);
     setError("");
-    try {
-      const response = await fetch("/api/radar/intel/sync", { method: "POST" });
-      if (response.status === 404) {
-        setFlagOff(true);
-        return;
-      }
-      if (!response.ok) throw new Error("intel_sync_failed");
-      const status = (await response.json()) as { status?: string };
-      if (
-        ["error", "invalid_signature", "invalid_schema", "wrong_tier", "too_large"].includes(
-          status.status ?? ""
-        )
-      ) {
-        setError(t("loadFailed"));
-      }
-      await load();
-    } catch {
-      setError(t("loadFailed"));
-      await load().catch(() => undefined);
-    } finally {
-      setSyncing(false);
+    const result = await fetchAisixJson(resolveAisixRequestUrl("/api/radar/intel/sync"), {
+      method: "POST",
+    });
+    if (result.missing) {
+      setFlagOff(true);
+      return;
     }
-  }, [load, t]);
+    if (!result.ok) {
+      setError(result.error || t("loadFailed"));
+      return;
+    }
+    const status = (result.data ?? {}) as { status?: string };
+    if (
+      ["error", "invalid_signature", "invalid_schema", "wrong_tier", "too_large"].includes(
+        status.status ?? ""
+      )
+    ) {
+      setError(t("loadFailed"));
+    }
+    await load();
+  }, [load, t, intelWrite.supported, intelWrite.reason]);
 
   useEffect(() => {
     void (async () => {
-      try {
-        await load();
-      } catch {
-        setError(t("loadFailed"));
-      } finally {
-        setLoading(false);
+      if (intelSupported) {
+        try {
+          await load();
+        } catch (err) {
+          setError(err instanceof Error ? err.message : t("loadFailed"));
+        }
       }
+      setLoading(false);
     })();
-  }, [load, t]);
+  }, [load, t, intelSupported]);
 
   if (flagOff) notFound();
+
+  if (!intelSupported) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div>
+          <Link
+            href="/dashboard/radar"
+            className="text-sm text-text-muted hover:text-text-main transition-colors"
+          >
+            ← {t("backToRadar")}
+          </Link>
+          <h1 className="mt-3 text-2xl font-bold">{t("title")}</h1>
+          <p className="mt-1 text-sm text-text-muted">{t("subtitle")}</p>
+        </div>
+        <div
+          role="status"
+          data-testid="radar-intel-unavailable"
+          className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-200"
+        >
+          {intelRead.reason}
+        </div>
+        <Card>
+          <p className="py-8 text-center text-text-muted">{t("empty")}</p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -105,7 +149,7 @@ export default function RadarIntelPage() {
           <button
             type="button"
             onClick={() => void sync()}
-            disabled={syncing}
+            disabled={syncing || !intelWrite.supported}
             className="rounded-lg border border-violet-500 px-4 py-2 text-sm font-medium text-violet-400 disabled:opacity-50"
           >
             {syncing ? t("syncing") : t("refresh")}

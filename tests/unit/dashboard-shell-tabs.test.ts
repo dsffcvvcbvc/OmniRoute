@@ -70,13 +70,17 @@ test("endpoint page exposes context-sources tab with Notion and Obsidian source 
   assert.ok(source.includes("<ObsidianSourceCard />"));
 });
 
+// AGENT.md §3.3: the forward runs client-side behind a <Suspense> boundary —
+// a Server Component `redirect()` cannot be prerendered for `output: "export"`.
 test("settings root redirects to section pages instead of rendering a tab shell", () => {
   const pageSource = readSource("src/app/(dashboard)/dashboard/settings/page.tsx");
 
-  assert.ok(pageSource.includes('import { redirect } from "next/navigation"'));
   assert.ok(pageSource.includes('general: "/dashboard/settings/general"'));
   assert.ok(pageSource.includes('resilience: "/dashboard/settings/resilience"'));
-  assert.ok(pageSource.includes("redirect(resolveSettingsRoute(tab))"));
+  assert.ok(pageSource.includes("useSearchParams"));
+  assert.ok(pageSource.includes("router.replace(target)"));
+  assert.ok(pageSource.includes("<Suspense"));
+  assert.ok(!pageSource.includes('import { redirect } from "next/navigation"'));
 });
 
 test("provider limit status chips use English fallback labels", () => {

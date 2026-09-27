@@ -4,7 +4,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/shared/components";
 import useEmailPrivacyStore from "@/store/emailPrivacyStore";
+import { useNotificationStore } from "@/store/notificationStore";
 import { maskEmailLikeValue } from "@/shared/utils/maskEmail";
+import { backoffPollDelayMs, isDocumentHidden } from "@/shared/utils/fetchTimeout";
+import {
+  aisixUnsupportedRead,
+  fetchAisixJson,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
 import type { QuotaPool } from "@/lib/quota/dimensions";
 
 import { usePools } from "./hooks/usePools";
@@ -51,6 +59,13 @@ interface PlanInfo {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+// Side-data polling
+// ────────────────────────────────────────────────────────────────────────────
+
+/** Base refresh for connections/keys/plans; backs off exponentially on failure. */
+const SIDE_DATA_POLL_MS = 60_000;
+
+// ────────────────────────────────────────────────────────────────────────────
 // Stat card helper
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -60,6 +75,7 @@ function StatCard({
   tone,
 }: {
   label: string;
+  /** `"—"` marks a value the current gateway does not report. */
   value: string;
   tone?: "green" | "amber" | "red";
 }) {
@@ -104,19 +120,32 @@ function PoolCardWithUsage({
   onEdit: () => void;
   onRemove: () => void;
 }) {
-  const { usage } = usePoolUsage(pool.id);
+  const { usage, unsupported: usageUnsupported } = usePoolUsage(pool.id);
   return (
-    <PoolCard
-      pool={pool}
-      usage={usage}
-      keyLabels={keyLabels}
-      connectionLabel={connectionLabel}
-      provider={provider}
-      providers={providers}
-      connectionIds={connectionIds}
-      onEdit={onEdit}
-      onRemove={onRemove}
-    />
+    <>
+      <PoolCard
+        pool={pool}
+        usage={usage}
+        keyLabels={keyLabels}
+        connectionLabel={connectionLabel}
+        provider={provider}
+        providers={providers}
+        connectionIds={connectionIds}
+        onEdit={onEdit}
+        onRemove={onRemove}
+      />
+      {/* `usage === null` used to render a confident "0 % / 0 borrowed" for a
+          pool the gateway cannot actually measure. Say which one it is. */}
+      {usageUnsupported && (
+        <p
+          role="status"
+          data-testid="quota-pool-usage-unavailable"
+          className="mt-1 rounded border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-700 dark:text-amber-200"
+        >
+          {aisixUnsupportedRead("quota").reason}
+        </p>
+      )}
+    </>
   );
 }
 
@@ -126,8 +155,24 @@ function PoolCardWithUsage({
 
 export default function QuotaSharePageClient() {
   const t = useTranslations("quotaShare");
-  const { pools, loading, mutate } = usePools();
+  const { pools, loading, unsupported, unsupportedReason, mutate } = usePools();
   const emailsVisible = useEmailPrivacyStore((s) => s.emailsVisible);
+  const notify = useNotificationStore();
+  // Quota pools/groups/plans are a Next.js/SQLite subsystem. On the AISIX
+  // gateway they do not exist, so every group/pool mutation refuses BEFORE
+  // sending and the page says so once instead of silently rendering "0 pools".
+  const quotaRead = resolveAisixSurfaceSupport("quota", "read");
+  const quotaWrite = resolveAisixSurfaceSupport("quota", "write");
+  const writeSupported = quotaWrite.supported;
+
+  const refuseQuotaWrite = useCallback(
+    (action: string): boolean => {
+      if (writeSupported) return false;
+      notify.error(`AISIX-шлюз: ${action} недоступно. ${quotaWrite.reason}`);
+      return true;
+    },
+    [writeSupported, notify, quotaWrite.reason]
+  );
 
   // LS → DB migration hook (B22) — runs once, idempotent
   useLocalStoragePoolMigration({ pools, mutate });
@@ -147,99 +192,121 @@ export default function QuotaSharePageClient() {
   const [renaming, setRenaming] = useState(false);
 
   // ── Fetch side data once on mount ─────────────────────────────────────────
+  //
+  // Provider connections DO have a native read (admin `provider_keys`), so that
+  // one keeps working on the gateway; the other two (OmniRoute API keys and the
+  // quota plan dimensions) are Next-only and degrade to an explicit null instead
+  // of a guessed empty list.
 
   useEffect(() => {
     let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const failuresRef = { current: 0 };
 
-    Promise.all([
-      fetch("/api/providers/client")
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null),
-      fetch("/api/keys")
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null),
-      fetch("/api/quota/plans")
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null),
-    ])
-      .then(([connsData, keysData, plansData]) => {
-        if (cancelled) return;
-
-        const conns: Connection[] = Array.isArray(connsData?.connections)
-          ? connsData.connections
-          : [];
-        const keys: ApiKey[] = Array.isArray(keysData) ? keysData : keysData?.keys || [];
-        setConnections(conns);
-        setApiKeys(keys);
-
-        if (Array.isArray(plansData)) {
-          const planMap: Record<string, PlanInfo> = {};
-          for (const p of plansData as Array<{
-            connectionId: string;
-            dimensions: PlanDimension[];
-            source: "auto" | "manual";
-          }>) {
-            if (p.connectionId)
-              planMap[p.connectionId] = { dimensions: p.dimensions, source: p.source };
-          }
-          setPlans(planMap);
+    async function loadSideData() {
+      if (!quotaRead.supported) return;
+      const [connsData, keysData, plansData] = await Promise.all([
+        fetchAisixJson(resolveAisixRequestUrl("/api/providers/client")),
+        fetchAisixJson(resolveAisixRequestUrl("/api/keys")),
+        fetchAisixJson(resolveAisixRequestUrl("/api/quota/plans")),
+      ]);
+      if (cancelled) return;
+      if (connsData.ok) {
+        const conns = (connsData.data ?? {}) as { connections?: Connection[] };
+        setConnections(Array.isArray(conns.connections) ? conns.connections : []);
+      }
+      if (keysData.ok) {
+        const keys = keysData.data as ApiKey[] | { keys?: ApiKey[] } | null;
+        setApiKeys(Array.isArray(keys) ? keys : Array.isArray(keys?.keys) ? keys.keys : []);
+      }
+      if (plansData.ok && Array.isArray(plansData.data)) {
+        const planMap: Record<string, PlanInfo> = {};
+        for (const p of plansData.data as Array<{
+          connectionId: string;
+          dimensions: PlanDimension[];
+          source: "auto" | "manual";
+        }>) {
+          if (p.connectionId)
+            planMap[p.connectionId] = { dimensions: p.dimensions, source: p.source };
         }
-      })
-      .catch(() => {
-        // fail open — side data not critical
-      });
+        setPlans(planMap);
+      }
+      // `null` for a 404 is the honest answer for keys/plans; the wizard then
+      // shows no key/plan choices instead of a phantom "unlimited" plan.
+      const anyFailed = [connsData, keysData, plansData].some((r) => !r.ok && !r.missing);
+      failuresRef.current = anyFailed ? failuresRef.current + 1 : 0;
+    }
+
+    const tick = async () => {
+      if (cancelled) return;
+      if (!isDocumentHidden()) {
+        await loadSideData();
+      }
+      if (cancelled) return;
+      timer = setTimeout(tick, backoffPollDelayMs(SIDE_DATA_POLL_MS, failuresRef.current));
+    };
+    void tick();
 
     return () => {
       cancelled = true;
+      if (timer) clearTimeout(timer);
     };
-  }, []);
+  }, [quotaRead.supported]);
 
   // ── Fetch groups ──────────────────────────────────────────────────────────
 
-  const fetchGroups = useCallback(async (options?: { signal?: AbortSignal }) => {
-    try {
-      const res = await fetch("/api/quota/groups", { signal: options?.signal });
-      if (res.ok) {
-        const data = (await res.json()) as { groups: QuotaGroup[] };
-        if (options?.signal?.aborted) return;
-        setGroups(Array.isArray(data.groups) ? data.groups : []);
-      }
-    } catch {
+  const fetchGroups = useCallback(
+    async (options?: { signal?: AbortSignal }) => {
+      if (!quotaRead.supported) return;
+      const result = await fetchAisixJson(resolveAisixRequestUrl("/api/quota/groups"), {
+        signal: options?.signal,
+      });
       if (options?.signal?.aborted) return;
-      // fail open — groups list not critical
-    }
-  }, []);
+      if (result.ok) {
+        const data = (result.data ?? {}) as { groups?: QuotaGroup[] };
+        setGroups(Array.isArray(data.groups) ? data.groups : []);
+        return;
+      }
+      if (result.missing) {
+        // The whole group surface is absent — an empty <select> would read as
+        // "you have no groups", so keep the page's unsupported banner honest.
+        return;
+      }
+      notify.error(`Ошибка загрузки групп квот (${result.error})`);
+    },
+    [quotaRead.supported, notify]
+  );
 
   useEffect(() => {
+    if (!quotaRead.supported) return;
     const controller = new AbortController();
     void Promise.resolve().then(() => fetchGroups({ signal: controller.signal }));
     return () => {
       controller.abort();
     };
-  }, [fetchGroups]);
+  }, [fetchGroups, quotaRead.supported]);
 
   // ── Group actions ─────────────────────────────────────────────────────────
 
   const handleCreateGroup = useCallback(async () => {
     const name = newGroupInput.trim();
     if (!name) return;
-    try {
-      const res = await fetch("/api/quota/groups", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
-      });
-      if (res.ok) {
-        const data = (await res.json()) as { group: QuotaGroup };
-        await fetchGroups();
-        setSelectedGroupId(data.group.id);
-      }
-    } catch {
-      // fail open
+    if (refuseQuotaWrite("Создание группы")) return;
+    const result = await fetchAisixJson(resolveAisixRequestUrl("/api/quota/groups"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (result.ok) {
+      const data = (result.data ?? {}) as { group?: QuotaGroup };
+      if (data.group?.id) setSelectedGroupId(data.group.id);
+      await fetchGroups();
+    } else {
+      notify.error(`Не удалось создать группу (${result.error ?? result.status})`);
     }
     setNewGroupInput("");
     setShowNewGroupInput(false);
-  }, [newGroupInput, fetchGroups]);
+  }, [newGroupInput, fetchGroups, refuseQuotaWrite, notify]);
 
   const handleRenameGroup = useCallback(async () => {
     const name = prompt(
@@ -247,40 +314,46 @@ export default function QuotaSharePageClient() {
       groups.find((g) => g.id === selectedGroupId)?.name ?? ""
     );
     if (!name?.trim()) return;
+    if (refuseQuotaWrite("Переименование группы")) return;
     setRenaming(true);
-    try {
-      const res = await fetch(`/api/quota/groups/${selectedGroupId}`, {
+    const result = await fetchAisixJson(
+      resolveAisixRequestUrl(`/api/quota/groups/${encodeURIComponent(selectedGroupId)}`),
+      {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim() }),
-      });
-      if (res.ok) {
-        await fetchGroups();
       }
-    } catch {
-      // fail open
+    );
+    if (result.ok) {
+      await fetchGroups();
+    } else {
+      notify.error(`Не удалось переименовать группу (${result.error ?? result.status})`);
     }
     setRenaming(false);
-  }, [selectedGroupId, groups, fetchGroups, t]);
+  }, [selectedGroupId, groups, fetchGroups, t, refuseQuotaWrite, notify]);
 
   // Delete the selected group. The API blocks deletion while the group still has
   // pools (HTTP 409) and protects the seed "group-demo"; surface both to the user.
   const handleDeleteGroup = useCallback(async () => {
     if (selectedGroupId === "all" || selectedGroupId === "group-demo") return;
     if (!confirm(t("deleteGroupConfirm"))) return;
-    try {
-      const res = await fetch(`/api/quota/groups/${selectedGroupId}`, { method: "DELETE" });
-      if (res.ok) {
-        setSelectedGroupId("all");
-        await fetchGroups();
-        await mutate();
-      } else if (res.status === 409) {
-        alert(t("deleteGroupHasPools"));
-      }
-    } catch {
-      // fail open
+    if (refuseQuotaWrite("Удаление группы")) return;
+    const result = await fetchAisixJson(
+      resolveAisixRequestUrl(`/api/quota/groups/${encodeURIComponent(selectedGroupId)}`),
+      { method: "DELETE" }
+    );
+    if (result.ok) {
+      setSelectedGroupId("all");
+      await fetchGroups();
+      await mutate();
+      return;
     }
-  }, [selectedGroupId, fetchGroups, mutate, t]);
+    if (result.status === 409) {
+      alert(t("deleteGroupHasPools"));
+      return;
+    }
+    notify.error(`Не удалось удалить группу (${result.error ?? result.status})`);
+  }, [selectedGroupId, fetchGroups, mutate, t, refuseQuotaWrite, notify]);
 
   // ── Derived ──────────────────────────────────────────────────────────────
 
@@ -330,12 +403,15 @@ export default function QuotaSharePageClient() {
 
   const aggregate = usePoolsUsageAggregate(pools);
 
+  // `null` — not `0` — for the two usage KPIs when the gateway reports no
+  // per-pool usage: "not reported" and "nothing is borrowing quota" are
+  // opposite facts, and only the second one is worth an alert colour.
   const stats = useMemo(
     () => ({
       activePools: pools.length,
       keysAllocated: pools.reduce((s, p) => s + p.allocations.length, 0),
-      avgUtilization: aggregate.avgUtilizationPercent,
-      borrowingNow: aggregate.borrowingKeyCount,
+      avgUtilization: aggregate.unsupported ? null : aggregate.avgUtilizationPercent,
+      borrowingNow: aggregate.unsupported ? null : aggregate.borrowingKeyCount,
     }),
     [pools, aggregate]
   );
@@ -386,25 +462,30 @@ export default function QuotaSharePageClient() {
   const handleRemovePool = useCallback(
     async (id: string) => {
       if (!confirm(t("removeConfirm"))) return;
+      if (refuseQuotaWrite("Удаление пула")) return;
       setRemoveError(null);
-      try {
-        const res = await fetch(`/api/quota/pools/${id}`, { method: "DELETE" });
-        if (!res.ok) {
-          const detail = await res
-            .json()
-            .then((b) => b?.error?.message || b?.error || b?.message)
-            .catch(() => null);
-          setRemoveError(detail ? `${t("removeFailed")} — ${detail}` : t("removeFailed"));
-          return;
-        }
-      } catch {
-        // Network-level failure: there is no response to read.
-        setRemoveError(t("removeFailed"));
+      const result = await fetchAisixJson(
+        resolveAisixRequestUrl(`/api/quota/pools/${encodeURIComponent(id)}`),
+        { method: "DELETE" }
+      );
+      if (!result.ok) {
+        const body = (result.data ?? {}) as {
+          error?: { message?: string } | string;
+          message?: string;
+        };
+        const detail =
+          typeof body.error === "object"
+            ? body.error?.message
+            : (body.error ?? body.message ?? null);
+        const reason = result.missing ? quotaWrite.reason : (result.error ?? null);
+        setRemoveError(
+          [t("removeFailed"), detail ?? reason].filter(Boolean).join(" — ") || t("removeFailed")
+        );
         return;
       }
       await mutate();
     },
-    [mutate, t]
+    [mutate, t, refuseQuotaWrite, quotaWrite.reason]
   );
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -440,12 +521,32 @@ export default function QuotaSharePageClient() {
           <p className="text-sm text-text-muted mt-0.5">{t("description")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="primary" size="sm" onClick={() => setCreateOpen(true)}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setCreateOpen(true)}
+            disabled={!writeSupported}
+          >
             <span className="material-symbols-outlined text-[14px] mr-1">add</span>
             {t("newPool")}
           </Button>
         </div>
       </div>
+
+      {/* AISIX SPA: pools/groups/plans are a Next.js-only subsystem. Without
+          this banner an empty pool grid reads as "you have no pools yet". */}
+      {unsupported && (
+        <div
+          role="status"
+          data-testid="quota-share-unavailable-banner"
+          className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-700 dark:text-amber-200"
+        >
+          <span className="material-symbols-outlined text-[16px] text-amber-500 shrink-0">
+            block
+          </span>
+          <span className="flex-1">{unsupportedReason ?? quotaRead.reason}</span>
+        </div>
+      )}
 
       {/* Beta banner — scoped to this page only */}
       <div className="flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-700 dark:text-amber-200">
@@ -466,92 +567,96 @@ export default function QuotaSharePageClient() {
         </a>
       </div>
 
-      {/* Group bar */}
-      <div className="flex items-center gap-2 flex-wrap rounded-lg border border-border/40 bg-bg-subtle/20 px-3 py-2">
-        <span className="text-[11px] uppercase tracking-wide text-text-muted font-semibold shrink-0">
-          {t("groupLabel")}
-        </span>
-        <select
-          value={selectedGroupId}
-          onChange={(e) => setSelectedGroupId(e.target.value)}
-          title={t("groupSelectHint")}
-          className="px-2 py-1 rounded border border-border bg-bg-base text-sm text-text-main min-w-[120px]"
-        >
-          <option value="all">{t("allGroups")}</option>
-          {groups.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
-            </option>
-          ))}
-        </select>
-        {showNewGroupInput ? (
-          <div className="flex items-center gap-1">
-            <input
-              type="text"
-              value={newGroupInput}
-              onChange={(e) => setNewGroupInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") void handleCreateGroup();
-                if (e.key === "Escape") {
+      {/* Group bar — a group <select> over an absent collection would only
+          ever offer the "all" sentinel, so it is hidden together with its
+          create/rename/delete actions. */}
+      {quotaRead.supported && (
+        <div className="flex items-center gap-2 flex-wrap rounded-lg border border-border/40 bg-bg-subtle/20 px-3 py-2">
+          <span className="text-[11px] uppercase tracking-wide text-text-muted font-semibold shrink-0">
+            {t("groupLabel")}
+          </span>
+          <select
+            value={selectedGroupId}
+            onChange={(e) => setSelectedGroupId(e.target.value)}
+            title={t("groupSelectHint")}
+            className="px-2 py-1 rounded border border-border bg-bg-base text-sm text-text-main min-w-[120px]"
+          >
+            <option value="all">{t("allGroups")}</option>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+          {showNewGroupInput ? (
+            <div className="flex items-center gap-1">
+              <input
+                type="text"
+                value={newGroupInput}
+                onChange={(e) => setNewGroupInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void handleCreateGroup();
+                  if (e.key === "Escape") {
+                    setShowNewGroupInput(false);
+                    setNewGroupInput("");
+                  }
+                }}
+                placeholder={t("groupNamePrompt")}
+                autoFocus
+                className="px-2 py-1 rounded border border-border bg-bg-base text-sm w-36"
+              />
+              <button
+                type="button"
+                onClick={() => void handleCreateGroup()}
+                disabled={!newGroupInput.trim()}
+                className="text-xs px-2 py-1 rounded bg-primary/15 text-primary hover:bg-primary/25 transition-colors disabled:opacity-40"
+              >
+                {t("newGroup")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
                   setShowNewGroupInput(false);
                   setNewGroupInput("");
-                }
-              }}
-              placeholder={t("groupNamePrompt")}
-              autoFocus
-              className="px-2 py-1 rounded border border-border bg-bg-base text-sm w-36"
-            />
+                }}
+                className="text-xs px-2 py-1 rounded border border-border text-text-muted hover:text-text-main transition-colors"
+              >
+                {t("cancel")}
+              </button>
+            </div>
+          ) : (
             <button
               type="button"
-              onClick={() => void handleCreateGroup()}
-              disabled={!newGroupInput.trim()}
-              className="text-xs px-2 py-1 rounded bg-primary/15 text-primary hover:bg-primary/25 transition-colors disabled:opacity-40"
+              onClick={() => setShowNewGroupInput(true)}
+              className="flex items-center gap-1 text-xs text-text-muted hover:text-text-main transition-colors"
             >
+              <span className="material-symbols-outlined text-[14px]">add</span>
               {t("newGroup")}
             </button>
+          )}
+          {selectedGroupId !== "all" && (
             <button
               type="button"
-              onClick={() => {
-                setShowNewGroupInput(false);
-                setNewGroupInput("");
-              }}
-              className="text-xs px-2 py-1 rounded border border-border text-text-muted hover:text-text-main transition-colors"
+              onClick={() => void handleRenameGroup()}
+              disabled={renaming}
+              className="flex items-center gap-1 text-xs text-text-muted hover:text-text-main transition-colors ml-1 disabled:opacity-40"
             >
-              {t("cancel")}
+              <span className="material-symbols-outlined text-[14px]">edit</span>
+              {t("renameGroup")}
             </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowNewGroupInput(true)}
-            className="flex items-center gap-1 text-xs text-text-muted hover:text-text-main transition-colors"
-          >
-            <span className="material-symbols-outlined text-[14px]">add</span>
-            {t("newGroup")}
-          </button>
-        )}
-        {selectedGroupId !== "all" && (
-          <button
-            type="button"
-            onClick={() => void handleRenameGroup()}
-            disabled={renaming}
-            className="flex items-center gap-1 text-xs text-text-muted hover:text-text-main transition-colors ml-1 disabled:opacity-40"
-          >
-            <span className="material-symbols-outlined text-[14px]">edit</span>
-            {t("renameGroup")}
-          </button>
-        )}
-        {selectedGroupId !== "all" && selectedGroupId !== "group-demo" && (
-          <button
-            type="button"
-            onClick={() => void handleDeleteGroup()}
-            className="flex items-center gap-1 text-xs text-text-muted hover:text-red-400 transition-colors"
-          >
-            <span className="material-symbols-outlined text-[14px]">delete</span>
-            {t("deleteGroup")}
-          </button>
-        )}
-      </div>
+          )}
+          {selectedGroupId !== "all" && selectedGroupId !== "group-demo" && (
+            <button
+              type="button"
+              onClick={() => void handleDeleteGroup()}
+              className="flex items-center gap-1 text-xs text-text-muted hover:text-red-400 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[14px]">delete</span>
+              {t("deleteGroup")}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Concept card */}
       <QuotaConceptCard />
@@ -570,13 +675,21 @@ export default function QuotaSharePageClient() {
         <StatCard label={t("kpiKeysAllocated")} value={String(stats.keysAllocated)} />
         <StatCard
           label={t("kpiAvgUtilization")}
-          value={`${Math.round(stats.avgUtilization)}%`}
-          tone={stats.avgUtilization > 80 ? "red" : stats.avgUtilization > 50 ? "amber" : "green"}
+          value={stats.avgUtilization === null ? "—" : `${Math.round(stats.avgUtilization)}%`}
+          tone={
+            stats.avgUtilization === null
+              ? undefined
+              : stats.avgUtilization > 80
+                ? "red"
+                : stats.avgUtilization > 50
+                  ? "amber"
+                  : "green"
+          }
         />
         <StatCard
           label={t("kpiBorrowingNow")}
-          value={String(stats.borrowingNow)}
-          tone={stats.borrowingNow > 0 ? "amber" : undefined}
+          value={stats.borrowingNow === null ? "—" : String(stats.borrowingNow)}
+          tone={stats.borrowingNow !== null && stats.borrowingNow > 0 ? "amber" : undefined}
         />
       </div>
 
@@ -590,7 +703,13 @@ export default function QuotaSharePageClient() {
           <span className="material-symbols-outlined text-[64px] opacity-15">pie_chart</span>
           <h3 className="mt-3 text-base font-semibold text-text-main">{t("emptyTitle")}</h3>
           <p className="mt-1 text-sm text-text-muted max-w-md mx-auto">{t("emptyDescription")}</p>
-          <Button variant="primary" size="sm" className="mt-4" onClick={() => setCreateOpen(true)}>
+          <Button
+            variant="primary"
+            size="sm"
+            className="mt-4"
+            disabled={!writeSupported}
+            onClick={() => setCreateOpen(true)}
+          >
             <span className="material-symbols-outlined text-[14px] mr-1">add</span>
             {t("newPool")}
           </Button>
@@ -604,6 +723,7 @@ export default function QuotaSharePageClient() {
                 variant="primary"
                 size="sm"
                 className="mt-3"
+                disabled={!writeSupported}
                 onClick={() => setCreateOpen(true)}
               >
                 <span className="material-symbols-outlined text-[14px] mr-1">add</span>
@@ -632,6 +752,7 @@ export default function QuotaSharePageClient() {
                         variant="primary"
                         size="sm"
                         className="mt-3"
+                        disabled={!writeSupported}
                         onClick={() => setCreateOpen(true)}
                       >
                         <span className="material-symbols-outlined text-[14px] mr-1">add</span>

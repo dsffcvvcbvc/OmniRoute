@@ -13,9 +13,11 @@ import {
 
 type TelemetrySample = {
   timestamp: number;
-  latencyMs: number;
-  throughput: number;
-  memoryBytes: number;
+  // Nullable: a missing native counter stays null so the sparkline skips it
+  // instead of drawing a fabricated zero dip (telemetry zeros render as "—").
+  latencyMs: number | null;
+  throughput: number | null;
+  memoryBytes: number | null;
 };
 
 const REFRESH_MS = 30_000;
@@ -56,27 +58,21 @@ function formatPercent(value?: number | null) {
   return `${value.toFixed(2)}%`;
 }
 
-function Sparkline({
-  samples,
-  field,
-}: {
-  samples: TelemetrySample[];
-  field: keyof TelemetrySample;
-}) {
-  const values = samples
-    .map((sample) => Number(sample[field]))
-    .filter((value) => Number.isFinite(value));
+function Sparkline({ values }: { values: (number | null | undefined)[] }) {
+  const finite = values.filter(
+    (value): value is number => typeof value === "number" && Number.isFinite(value)
+  );
 
-  if (values.length < 2) {
+  if (finite.length < 2) {
     return <div className="h-10 rounded-lg bg-sidebar/50" />;
   }
 
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  const min = Math.min(...finite);
+  const max = Math.max(...finite);
   const range = Math.max(1, max - min);
-  const points = values
+  const points = finite
     .map((value, index) => {
-      const x = (index / Math.max(1, values.length - 1)) * 100;
+      const x = (index / Math.max(1, finite.length - 1)) * 100;
       const y = 36 - ((value - min) / range) * 32;
       return `${x.toFixed(2)},${y.toFixed(2)}`;
     })
@@ -138,16 +134,17 @@ export default function TelemetryCard() {
       setLastUpdated(new Date());
       failuresRef.current = 0;
       // Only accumulate a sample when the native payload actually reported a
-      // counter. Pushing fabricated zeros would draw a convincing flat line
-      // where the honest answer is "no data".
+      // counter. Missing counters stay null (never fabricated zeros) so the
+      // sparkline skips them instead of drawing a convincing flat line where
+      // the honest answer is "no data".
       if (next.avgLatencyMs !== null || next.totalRequests !== null) {
         setSamples((prev) => [
           ...prev.slice(Math.max(0, prev.length - MAX_SAMPLES + 1)),
           {
             timestamp: Date.now(),
-            latencyMs: next.avgLatencyMs ?? 0,
-            throughput: next.totalRequests ?? 0,
-            memoryBytes: 0,
+            latencyMs: next.avgLatencyMs,
+            throughput: next.totalRequests,
+            memoryBytes: null,
           },
         ]);
       }
@@ -307,14 +304,14 @@ export default function TelemetryCard() {
             <span>{t("latencyTrend")}</span>
             <span>{formatMs(values.p95Latency)} p95</span>
           </div>
-          <Sparkline samples={samples} field="latencyMs" />
+          <Sparkline values={samples.map((sample) => sample.latencyMs)} />
         </div>
         <div className="rounded-xl border border-border bg-surface/40 p-3">
           <div className="mb-2 flex items-center justify-between text-xs text-text-muted">
             <span>{t("throughputTrend")}</span>
             <span>{formatCount(values.totalRequests)}</span>
           </div>
-          <Sparkline samples={samples} field="throughput" />
+          <Sparkline values={samples.map((sample) => sample.throughput)} />
         </div>
         <div className="rounded-xl border border-border bg-surface/40 p-3">
           <div className="mb-2 flex items-center justify-between text-xs text-text-muted">
@@ -322,7 +319,7 @@ export default function TelemetryCard() {
             <span>{formatBytes(null)}</span>
           </div>
           {/* No process-memory series natively — always the empty placeholder. */}
-          <Sparkline samples={[]} field="memoryBytes" />
+          <Sparkline values={[]} />
         </div>
       </div>
     </Card>

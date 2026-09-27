@@ -1902,7 +1902,9 @@
     "readinessStep3": "သင်၏ endpoint ကို ကူးယူပါ",
     "readinessStep4": "စမ်းသပ်တောင်းဆိုမှုတစ်ခု ပို့ပါ",
     "readinessContinue": "စနစ်ထည့်သွင်းမှုကို ဆက်လုပ်ပါ",
-    "readinessDismiss": "ယခုအတွက် ပိတ်ထားပါ"
+    "readinessDismiss": "ယခုအတွက် ပိတ်ထားပါ",
+    "coreUnreachableBadge": "Core unreachable",
+    "coreUnreachableHint": "The admin plane is unreachable, so the setup state is unknown — not complete."
   },
   "analytics": {
     "title": "ခွဲခြမ်းစိတ်ဖြာချက်များ",
@@ -4811,7 +4813,21 @@
     "issueCount": "ပြဿနာ {count} ခု",
     "score": "ရမှတ်",
     "lastRequest": "နောက်ဆုံးတောင်းဆိုမှု",
-    "lastError": "နောက်ဆုံးအမှား"
+    "lastError": "နောက်ဆုံးအမှား",
+    "cooldownStatusTitle": "Keys in Cooldown (429)",
+    "cooldownStatusDescription": "Keys in Cooldown after 429; used for Failover/SSE/TTFT diagnostics.",
+    "cooldownColKey": "Key",
+    "cooldownColProvider": "Provider",
+    "cooldownColUntil": "Cooldown until",
+    "cooldownColReason": "Reason",
+    "cooldownEmpty": "No keys in Cooldown right now.",
+    "cooldownLoadFailed": "Failed to load Cooldown status: {error}",
+    "hotReloadTitle": "Resources Hot-Reload",
+    "hotReloadDescription": "Admin resources version; green badge means Hot-Reload applied.",
+    "hotReloadOk": "Hot-Reload OK",
+    "hotReloadUnavailable": "Unavailable",
+    "hotReloadAppliedAt": "Applied at",
+    "hotReloadError": "Resources admin is unreachable."
   },
   "telemetry": {
     "title": "စနစ် တယ်လီမက်ထရီ",

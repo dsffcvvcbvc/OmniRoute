@@ -58,6 +58,7 @@ const ImportProvidersFromFileModal = dynamic(
   { ssr: false }
 );
 import NoAuthProvidersSection from "./components/NoAuthProvidersSection";
+import PresetProvidersSection from "./components/PresetProvidersSection";
 import HighlightableProviderCard from "./components/HighlightableProviderCard";
 import ProviderCountBadge from "./components/ProviderCountBadge";
 import ProviderSummaryCard from "./components/ProviderSummaryCard";
@@ -1841,6 +1842,12 @@ function ProvidersPageContent() {
             )}
           </>
         )}
+
+        {/* Core preset catalog: vendors without a local connection yet. Rendered
+            outside the static-catalog category filters on purpose — it is driven
+            by `:3001/admin/v1/preset_providers`, not by the local catalog, and
+            degrades to its own honest empty state when the core has no catalog. */}
+        <PresetProvidersSection connections={connections} />
 
         <AddCompatibleProviderModal
           isOpen={showAddCompatibleModal}

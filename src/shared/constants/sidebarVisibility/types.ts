@@ -149,6 +149,16 @@ export interface SidebarItemDefinition {
   exact?: boolean;
   external?: boolean;
   /**
+   * AISIX SPA export marker (AGENT.md §3.3). When true, the item drives a
+   * Node-only subsystem (MITM target registry, traffic-inspector proxy) that
+   * does not exist in the Rust core, so the static bundle can only render a
+   * dead link: `aisixSpaFilter()` in sections.ts drops the item while
+   * `NEXT_PUBLIC_AISIX_SPA_EXPORT === "1"`. The same marker is the hook for
+   * the "external / unavailable in SPA" badge — Sidebar renders it from this
+   * field, so badge and hiding can never drift apart.
+   */
+  spaUnavailable?: boolean;
+  /**
    * Opt-in feature-flag gate. When present, the item is only shown while the
    * named flag resolves to `true` server-side. Sidebar.tsx has no built-in
    * feature-flag awareness — the flag's resolved value is fetched once

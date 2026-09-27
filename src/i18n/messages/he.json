@@ -1902,7 +1902,9 @@
     "readinessStep3": "העתקת נקודת הקצה שלכם",
     "readinessStep4": "שליחת בקשת בדיקה",
     "readinessContinue": "המשך ההגדרה",
-    "readinessDismiss": "התעלמות לעת עתה"
+    "readinessDismiss": "התעלמות לעת עתה",
+    "coreUnreachableBadge": "Core unreachable",
+    "coreUnreachableHint": "The admin plane is unreachable, so the setup state is unknown — not complete."
   },
   "analytics": {
     "title": "אנליטיקס",
@@ -4811,7 +4813,21 @@
     "issueCount": "{count} בעיות",
     "score": "ציון",
     "lastRequest": "בקשה אחרונה",
-    "lastError": "שגיאה אחרונה"
+    "lastError": "שגיאה אחרונה",
+    "cooldownStatusTitle": "Keys in Cooldown (429)",
+    "cooldownStatusDescription": "Keys in Cooldown after 429; used for Failover/SSE/TTFT diagnostics.",
+    "cooldownColKey": "Key",
+    "cooldownColProvider": "Provider",
+    "cooldownColUntil": "Cooldown until",
+    "cooldownColReason": "Reason",
+    "cooldownEmpty": "No keys in Cooldown right now.",
+    "cooldownLoadFailed": "Failed to load Cooldown status: {error}",
+    "hotReloadTitle": "Resources Hot-Reload",
+    "hotReloadDescription": "Admin resources version; green badge means Hot-Reload applied.",
+    "hotReloadOk": "Hot-Reload OK",
+    "hotReloadUnavailable": "Unavailable",
+    "hotReloadAppliedAt": "Applied at",
+    "hotReloadError": "Resources admin is unreachable."
   },
   "telemetry": {
     "title": "טלמטריית מערכת",

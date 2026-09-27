@@ -6,6 +6,11 @@ import ProviderIcon from "@/shared/components/ProviderIcon";
 import useEmailPrivacyStore from "@/store/emailPrivacyStore";
 import { maskEmailLikeValue } from "@/shared/utils/maskEmail";
 import {
+  fetchAisixJson,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
+import {
   parseQuotaData,
   calculatePercentage,
   formatCountdown,
@@ -59,10 +64,8 @@ function summarizeQuotas(provider: string, raw: unknown): QuotaSummary | null {
 }
 
 function PctDot({ pct }: { pct: number }) {
-  const color =
-    pct <= 20 ? "bg-red-500" : pct <= 50 ? "bg-yellow-500" : "bg-emerald-500";
-  const textColor =
-    pct <= 20 ? "text-red-500" : pct <= 50 ? "text-yellow-500" : "text-emerald-500";
+  const color = pct <= 20 ? "bg-red-500" : pct <= 50 ? "bg-yellow-500" : "bg-emerald-500";
+  const textColor = pct <= 20 ? "text-red-500" : pct <= 50 ? "text-yellow-500" : "text-emerald-500";
   return (
     <span className={`inline-flex items-center gap-1 tabular-nums text-[11px] ${textColor}`}>
       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${color}`} aria-hidden />
@@ -91,41 +94,49 @@ export default function AccountQuotaRow({
   const [caches, setCaches] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState(false);
 
+  // The per-connection quota caches are a Next.js-only read; `:9090/status/models`
+  // reports provider/model STATES, not remaining quota, so mapping one onto the
+  // other would invent percentages. The row therefore reports "no quota data"
+  // for the same reason it did before — but now because the surface is known to
+  // be absent, not because a 404 was swallowed.
+  const quotaCachesRead = resolveAisixSurfaceSupport("usage", "read");
+
   useEffect(() => {
+    if (!quotaCachesRead.supported) return;
     let alive = true;
-    fetch("/api/usage/provider-limits")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!alive) return;
-        const map = data?.caches;
-        setCaches(map && typeof map === "object" ? (map as Record<string, unknown>) : {});
-      })
-      .catch(() => {
-        if (alive) setError(true);
-      });
+    void (async () => {
+      const result = await fetchAisixJson(resolveAisixRequestUrl("/api/usage/provider-limits"));
+      if (!alive) return;
+      if (!result.ok) {
+        setError(true);
+        return;
+      }
+      const data = (result.data ?? {}) as { caches?: unknown };
+      const map = data.caches;
+      setCaches(map && typeof map === "object" ? (map as Record<string, unknown>) : {});
+    })();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [quotaCachesRead.supported]);
+
+  // Derived, not stored: an unsupported read never loads, so it must not need a
+  // setState round-trip to leave the "still loading" state.
+  const resolvedCaches = quotaCachesRead.supported ? caches : {};
 
   // Resolve the effective connection list to display
-  const ids: string[] = Array.isArray(connectionIds) && connectionIds.length > 0
-    ? connectionIds
-    : [];
+  const ids: string[] =
+    Array.isArray(connectionIds) && connectionIds.length > 0 ? connectionIds : [];
 
   // Resolve provider for each connection (providers[i] matches connectionIds[i])
   const providerFor = (index: number): string =>
-    Array.isArray(providers) && providers[index] != null
-      ? (providers[index] as string)
-      : provider;
+    Array.isArray(providers) && providers[index] != null ? (providers[index] as string) : provider;
 
   const renderFallback = () => (
-    <span className="text-[11px] text-text-muted tabular-nums">
-      {t("accountQuotaNone")}
-    </span>
+    <span className="text-[11px] text-text-muted tabular-nums">{t("accountQuotaNone")}</span>
   );
 
-  if (error || caches === null) {
+  if (error || (quotaCachesRead.supported && caches === null)) {
     return (
       <div className="mt-2 pt-2 border-t border-border/30">
         <span className="text-[10px] uppercase tracking-wide font-bold text-text-muted block mb-1">
@@ -155,7 +166,7 @@ export default function AccountQuotaRow({
       </span>
       <div className="flex flex-col gap-1">
         {ids.map((connId, idx) => {
-          const raw = caches?.[connId];
+          const raw = resolvedCaches[connId];
           const prov = providerFor(idx);
           const summary = summarizeQuotas(prov, raw);
           const reset = summary?.resetAt ? formatCountdown(summary.resetAt) : null;
@@ -165,15 +176,16 @@ export default function AccountQuotaRow({
               <span className="shrink-0">
                 <ProviderIcon providerId={prov} size={14} />
               </span>
-              <span className="text-text-muted truncate max-w-[90px]" title={emailsVisible ? connId : maskEmailLikeValue(connId)}>
+              <span
+                className="text-text-muted truncate max-w-[90px]"
+                title={emailsVisible ? connId : maskEmailLikeValue(connId)}
+              >
                 {emailsVisible ? `${connId.slice(0, 8)}…` : maskEmailLikeValue(connId)}
               </span>
               {summary ? (
                 <>
                   <PctDot pct={summary.pct} />
-                  {reset ? (
-                    <span className="text-text-muted">· {reset}</span>
-                  ) : null}
+                  {reset ? <span className="text-text-muted">· {reset}</span> : null}
                 </>
               ) : (
                 <span className="text-text-muted">{t("accountQuotaNone")}</span>

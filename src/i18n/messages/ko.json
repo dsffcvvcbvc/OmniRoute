@@ -1902,7 +1902,9 @@
     "readinessStep3": "엔드포인트 복사",
     "readinessStep4": "테스트 요청 보내기",
     "readinessContinue": "설정 계속하기",
-    "readinessDismiss": "지금은 닫기"
+    "readinessDismiss": "지금은 닫기",
+    "coreUnreachableBadge": "Core unreachable",
+    "coreUnreachableHint": "The admin plane is unreachable, so the setup state is unknown — not complete."
   },
   "analytics": {
     "title": "분석",
@@ -4811,7 +4813,21 @@
     "issueCount": "{count}개 이슈",
     "score": "점수",
     "lastRequest": "최근 요청",
-    "lastError": "최근 오류"
+    "lastError": "최근 오류",
+    "cooldownStatusTitle": "Keys in Cooldown (429)",
+    "cooldownStatusDescription": "Keys in Cooldown after 429; used for Failover/SSE/TTFT diagnostics.",
+    "cooldownColKey": "Key",
+    "cooldownColProvider": "Provider",
+    "cooldownColUntil": "Cooldown until",
+    "cooldownColReason": "Reason",
+    "cooldownEmpty": "No keys in Cooldown right now.",
+    "cooldownLoadFailed": "Failed to load Cooldown status: {error}",
+    "hotReloadTitle": "Resources Hot-Reload",
+    "hotReloadDescription": "Admin resources version; green badge means Hot-Reload applied.",
+    "hotReloadOk": "Hot-Reload OK",
+    "hotReloadUnavailable": "Unavailable",
+    "hotReloadAppliedAt": "Applied at",
+    "hotReloadError": "Resources admin is unreachable."
   },
   "telemetry": {
     "title": "시스템 원격 측정",

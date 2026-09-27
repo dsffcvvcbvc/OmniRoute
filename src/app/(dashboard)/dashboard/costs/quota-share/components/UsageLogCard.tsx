@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import {
+  fetchAisixJson,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
 import type { ConsumptionEvent } from "@/lib/db/quotaConsumption";
 
 export interface UsageLogCardProps {
@@ -28,7 +33,9 @@ function formatTime(epochMs: number): string {
  * GET /api/quota/pools/[id]/log.
  *
  * Fail-soft: on error / loading / no data → renders an empty-state message.
- * Never throws; never crashes the parent PoolCard.
+ * Never throws; never crashes the parent PoolCard. On a gateway with no quota
+ * store it states that explicitly instead of showing "no events" (the previous
+ * behaviour, where a 404 was swallowed into an empty list).
  *
  * Collapsed by default so pool cards stay compact.
  */
@@ -37,28 +44,39 @@ export default function UsageLogCard({ poolId, keyLabels }: UsageLogCardProps) {
   const [open, setOpen] = useState(false);
   const [events, setEvents] = useState<ConsumptionEvent[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [readError, setReadError] = useState<string | null>(null);
+  const quotaLogRead = resolveAisixSurfaceSupport("quota", "read");
 
   useEffect(() => {
     if (!open) return;
+    if (!quotaLogRead.supported) return;
     let alive = true;
-    fetch(`/api/quota/pools/${poolId}/log`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!alive) return;
-        const raw: unknown = data?.events;
-        setEvents(Array.isArray(raw) ? (raw as ConsumptionEvent[]) : [] ?? []);
+    void (async () => {
+      const result = await fetchAisixJson(
+        resolveAisixRequestUrl(`/api/quota/pools/${encodeURIComponent(poolId)}/log`)
+      );
+      if (!alive) return;
+      if (!result.ok) {
+        // A gateway 404 and a transport failure share one copy here; the
+        // "absent surface" wording is supplied by `unavailableReason` below.
+        setReadError(t("logEmpty"));
+        setEvents([]);
         setLoaded(true);
-      })
-      .catch(() => {
-        if (alive) {
-          setEvents([] ?? []);
-          setLoaded(true);
-        }
-      });
+        return;
+      }
+      const raw: unknown = (result.data ?? {}) as { events?: unknown } | null;
+      setEvents(Array.isArray(raw) ? (raw as ConsumptionEvent[]) : []);
+      setLoaded(true);
+    })();
     return () => {
       alive = false;
     };
-  }, [open, poolId]);
+  }, [open, poolId, t, quotaLogRead.supported]);
+
+  // Derived from the build-time support flag, so a gateway without the log
+  // surface never needs a state write to stop showing "loading".
+  const unavailableReason = !quotaLogRead.supported ? quotaLogRead.reason : readError;
+  const isLoaded = quotaLogRead.supported ? loaded : true;
 
   const keyLabel = (apiKeyId: string): string =>
     keyLabels?.[apiKeyId] ?? apiKeyId.slice(0, 10) + "…";
@@ -80,8 +98,16 @@ export default function UsageLogCard({ poolId, keyLabels }: UsageLogCardProps) {
 
       {open && (
         <div className="mt-1.5">
-          {!loaded ? (
+          {!isLoaded ? (
             <div className="text-[11px] text-text-muted italic">{t("loading")}</div>
+          ) : unavailableReason ? (
+            <div
+              role="status"
+              data-testid="quota-usage-log-unavailable"
+              className="rounded border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-700 dark:text-amber-200"
+            >
+              {unavailableReason}
+            </div>
           ) : events.length === 0 ? (
             <div className="text-[11px] text-text-muted italic">{t("logEmpty")}</div>
           ) : (

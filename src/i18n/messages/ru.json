@@ -1903,7 +1903,9 @@
     "readinessStep3": "Скопируйте конечную точку",
     "readinessStep4": "Отправьте тестовый запрос",
     "readinessContinue": "Продолжить настройку",
-    "readinessDismiss": "Пока скрыть"
+    "readinessDismiss": "Пока скрыть",
+    "coreUnreachableBadge": "Ядро недоступно",
+    "coreUnreachableHint": "Админка недоступна, поэтому состояние настройки неизвестно — не завершено."
   },
   "analytics": {
     "title": "Аналитика",
@@ -3539,7 +3541,7 @@
     "excludedProviders": "Исключённые провайдеры",
     "excludedProvidersHint": "Провайдеры с механизмом Circuit Breaker в состоянии OPEN временно исключаются из маршрутизации.",
     "noExcludedProviders": "В настоящее время исключённых провайдеров нет.",
-    "cooldownMinutes": "Cooldown: {minutes} мин",
+    "cooldownMinutes": "Cooldown: {minutes, plural, one {# минута} few {# минуты} many {# минут} other {# минуты}}",
     "builderIntelligentTitle": "Настройка интеллектуальной маршрутизации",
     "builderIntelligentDesc": "Настройте механизм многофакторной оценки для этой комбинации автоматической маршрутизации.",
     "candidatePoolLabel": "Пул кандидатов",
@@ -3929,7 +3931,7 @@
     "machineId": "Идентификатор машины: {id}...",
     "disableCloud": "Отключить облако",
     "enableCloud": "Включить облако",
-    "modelsAcrossEndpoints": "{models} модели на {endpoints} конечных точках",
+    "modelsAcrossEndpoints": "{models, plural, one {# модель} few {# модели} many {# моделей} other {# модели}} на {endpoints, plural, one {# конечной точке} few {# конечных точках} many {# конечных точках} other {# конечных точках}}",
     "loadingModels": "Загрузка доступных моделей...",
     "chatDesc": "Потоковое и непотоковое чат со всеми провайдерами",
     "embeddings": "Вложения",

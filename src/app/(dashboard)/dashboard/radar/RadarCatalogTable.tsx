@@ -4,6 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Card } from "@/shared/components";
+import { useNotificationStore } from "@/store/notificationStore";
+import {
+  fetchAisixJson,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
 
 export interface RadarMergedEntry {
   provider: string;
@@ -122,21 +128,31 @@ function capabilityBadge(
 
 export function RadarCatalogTable({ entries, refreshCatalog, onError }: RadarCatalogTableProps) {
   const t = useTranslations("radarPage");
+  const notify = useNotificationStore();
   const [states, setStates] = useState<RadarLocalModelState[]>([]);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [enabled, setEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
+  // Per-model local overrides (rename / enable / tombstone) live in the
+  // Next.js-only Radar store: there is no AISIX write surface for them. Buttons
+  // are disabled and the click still refuses loudly, so a save can never look
+  // like it silently did nothing.
+  const localStateWrite = resolveAisixSurfaceSupport("radar", "write");
+  const localStateSupported = localStateWrite.supported;
 
   const loadState = useCallback(async () => {
-    try {
-      const response = await fetch("/api/radar/local-model-state");
-      if (!response.ok) return;
-      const payload = await response.json();
-      setStates(Array.isArray(payload.states) ? payload.states : []);
-    } catch {
-      onError(t("errorLoading"));
+    if (!resolveAisixSurfaceSupport("radar", "read").supported) {
+      onError("");
+      return;
     }
+    const result = await fetchAisixJson(resolveAisixRequestUrl("/api/radar/local-model-state"));
+    if (!result.ok) {
+      if (result.error) onError(`${t("errorLoading")} (${result.error})`);
+      return;
+    }
+    const payload = (result.data ?? {}) as { states?: unknown };
+    setStates(Array.isArray(payload.states) ? (payload.states as RadarLocalModelState[]) : []);
   }, [onError, t]);
 
   useEffect(() => {
@@ -151,27 +167,34 @@ export function RadarCatalogTable({ entries, refreshCatalog, onError }: RadarCat
   );
   const hiddenModels = useMemo(() => states.filter((state) => state.tombstoned), [states]);
 
-  const applyResponse = useCallback(async (response: Response) => {
-    if (!response.ok) throw new Error("save_failed");
-    const payload = await response.json();
-    setStates(Array.isArray(payload.states) ? payload.states : []);
-  }, []);
+  const refuseLocalStateWrite = useCallback(
+    (action: string): boolean => {
+      if (localStateSupported) return false;
+      notify.error(`AISIX-шлюз: ${action} недоступно. ${localStateWrite.reason}`);
+      return true;
+    },
+    [localStateSupported, notify, localStateWrite.reason]
+  );
 
   const mutate = useCallback(
-    async (operation: () => Promise<Response>) => {
+    async (action: string, operation: () => Promise<Response>) => {
+      if (refuseLocalStateWrite(action)) return;
       setSaving(true);
       onError("");
       try {
-        await applyResponse(await operation());
+        const response = await operation();
+        if (!response.ok) throw new Error(`save_failed: HTTP ${response.status}`);
+        const payload = (await response.json()) as { states?: unknown };
+        setStates(Array.isArray(payload.states) ? (payload.states as RadarLocalModelState[]) : []);
         setEditingKey(null);
         await refreshCatalog();
-      } catch {
-        onError(t("localStateSaveFailed"));
+      } catch (err) {
+        onError(err instanceof Error ? err.message : t("localStateSaveFailed"));
       } finally {
         setSaving(false);
       }
     },
-    [applyResponse, onError, refreshCatalog, t]
+    [onError, refreshCatalog, t, refuseLocalStateWrite]
   );
 
   const beginEdit = useCallback((entry: RadarMergedEntry) => {
@@ -182,8 +205,8 @@ export function RadarCatalogTable({ entries, refreshCatalog, onError }: RadarCat
 
   const saveOverride = useCallback(
     (entry: RadarMergedEntry) =>
-      mutate(() =>
-        fetch("/api/radar/local-model-state", {
+      mutate("Переименование модели", () =>
+        fetch(resolveAisixRequestUrl("/api/radar/local-model-state"), {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -200,8 +223,10 @@ export function RadarCatalogTable({ entries, refreshCatalog, onError }: RadarCat
   const resetOverride = useCallback(
     (entry: Pick<RadarMergedEntry, "provider" | "modelId">) => {
       const query = new URLSearchParams({ provider: entry.provider, modelId: entry.modelId });
-      return mutate(() =>
-        fetch(`/api/radar/local-model-state?${query.toString()}`, { method: "DELETE" })
+      return mutate("Сброс локальных правок", () =>
+        fetch(`${resolveAisixRequestUrl("/api/radar/local-model-state")}?${query.toString()}`, {
+          method: "DELETE",
+        })
       );
     },
     [mutate]
@@ -209,8 +234,8 @@ export function RadarCatalogTable({ entries, refreshCatalog, onError }: RadarCat
 
   const setTombstone = useCallback(
     (provider: string, modelId: string, tombstoned: boolean) =>
-      mutate(() =>
-        fetch("/api/radar/local-model-state", {
+      mutate("Скрытие модели", () =>
+        fetch(resolveAisixRequestUrl("/api/radar/local-model-state"), {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ provider, modelId, tombstoned }),
@@ -221,6 +246,16 @@ export function RadarCatalogTable({ entries, refreshCatalog, onError }: RadarCat
 
   return (
     <>
+      {!localStateSupported && (
+        <div
+          role="status"
+          data-testid="radar-local-state-unavailable"
+          className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-200"
+        >
+          {localStateWrite.reason} Локальные правки моделей (переименование, вкл/выкл, скрытие)
+          отключены.
+        </div>
+      )}
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -367,7 +402,9 @@ export function RadarCatalogTable({ entries, refreshCatalog, onError }: RadarCat
                           </label>
                           <button
                             type="button"
-                            disabled={saving || displayName.trim().length === 0}
+                            disabled={
+                              !localStateSupported || saving || displayName.trim().length === 0
+                            }
                             onClick={() => void saveOverride(entry)}
                             className="text-xs text-violet-400 hover:underline disabled:opacity-50"
                           >
@@ -395,7 +432,7 @@ export function RadarCatalogTable({ entries, refreshCatalog, onError }: RadarCat
                           {hasOverride && (
                             <button
                               type="button"
-                              disabled={saving}
+                              disabled={!localStateSupported || saving}
                               onClick={() => void resetOverride(entry)}
                               className="text-xs text-text-muted hover:text-text-main disabled:opacity-50"
                             >
@@ -404,7 +441,7 @@ export function RadarCatalogTable({ entries, refreshCatalog, onError }: RadarCat
                           )}
                           <button
                             type="button"
-                            disabled={saving}
+                            disabled={!localStateSupported || saving}
                             onClick={() => void setTombstone(entry.provider, entry.modelId, true)}
                             className="text-xs text-red-400 hover:underline disabled:opacity-50"
                           >
@@ -438,7 +475,7 @@ export function RadarCatalogTable({ entries, refreshCatalog, onError }: RadarCat
                 </div>
                 <button
                   type="button"
-                  disabled={saving}
+                  disabled={!localStateSupported || saving}
                   onClick={() => void setTombstone(state.provider, state.modelId, false)}
                   className="text-sm text-violet-400 hover:underline disabled:opacity-50"
                 >

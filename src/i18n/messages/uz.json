@@ -1902,7 +1902,9 @@
     "readinessStep3": "Endpoint manzilingizni nusxalang",
     "readinessStep4": "Sinov soʻrovini yuboring",
     "readinessContinue": "Sozlashni davom ettirish",
-    "readinessDismiss": "Hozircha yopish"
+    "readinessDismiss": "Hozircha yopish",
+    "coreUnreachableBadge": "Core unreachable",
+    "coreUnreachableHint": "The admin plane is unreachable, so the setup state is unknown — not complete."
   },
   "analytics": {
     "title": "Tahlil",
@@ -4811,7 +4813,21 @@
     "issueCount": "{count} ta muammo",
     "score": "Ball",
     "lastRequest": "Oxirgi soʻrov",
-    "lastError": "Oxirgi xato"
+    "lastError": "Oxirgi xato",
+    "cooldownStatusTitle": "Keys in Cooldown (429)",
+    "cooldownStatusDescription": "Keys in Cooldown after 429; used for Failover/SSE/TTFT diagnostics.",
+    "cooldownColKey": "Key",
+    "cooldownColProvider": "Provider",
+    "cooldownColUntil": "Cooldown until",
+    "cooldownColReason": "Reason",
+    "cooldownEmpty": "No keys in Cooldown right now.",
+    "cooldownLoadFailed": "Failed to load Cooldown status: {error}",
+    "hotReloadTitle": "Resources Hot-Reload",
+    "hotReloadDescription": "Admin resources version; green badge means Hot-Reload applied.",
+    "hotReloadOk": "Hot-Reload OK",
+    "hotReloadUnavailable": "Unavailable",
+    "hotReloadAppliedAt": "Applied at",
+    "hotReloadError": "Resources admin is unreachable."
   },
   "telemetry": {
     "title": "Tizim telemetriyasi",

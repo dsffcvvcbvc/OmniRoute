@@ -1902,7 +1902,9 @@
     "readinessStep3": "നിങ്ങളുടെ എൻഡ്പോയിന്റ് പകർത്തുക",
     "readinessStep4": "ഒരു പരീക്ഷണ അഭ്യർത്ഥന അയയ്ക്കുക",
     "readinessContinue": "സജ്ജീകരണം തുടരുക",
-    "readinessDismiss": "ഇപ്പോൾ ഒഴിവാക്കുക"
+    "readinessDismiss": "ഇപ്പോൾ ഒഴിവാക്കുക",
+    "coreUnreachableBadge": "Core unreachable",
+    "coreUnreachableHint": "The admin plane is unreachable, so the setup state is unknown — not complete."
   },
   "analytics": {
     "title": "വിശകലനം",
@@ -4811,7 +4813,21 @@
     "issueCount": "{count} പ്രശ്നങ്ങൾ",
     "score": "സ്കോർ",
     "lastRequest": "അവസാന അഭ്യർഥന",
-    "lastError": "അവസാന പിശക്"
+    "lastError": "അവസാന പിശക്",
+    "cooldownStatusTitle": "Keys in Cooldown (429)",
+    "cooldownStatusDescription": "Keys in Cooldown after 429; used for Failover/SSE/TTFT diagnostics.",
+    "cooldownColKey": "Key",
+    "cooldownColProvider": "Provider",
+    "cooldownColUntil": "Cooldown until",
+    "cooldownColReason": "Reason",
+    "cooldownEmpty": "No keys in Cooldown right now.",
+    "cooldownLoadFailed": "Failed to load Cooldown status: {error}",
+    "hotReloadTitle": "Resources Hot-Reload",
+    "hotReloadDescription": "Admin resources version; green badge means Hot-Reload applied.",
+    "hotReloadOk": "Hot-Reload OK",
+    "hotReloadUnavailable": "Unavailable",
+    "hotReloadAppliedAt": "Applied at",
+    "hotReloadError": "Resources admin is unreachable."
   },
   "telemetry": {
     "title": "സിസ്റ്റം ടെലിമെട്രി",

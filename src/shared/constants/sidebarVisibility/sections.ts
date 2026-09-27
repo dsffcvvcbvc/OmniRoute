@@ -7,6 +7,25 @@ import type {
 
 // ─── Item arrays ────────────────────────────────────────────────────────────
 
+/**
+ * AISIX SPA profile (AGENT.md §3.3) — items whose pages drive a subsystem that
+ * does not exist in the Rust core (the MITM target registry, the
+ * traffic-inspector proxy, the Radar feed, quota-share), so the static bundle
+ * can only render a dead link or a page whose every read 404s.
+ *
+ * Filtered HERE, at the single source every consumer reads (Sidebar,
+ * CommandPalette, Header, Settings → Sidebar), instead of per-consumer: the
+ * marker is inlined into the client bundle by `next.config.mjs` (`env`), because
+ * `process.env.OMNIROUTE_EXPORT` is not readable in the browser. Driven by the
+ * per-item `spaUnavailable` marker (the same marker feeds the "external /
+ * unavailable in SPA" badge), not a detached id list, so badge and hiding
+ * cannot drift apart.
+ */
+function aisixSpaFilter(items: readonly SidebarItemDefinition[]): readonly SidebarItemDefinition[] {
+  if (process.env.NEXT_PUBLIC_AISIX_SPA_EXPORT !== "1") return items;
+  return items.filter((item) => !item.spaUnavailable);
+}
+
 const HOME_ITEMS: readonly SidebarItemDefinition[] = [
   {
     id: "home",
@@ -18,7 +37,9 @@ const HOME_ITEMS: readonly SidebarItemDefinition[] = [
   },
 ];
 
-const OMNI_PROXY_ITEMS: readonly SidebarItemDefinition[] = [
+// AISIX SPA: `costs-quota-share` is a Next/SQLite-only subsystem, so
+// `aisixSpaFilter` drops it there too (same per-item marker as the tools group).
+const OMNI_PROXY_ITEMS: readonly SidebarItemDefinition[] = aisixSpaFilter([
   {
     id: "endpoints",
     href: "/dashboard/endpoint",
@@ -85,8 +106,13 @@ const OMNI_PROXY_ITEMS: readonly SidebarItemDefinition[] = [
     i18nKey: "costsQuotaShare",
     subtitleKey: "costsQuotaShareSubtitle",
     icon: "pie_chart",
+    // Quota pools/groups/plans are a Next/SQLite subsystem with no AISIX
+    // counterpart, so the page's KPIs, wizard and schedule editor could only
+    // render zeros over guaranteed 404s. Marked like the other SPA-unavailable
+    // items so the sidebar and the page's own banner agree.
+    spaUnavailable: true,
   },
-];
+]);
 
 export const COMPRESSION_CONTEXT_GROUP: SidebarItemGroup = {
   type: "group",
@@ -218,23 +244,6 @@ export const COMPRESSION_CONTEXT_GROUP: SidebarItemGroup = {
   ],
 };
 
-/**
- * AISIX SPA profile (AGENT.md §3.3) — items whose pages drive a Node-only
- * subsystem (the MITM target registry and the traffic-inspector proxy) that does
- * not exist in the Rust core, so the static bundle can only render dead links.
- *
- * Filtered HERE, at the single source every consumer reads (Sidebar,
- * CommandPalette, Header, Settings → Sidebar), instead of per-consumer: the
- * marker is inlined into the client bundle by `next.config.mjs` (`env`), because
- * `process.env.OMNIROUTE_EXPORT` is not readable in the browser.
- */
-const AISIX_SPA_UNAVAILABLE_ITEM_IDS = new Set<string>(["agent-bridge", "traffic-inspector"]);
-
-function aisixSpaFilter(items: readonly SidebarItemDefinition[]): readonly SidebarItemDefinition[] {
-  if (process.env.NEXT_PUBLIC_AISIX_SPA_EXPORT !== "1") return items;
-  return items.filter((item) => !AISIX_SPA_UNAVAILABLE_ITEM_IDS.has(item.id));
-}
-
 const TOOLS_GROUP_ITEMS: readonly SidebarItemDefinition[] = [
   {
     id: "cli-code",
@@ -286,6 +295,7 @@ const TOOLS_GROUP_ITEMS: readonly SidebarItemDefinition[] = [
     i18nKey: "agentBridge",
     subtitleKey: "agentBridgeSubtitle",
     icon: "link",
+    spaUnavailable: true,
   },
   {
     id: "traffic-inspector",
@@ -293,6 +303,7 @@ const TOOLS_GROUP_ITEMS: readonly SidebarItemDefinition[] = [
     i18nKey: "trafficInspector",
     subtitleKey: "trafficInspectorSubtitle",
     icon: "network_check",
+    spaUnavailable: true,
   },
   {
     id: "discovery",
@@ -495,7 +506,9 @@ const SYSTEM_GROUP: SidebarItemGroup = {
   ],
 };
 
-const COSTS_ITEMS: readonly SidebarItemDefinition[] = [
+// AISIX SPA: `radar` is filtered here for the same reason (see
+// `aisixSpaFilter`). No-op in a normal Next build.
+const COSTS_ITEMS: readonly SidebarItemDefinition[] = aisixSpaFilter([
   {
     id: "costs",
     href: "/dashboard/costs",
@@ -538,8 +551,14 @@ const COSTS_ITEMS: readonly SidebarItemDefinition[] = [
     subtitleKey: "radarSubtitle",
     icon: "radar",
     featureFlagKey: "RADAR_ENABLED",
+    // Radar drives a Next/SQLite-only subsystem (feed cache + supporter keys).
+    // The Rust core exposes no `/api/radar/*`, so the static bundle could only
+    // render an activation screen and an empty catalog table whose writes all
+    // 404. Marked here so `aisixSpaFilter` (and any badge reading the same
+    // marker) cannot drift apart from the pages' own "unavailable" banners.
+    spaUnavailable: true,
   },
-];
+]);
 
 const AUDIT_GROUP: SidebarItemGroup = {
   type: "group",

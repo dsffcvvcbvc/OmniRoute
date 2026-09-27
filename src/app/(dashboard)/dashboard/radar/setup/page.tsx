@@ -5,6 +5,12 @@ import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/shared/components";
+import { useNotificationStore } from "@/store/notificationStore";
+import {
+  fetchAisixJson,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
 import {
   firstProviderConnectionId,
   providerConnectionsRequestUrl,
@@ -68,95 +74,106 @@ function RadarSetupPageContent() {
   const [error, setError] = useState("");
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const notify = useNotificationStore();
+  // The setup guide is rendered from the Radar feed's per-provider `setup` block,
+  // which the AISIX gateway does not carry. Provider connections themselves DO
+  // have a native read (admin provider_keys) — that part keeps working, but
+  // there is no guide to show without the feed, and the connection-test write
+  // has no AISIX counterpart.
+  const radarRead = resolveAisixSurfaceSupport("radar", "read");
+  const connectionTestWrite = resolveAisixSurfaceSupport("radar", "write");
+  const radarSupported = radarRead.supported;
+  // With no Radar surface there is nothing to load, so the spinner must not
+  // depend on an effect writing `loading` — it is derived from the support flag.
+  const isLoading = radarSupported && loading;
 
   // Fetch catalog to find the provider's setup data
   useEffect(() => {
     if (!provider) {
       return;
     }
+    if (!radarSupported) return;
 
     async function load() {
-      try {
-        const [res, connectionsRes] = await Promise.all([
-          fetch("/api/radar/catalog"),
-          fetch(providerConnectionsRequestUrl(provider)),
-        ]);
-        if (res.status === 404) {
-          setError(t("flagDisabled"));
-          setLoading(false);
-          return;
-        }
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        if (!connectionsRes.ok) throw new Error(`HTTP ${connectionsRes.status}`);
-        const data = await res.json();
-        const connectionsData = (await connectionsRes.json()) as {
-          connections?: RadarSetupConnection[];
-        };
-
-        // Find ALL entries for this provider and extract setup from the first one that has it
-        const providerEntries = data.entries.filter(
-          (e: { provider: string }) => e.provider === provider
-        );
-
-        if (providerEntries.length === 0) {
-          setError(t("providerNotFound", { provider }));
-          setLoading(false);
-          return;
-        }
-
-        // Find setup info from feed entries (they carry the setup field)
-        const entryWithSetup = providerEntries.find(
-          (e: { setup?: SetupInfo | null }) =>
-            e.setup && (e.setup.steps.length > 0 || e.setup.keyUrl)
-        );
-
-        const connectionId = firstProviderConnectionId(
-          Array.isArray(connectionsData.connections) ? connectionsData.connections : [],
-          provider
-        );
-        setSetupData({
-          provider,
-          setup: entryWithSetup?.setup ?? null,
-          configured: connectionId !== null,
-          connectionId,
-        });
-      } catch (err) {
-        setError(err instanceof Error ? err.message : t("loadFailed"));
-      } finally {
+      const [res, connectionsRes] = await Promise.all([
+        fetchAisixJson(resolveAisixRequestUrl("/api/radar/catalog")),
+        fetchAisixJson(providerConnectionsRequestUrl(provider)),
+      ]);
+      if (res.missing) {
+        setError(t("flagDisabled"));
         setLoading(false);
+        return;
       }
+      if (!res.ok) {
+        setError(res.error || t("loadFailed"));
+        setLoading(false);
+        return;
+      }
+      if (!connectionsRes.ok) {
+        setError(connectionsRes.error || t("loadFailed"));
+        setLoading(false);
+        return;
+      }
+      const data = (res.data ?? {}) as {
+        entries?: Array<{ provider: string; setup?: SetupInfo | null }>;
+      };
+      const connectionsData = (connectionsRes.data ?? {}) as {
+        connections?: RadarSetupConnection[];
+      };
+
+      // Find ALL entries for this provider and extract setup from the first one that has it
+      const providerEntries = (Array.isArray(data.entries) ? data.entries : []).filter(
+        (e) => e.provider === provider
+      );
+
+      if (providerEntries.length === 0) {
+        setError(t("providerNotFound", { provider }));
+        setLoading(false);
+        return;
+      }
+
+      // Find setup info from feed entries (they carry the setup field)
+      const entryWithSetup = providerEntries.find(
+        (e) => e.setup && (e.setup.steps.length > 0 || e.setup.keyUrl)
+      );
+
+      const connectionId = firstProviderConnectionId(
+        Array.isArray(connectionsData.connections) ? connectionsData.connections : [],
+        provider
+      );
+      setSetupData({
+        provider,
+        setup: entryWithSetup?.setup ?? null,
+        configured: connectionId !== null,
+        connectionId,
+      });
     }
 
-    load();
-  }, [provider, t]);
+    void load().finally(() => setLoading(false));
+  }, [provider, t, radarSupported]);
 
   // Test connection — uses the EXISTING connection-test endpoint
   const connectionId = setupData?.connectionId ?? null;
   const handleTestConnection = useCallback(async () => {
     if (!connectionId) return;
+    if (!connectionTestWrite.supported) {
+      notify.error(`AISIX-шлюз: ${t("testButton")} недоступно. ${connectionTestWrite.reason}`);
+      return;
+    }
     setTesting(true);
     setTestResult(null);
-    try {
-      const res = await fetch(`/api/providers/${encodeURIComponent(connectionId)}/test`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      const data = await res.json().catch(() => null);
-      if (res.ok && data?.valid === true) {
-        setTestResult({ ok: true, message: t("testSuccess") });
-      } else {
-        setTestResult({
-          ok: false,
-          message: t("testFailed"),
-        });
-      }
-    } catch {
+    const result = await fetchAisixJson(
+      resolveAisixRequestUrl(`/api/providers/${encodeURIComponent(connectionId)}/test`),
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }
+    );
+    const data = (result.data ?? {}) as { valid?: unknown };
+    if (result.ok && data.valid === true) {
+      setTestResult({ ok: true, message: t("testSuccess") });
+    } else {
       setTestResult({ ok: false, message: t("testFailed") });
-    } finally {
-      setTesting(false);
     }
-  }, [connectionId, t]);
+    setTesting(false);
+  }, [connectionId, t, notify, connectionTestWrite.supported, connectionTestWrite.reason]);
 
   if (!provider) {
     return (
@@ -164,6 +181,35 @@ function RadarSetupPageContent() {
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <Card>
           <div className="text-center py-12 text-text-muted">{t("noProvider")}</div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!radarSupported) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard/radar"
+            className="text-sm text-text-muted hover:text-text-main transition-colors"
+          >
+            ← {t("backToCatalog")}
+          </Link>
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold">{t("setupTitle", { provider })}</h1>
+          <p className="text-sm text-text-muted mt-1">{t("setupSubtitle")}</p>
+        </div>
+        <div
+          role="status"
+          data-testid="radar-setup-unavailable"
+          className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-200"
+        >
+          {radarRead.reason}
+        </div>
+        <Card>
+          <p className="text-center py-8 text-text-muted">{t("noGuide")}</p>
         </Card>
       </div>
     );
@@ -187,7 +233,7 @@ function RadarSetupPageContent() {
 
       {error && <div className="p-3 rounded-lg bg-red-500/10 text-red-400 text-sm">{error}</div>}
 
-      {loading ? (
+      {isLoading ? (
         <div className="flex items-center justify-center min-h-[200px]">
           <div className="text-text-muted">{t("loading")}</div>
         </div>
@@ -258,7 +304,7 @@ function RadarSetupPageContent() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleTestConnection}
-                  disabled={testing || !setupData.connectionId}
+                  disabled={!connectionTestWrite.supported || testing || !setupData.connectionId}
                   className="px-4 py-2 text-sm font-medium rounded-lg border border-violet-500 text-violet-400 hover:bg-violet-500/10 transition-colors disabled:opacity-50"
                 >
                   {testing ? t("testing") : t("testButton")}

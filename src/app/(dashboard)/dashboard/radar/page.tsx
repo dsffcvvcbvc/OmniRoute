@@ -5,8 +5,14 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card } from "@/shared/components";
+import { useNotificationStore } from "@/store/notificationStore";
 import { shouldAutoSyncOnOpen } from "@/lib/radar/autoSync";
 import { isValidSupporterKeyFormat } from "@/lib/radar/supporterKey";
+import {
+  fetchAisixJson,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
 import { RadarAccessExplainer } from "./RadarAccessExplainer";
 import { RadarCatalogTable, type RadarMergedEntry } from "./RadarCatalogTable";
 
@@ -109,97 +115,154 @@ export default function RadarPage() {
   const [hasSupporterKey, setHasSupporterKey] = useState(false);
   const [supporterKeyMasked, setSupporterKeyMasked] = useState<string | null>(null);
   const [showKeyForm, setShowKeyForm] = useState(false);
+  const notify = useNotificationStore();
+  // The whole Radar subsystem (feed cache, opt-in supporter key, referrals) is
+  // Next/SQLite-only — the Rust core has neither `/api/radar/*` nor any AISIX
+  // counterpart. In a SPA export build `radarRead`/`radarWrite` are refusals
+  // from the start, so nothing is ever requested; in a Next build they are
+  // `{supported:true}` and the legacy routes answer as before. `probeMissing`
+  // covers the belt-and-braces case of a gateway-served bundle that was NOT
+  // built with the export marker: one 404/405 then arms the same refusal for
+  // every later click, instead of each one landing on its own 404.
+  const radarRead = resolveAisixSurfaceSupport("radar", "read");
+  const radarWrite = resolveAisixSurfaceSupport("radar", "write");
+  const [probeMissing, setProbeMissing] = useState(false);
+  const radarSupported = radarRead.supported && !probeMissing;
+  const writeSupported = radarWrite.supported && !probeMissing;
+
+  // Pre-send gate shared by every Radar write (opt-in, supporter key, sync).
+  const refuseRadarWrite = useCallback(
+    (action: string): boolean => {
+      if (writeSupported) return false;
+      notify.error(`AISIX-шлюз: ${action} недоступно. ${radarWrite.reason}`);
+      return true;
+    },
+    [writeSupported, notify, radarWrite.reason]
+  );
+
   // Fetch catalog
   const fetchCatalog = useCallback(
     async (showLoading = true) => {
+      if (!radarRead.supported) {
+        // AISIX SPA export: there is no `/api/radar/catalog` to ask for. Leave
+        // the page on the explicit "unavailable" state instead of firing a
+        // guaranteed 404 and leaving the skeleton up forever.
+        setFeatureAvailable(true);
+        setEntries([]);
+        setMeta(null);
+        if (showLoading) setLoading(false);
+        return;
+      }
       if (showLoading) setLoading(true);
       setError("");
-      try {
-        const res = await fetch("/api/radar/catalog", { cache: "no-store" });
-        if (res.status === 404) {
-          // Flag off — treat as not found
-          setFeatureAvailable(false);
-          setEntries([]);
-          setMeta(null);
-          if (showLoading) setLoading(false);
-          return;
-        }
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        setFeatureAvailable(true);
-        const data = await res.json();
-        setEntries(data.entries || []);
-        setMeta(data.meta || null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : t("errorLoading"));
-      } finally {
+      const result = await fetchAisixJson(resolveAisixRequestUrl("/api/radar/catalog"), {
+        cache: "no-store",
+      });
+      if (result.missing) {
+        // Flag off — treat as not found
+        setFeatureAvailable(false);
+        setEntries([]);
+        setMeta(null);
         if (showLoading) setLoading(false);
+        return;
       }
+      if (!result.ok) {
+        setError(result.error || t("errorLoading"));
+        if (showLoading) setLoading(false);
+        return;
+      }
+      setFeatureAvailable(true);
+      const data = (result.data ?? {}) as { entries?: RadarMergedEntry[]; meta?: RadarMeta | null };
+      setEntries(Array.isArray(data.entries) ? data.entries : []);
+      setMeta(data.meta || null);
+      if (showLoading) setLoading(false);
     },
-    [t]
+    [t, radarRead.supported]
   );
   const refreshCatalogSilently = useCallback(() => fetchCatalog(false), [fetchCatalog]);
 
   // D28 — fetch the referral links section ("Pegue seus créditos grátis").
-  // Best-effort: flag off => 404, no cache => empty shape; either way this
-  // never blocks rendering of the rest of the page.
+  // Best-effort: a 404 (flag off) or an absent gateway both leave the empty
+  // shape; neither may ever block rendering of the rest of the page.
   const fetchReferrals = useCallback(async () => {
-    try {
-      const res = await fetch("/api/radar/referrals");
-      if (!res.ok) return;
-      const data = await res.json();
-      setReferrals({
-        fixed: Array.isArray(data.fixed) ? data.fixed : [],
-        campaigns: Array.isArray(data.campaigns) ? data.campaigns : [],
-        tier: data.tier ?? null,
-      });
-    } catch {
-      // Best-effort only.
-    }
-  }, []);
+    if (!radarRead.supported) return;
+    const result = await fetchAisixJson(resolveAisixRequestUrl("/api/radar/referrals"));
+    if (!result.ok) return;
+    const data = (result.data ?? {}) as {
+      fixed?: RadarReferralItem[];
+      campaigns?: RadarReferralItem[];
+      tier?: string | null;
+    };
+    setReferrals({
+      fixed: Array.isArray(data.fixed) ? data.fixed : [],
+      campaigns: Array.isArray(data.campaigns) ? data.campaigns : [],
+      tier: data.tier ?? null,
+    });
+  }, [radarRead.supported]);
 
   // Fetch settings to determine opt-in state (GET /api/radar/settings — FIX 3:
   // previously there was no settings GET, so an already-opted-in operator saw
   // the activation screen on every reload).
   const fetchSettings = useCallback(async () => {
-    try {
-      const settingsRes = await fetch("/api/radar/settings", { cache: "no-store" });
-      if (settingsRes.status === 404) {
-        // Flag off
-        setFeatureAvailable(false);
-        setOptIn(null);
-        return;
-      }
-      if (!settingsRes.ok) throw new Error(`HTTP ${settingsRes.status}`);
-      const settingsData = await settingsRes.json();
+    if (!radarRead.supported) {
+      // Nothing to ask: the surface does not exist on this gateway. `true`
+      // (rather than `false`) keeps the page out of the "flag off" →
+      // notFound() branch so the operator sees WHY it is empty.
       setFeatureAvailable(true);
-      setOptIn(settingsData.optIn === true);
-      setHasSupporterKey(settingsData.hasSupporterKey === true);
-      setSupporterKeyMasked(
-        typeof settingsData.supporterKeyMasked === "string" ? settingsData.supporterKeyMasked : null
-      );
-      // F4/T7 — best-effort: keep whatever we already had if the field is
-      // absent (older cached response shape), never fall back to a literal.
-      if (typeof settingsData.contributorClaimUrl === "string") {
-        setContributorClaimUrl(settingsData.contributorClaimUrl);
-      }
-      if (typeof settingsData.supporterPlansUrl === "string") {
-        setSupporterPlansUrl(settingsData.supporterPlansUrl);
-      }
-
-      if (settingsData.optIn === true) {
-        // Already opted in — load the catalog now so the populated/empty
-        // state renders immediately instead of waiting for a manual sync.
-        await fetchCatalog();
-        // D28 — load the referral links in parallel; best-effort, never
-        // blocks the catalog state above.
-        void fetchReferrals();
-      }
-    } catch {
-      setOptIn(null);
-    } finally {
+      setOptIn(false);
       setLoading(false);
+      return;
     }
-  }, [fetchCatalog, fetchReferrals]);
+    const result = await fetchAisixJson(resolveAisixRequestUrl("/api/radar/settings"), {
+      cache: "no-store",
+    });
+    if (result.missing) {
+      // A 404 here is ambiguous by design in a Next build: it is the
+      // RADAR_ENABLED "flag off" signal. So a flag-off 404 keeps
+      // `featureAvailable=false`; only the WRITE surface arms `probeMissing`.
+      setFeatureAvailable(false);
+      setOptIn(null);
+      setLoading(false);
+      return;
+    }
+    if (!result.ok) {
+      setError(result.error || t("errorLoading"));
+      setOptIn(null);
+      setLoading(false);
+      return;
+    }
+    setFeatureAvailable(true);
+    const settingsData = (result.data ?? {}) as {
+      optIn?: unknown;
+      hasSupporterKey?: unknown;
+      supporterKeyMasked?: unknown;
+      contributorClaimUrl?: unknown;
+      supporterPlansUrl?: unknown;
+    };
+    setOptIn(settingsData.optIn === true);
+    setHasSupporterKey(settingsData.hasSupporterKey === true);
+    setSupporterKeyMasked(
+      typeof settingsData.supporterKeyMasked === "string" ? settingsData.supporterKeyMasked : null
+    );
+    // F4/T7 — best-effort: keep whatever we already had if the field is
+    // absent (older cached response shape), never fall back to a literal.
+    if (typeof settingsData.contributorClaimUrl === "string") {
+      setContributorClaimUrl(settingsData.contributorClaimUrl);
+    }
+    if (typeof settingsData.supporterPlansUrl === "string") {
+      setSupporterPlansUrl(settingsData.supporterPlansUrl);
+    }
+
+    if (settingsData.optIn === true) {
+      // Already opted in — load the catalog now so the populated/empty
+      // state renders immediately instead of waiting for a manual sync.
+      await fetchCatalog();
+      // D28 — load the referral links in parallel; best-effort, never
+      // blocks the catalog state above.
+      void fetchReferrals();
+    }
+    setLoading(false);
+  }, [t, fetchCatalog, fetchReferrals, radarRead.supported]);
 
   useEffect(() => {
     void (async () => {
@@ -209,12 +272,20 @@ export default function RadarPage() {
 
   // Sync (defined before handleActivate which depends on it)
   const handleSync = useCallback(async () => {
+    if (refuseRadarWrite("Синхронизация каталога")) return;
     setSyncing(true);
     setError("");
-    try {
-      const res = await fetch("/api/radar/sync", { method: "POST" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+    const result = await fetchAisixJson(resolveAisixRequestUrl("/api/radar/sync"), {
+      method: "POST",
+    });
+    if (result.missing) {
+      // The core answered but has no Radar write surface: arm the refusal for
+      // every later click instead of letting each one land on its own 404.
+      setProbeMissing(true);
+    } else if (!result.ok) {
+      setError(result.error || t("syncFailed"));
+    } else {
+      const data = (result.data ?? {}) as { status?: string; reason?: string };
       if (data.status === "updated" || data.status === "stale") {
         await fetchCatalog();
         void fetchReferrals();
@@ -228,12 +299,9 @@ export default function RadarPage() {
       } else if (data.status === "opt_out") {
         setOptIn(false);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("syncFailed"));
-    } finally {
-      setSyncing(false);
     }
-  }, [t, fetchCatalog, fetchReferrals]);
+    setSyncing(false);
+  }, [t, fetchCatalog, fetchReferrals, refuseRadarWrite]);
 
   // Auto-sync on open: when the operator is already opted in and the cached
   // feed is stale (or absent), refresh it automatically once per mount so the
@@ -252,23 +320,25 @@ export default function RadarPage() {
 
   // Activate opt-in
   const handleActivate = useCallback(async () => {
+    if (refuseRadarWrite("Активация Radar")) return;
     setActivating(true);
-    try {
-      const res = await fetch("/api/radar/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ optIn: true }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    setError("");
+    const result = await fetchAisixJson(resolveAisixRequestUrl("/api/radar/settings"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ optIn: true }),
+    });
+    if (result.missing) {
+      setProbeMissing(true);
+    } else if (!result.ok) {
+      setError(result.error || t("activationFailed"));
+    } else {
       setOptIn(true);
       // After activation, trigger a sync
       await handleSync();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("activationFailed"));
-    } finally {
-      setActivating(false);
     }
-  }, [t, handleSync]);
+    setActivating(false);
+  }, [t, handleSync, refuseRadarWrite]);
 
   // Activate with a pasted supporter key — the primary path on this screen.
   // Submitting a key both sets it AND opts in, in a single POST (pasting a
@@ -281,15 +351,19 @@ export default function RadarPage() {
       setError(t("keyInvalidFormatError"));
       return;
     }
+    if (refuseRadarWrite("Активация supporter-ключа")) return;
     setKeySubmitting(true);
-    try {
-      const res = await fetch("/api/radar/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ optIn: true, supporterKey: trimmed }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+    const result = await fetchAisixJson(resolveAisixRequestUrl("/api/radar/settings"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ optIn: true, supporterKey: trimmed }),
+    });
+    if (result.missing) {
+      setProbeMissing(true);
+    } else if (!result.ok) {
+      setError(result.error || t("activationFailed"));
+    } else {
+      const data = (result.data ?? {}) as { supporterKey?: unknown };
       setOptIn(true);
       setHasSupporterKey(true);
       setSupporterKeyMasked(typeof data.supporterKey === "string" ? data.supporterKey : null);
@@ -297,12 +371,9 @@ export default function RadarPage() {
       setShowKeyForm(false);
       // After activation, trigger a sync so the live tier catalog loads.
       await handleSync();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("activationFailed"));
-    } finally {
-      setKeySubmitting(false);
     }
-  }, [keyInput, t, handleSync]);
+    setKeySubmitting(false);
+  }, [keyInput, t, handleSync, refuseRadarWrite]);
 
   // Feature availability and privacy opt-in are independent states. A successful
   // settings response with `optIn: false` means "show activation", not "flag off".
@@ -315,6 +386,35 @@ export default function RadarPage() {
   // Flag off — render not-found
   if (featureAvailable === false && !loading) {
     notFound();
+  }
+
+  // Radar has no surface on the AISIX gateway at all. Say so ONCE, explicitly,
+  // instead of rendering the activation screen (whose POST is a guaranteed 404),
+  // an empty catalog table, or — worst — the `loading` block forever.
+  if (!radarSupported && !loading) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="text-2xl font-bold">{t("title")}</h1>
+          <p className="text-sm text-text-muted mt-1">{t("subtitle")}</p>
+        </div>
+        <div
+          role="status"
+          data-testid="radar-unavailable-banner"
+          className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-200"
+        >
+          {radarRead.reason}
+        </div>
+        <Card>
+          <div className="flex flex-col items-center gap-3 py-12 text-center">
+            <span aria-hidden="true" className="material-symbols-outlined text-4xl text-amber-500">
+              block
+            </span>
+            <p className="max-w-2xl text-text-muted">{t("emptyState")}</p>
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -353,7 +453,7 @@ export default function RadarPage() {
           {pageState === "populated" && (
             <button
               onClick={handleSync}
-              disabled={syncing}
+              disabled={syncing || !writeSupported}
               className="px-4 py-2 text-sm font-medium rounded-lg border border-violet-500 text-violet-400 hover:bg-violet-500/10 transition-colors disabled:opacity-50"
             >
               {syncing ? t("syncing") : t("syncNow")}
@@ -464,7 +564,7 @@ export default function RadarPage() {
                       <button
                         type="button"
                         onClick={handleSubmitKey}
-                        disabled={keySubmitting || keyInput.trim().length === 0}
+                        disabled={!writeSupported || keySubmitting || keyInput.trim().length === 0}
                         className="px-6 py-2 bg-violet-500 hover:bg-violet-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50 shrink-0"
                       >
                         {keySubmitting ? t("activating") : t("activateWithKeyButton")}
@@ -477,7 +577,7 @@ export default function RadarPage() {
 
                 <button
                   onClick={handleActivate}
-                  disabled={activating}
+                  disabled={!writeSupported || activating}
                   className="px-6 py-3 bg-violet-500 hover:bg-violet-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
                 >
                   {activating ? t("activating") : t("activateButton")}
@@ -605,7 +705,7 @@ export default function RadarPage() {
                 <p className="text-text-muted">{t("emptyState")}</p>
                 <button
                   onClick={handleSync}
-                  disabled={syncing}
+                  disabled={!writeSupported || syncing}
                   className="px-6 py-3 bg-violet-500 hover:bg-violet-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
                 >
                   {syncing ? t("syncing") : t("syncCta")}

@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { useNotificationStore } from "@/store/notificationStore";
+import {
+  fetchAisixJson,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
 import type { QuotaSchedule, ReserveRule } from "@/lib/quota/schedules";
 
 export interface PoolSchedulesCardProps {
@@ -81,30 +87,42 @@ export default function PoolSchedulesCard({ poolId }: PoolSchedulesCardProps) {
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  const notify = useNotificationStore();
+  // Pool schedules live in the Next.js quota store; there is no AISIX surface.
+  const schedulesRead = resolveAisixSurfaceSupport("quota", "read");
+  const schedulesWrite = resolveAisixSurfaceSupport("quota", "write");
 
   const initials = weekdayInitials(locale);
 
   useEffect(() => {
     if (!open || loaded) return;
+    if (!schedulesRead.supported) return;
     let alive = true;
-    fetch(`/api/quota/pools/${poolId}/schedules`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!alive) return;
-        const raw: unknown = data?.schedules;
-        setRows(Array.isArray(raw) ? (raw as DraftSchedule[]) : []);
-        setLoaded(true);
-      })
-      .catch(() => {
-        if (!alive) return;
+    void (async () => {
+      const result = await fetchAisixJson(
+        resolveAisixRequestUrl(`/api/quota/pools/${encodeURIComponent(poolId)}/schedules`)
+      );
+      if (!alive) return;
+      if (!result.ok) {
         setRows([]);
         setLoaded(true);
         setMessage({ kind: "error", text: t("schedulesLoadError") });
-      });
+        return;
+      }
+      const raw: unknown = (result.data ?? {}) as { schedules?: unknown } | null;
+      setRows(Array.isArray(raw) ? (raw as DraftSchedule[]) : []);
+      setLoaded(true);
+    })();
     return () => {
       alive = false;
     };
-  }, [open, loaded, poolId, t]);
+  }, [open, loaded, poolId, t, schedulesRead.supported]);
+
+  // Derived from the build-time support flag: with no schedules surface there is
+  // nothing to load, so the card must not sit in its "loading" state waiting for
+  // a read that will never be issued.
+  const unavailableReason = schedulesRead.supported ? null : schedulesRead.reason;
+  const isReady = schedulesRead.supported ? loaded : true;
 
   const patchRow = useCallback((index: number, patch: Partial<DraftSchedule>) => {
     setRows((prev) => prev.map((row, i) => (i === index ? { ...row, ...patch } : row)));
@@ -171,25 +189,34 @@ export default function PoolSchedulesCard({ poolId }: PoolSchedulesCardProps) {
         };
       });
 
-      const res = await fetch(`/api/quota/pools/${poolId}/schedules`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ schedules: payload }),
-      });
-
-      if (!res.ok) {
-        setMessage({ kind: "error", text: t("schedulesSaveError") });
+      if (!schedulesWrite.supported) {
+        setMessage({ kind: "error", text: schedulesWrite.reason });
+        notify.error(`AISIX-шлюз: ${t("schedulesSaved")} недоступно. ${schedulesWrite.reason}`);
         return;
       }
-      const data = await res.json();
-      setRows(Array.isArray(data?.schedules) ? (data.schedules as DraftSchedule[]) : []);
+      const result = await fetchAisixJson(
+        resolveAisixRequestUrl(`/api/quota/pools/${encodeURIComponent(poolId)}/schedules`),
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ schedules: payload }),
+        }
+      );
+
+      if (!result.ok) {
+        setMessage({
+          kind: "error",
+          text: result.missing ? schedulesWrite.reason : t("schedulesSaveError"),
+        });
+        return;
+      }
+      const data = (result.data ?? {}) as { schedules?: unknown };
+      setRows(Array.isArray(data.schedules) ? (data.schedules as DraftSchedule[]) : []);
       setMessage({ kind: "ok", text: t("schedulesSaved") });
-    } catch {
-      setMessage({ kind: "error", text: t("schedulesSaveError") });
     } finally {
       setSaving(false);
     }
-  }, [rows, poolId, t]);
+  }, [rows, poolId, t, notify, schedulesWrite.supported, schedulesWrite.reason]);
 
   const inputCls =
     "bg-bg-subtle border border-border/50 rounded px-1.5 py-0.5 text-[11px] text-text-main";
@@ -216,7 +243,15 @@ export default function PoolSchedulesCard({ poolId }: PoolSchedulesCardProps) {
         <div className="mt-1.5 flex flex-col gap-2">
           <p className="text-[11px] text-text-muted leading-snug">{t("schedulesHint")}</p>
 
-          {!loaded ? (
+          {unavailableReason ? (
+            <div
+              role="status"
+              data-testid="quota-schedules-unavailable"
+              className="rounded border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-700 dark:text-amber-200"
+            >
+              {unavailableReason}
+            </div>
+          ) : !isReady ? (
             <div className="text-[11px] text-text-muted italic">{t("loading")}</div>
           ) : rows.length === 0 ? (
             <div className="text-[11px] text-text-muted italic">{t("schedulesEmpty")}</div>
@@ -485,7 +520,7 @@ export default function PoolSchedulesCard({ poolId }: PoolSchedulesCardProps) {
             <button
               type="button"
               onClick={save}
-              disabled={saving || !loaded}
+              disabled={!schedulesWrite.supported || saving || !isReady}
               className="text-[11px] px-2 py-1 rounded bg-accent/20 text-accent hover:bg-accent/30 disabled:opacity-40 cursor-pointer"
             >
               {saving ? t("loading") : t("save")}

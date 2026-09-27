@@ -172,6 +172,21 @@ export default function ProviderHealthAutopilotCard() {
     [report]
   );
 
+  // No report yet: show "—" instead of plausible-looking zeros, and never a
+  // green "healthy" while the last probe failed — the error box below is the
+  // loud signal, the tiles stay honest. ("—" is a literal on purpose: the
+  // completeness gate forbids adding en-only keys.)
+  const hasReport = report !== null;
+  const loadError = !hasReport && error !== null;
+  const statusTone = loadError
+    ? "bg-red-500/10 text-red-400 border-red-500/20"
+    : STATUS_STYLES[report?.status || "healthy"];
+  const statusLabel = report
+    ? t(`state.${report.status}`)
+    : loadError
+      ? t("loadFailed")
+      : t("state.loading");
+
   return (
     <Card className="p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -196,28 +211,26 @@ export default function ProviderHealthAutopilotCard() {
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-4">
-        <div
-          className={`rounded-xl border px-3 py-2 ${STATUS_STYLES[report?.status || "healthy"]}`}
-        >
+        <div className={`rounded-xl border px-3 py-2 ${statusTone}`}>
           <p className="text-xs uppercase tracking-wide opacity-80">{t("status")}</p>
-          <p className="text-lg font-semibold capitalize">
-            {t(`state.${report?.status || "loading"}`)}
-          </p>
+          <p className="text-lg font-semibold capitalize">{statusLabel}</p>
         </div>
         <div className="rounded-xl border border-border bg-bg-subtle px-3 py-2">
           <p className="text-xs uppercase tracking-wide text-text-muted">{t("issues")}</p>
-          <p className="text-lg font-semibold text-text-main">{report?.summary.issueCount ?? 0}</p>
+          <p className="text-lg font-semibold text-text-main">
+            {hasReport ? report.summary.issueCount : "—"}
+          </p>
         </div>
         <div className="rounded-xl border border-border bg-bg-subtle px-3 py-2">
           <p className="text-xs uppercase tracking-wide text-text-muted">{t("actions")}</p>
           <p className="text-lg font-semibold text-text-main">
-            {report?.summary.actionableCount ?? 0}
+            {hasReport ? report.summary.actionableCount : "—"}
           </p>
         </div>
         <div className="rounded-xl border border-border bg-bg-subtle px-3 py-2">
           <p className="text-xs uppercase tracking-wide text-text-muted">{t("connections")}</p>
           <p className="text-lg font-semibold text-text-main">
-            {report?.summary.connectionCount ?? 0}
+            {hasReport ? report.summary.connectionCount : "—"}
           </p>
         </div>
       </div>

@@ -21,7 +21,13 @@ import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useTranslations } from "next-intl";
 import { Button, Modal } from "@/shared/components";
 import useEmailPrivacyStore from "@/store/emailPrivacyStore";
+import { useNotificationStore } from "@/store/notificationStore";
 import { maskEmailLikeValue } from "@/shared/utils/maskEmail";
+import {
+  fetchAisixJson,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
 import { getKnownPlan } from "@/lib/quota/planRegistry";
 import { quotaModelName } from "@/lib/quota/quotaModelNaming";
 import type {
@@ -339,6 +345,9 @@ export default function PoolWizard({
   // ── Saving ────────────────────────────────────────────────────────────────
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const notify = useNotificationStore();
+  // Pool + plan writes have no AISIX counterpart (see the quota-share page).
+  const quotaWrite = resolveAisixSurfaceSupport("quota", "write");
 
   // ── Derived state ─────────────────────────────────────────────────────────
   // The first selected connection is the "primary" — used for plan fetch/PUT.
@@ -505,6 +514,14 @@ export default function PoolWizard({
 
   const handleFinish = async () => {
     if (!selectedConn || connectionIds.length === 0) return;
+    // Refuse BEFORE the first request: the pool/plan collections do not exist
+    // on the AISIX gateway, so a wizard that "saves" here used to end in a 404
+    // surfaced only as a modal error the operator could not act on.
+    if (!quotaWrite.supported) {
+      setError(quotaWrite.reason);
+      notify.error(`AISIX-шлюз: создание пула недоступно. ${quotaWrite.reason}`);
+      return;
+    }
     setSaving(true);
     setError(null);
 
@@ -520,7 +537,7 @@ export default function PoolWizard({
         // ── Create mode: POST → optional PUT → PATCH ──────────────────────
 
         // 1. POST /api/quota/pools → get new pool id
-        const createRes = await fetch("/api/quota/pools", {
+        const createResult = await fetchAisixJson(resolveAisixRequestUrl("/api/quota/pools"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -531,40 +548,62 @@ export default function PoolWizard({
             groupId: resolvedGroupId,
           }),
         });
-        if (!createRes.ok) {
-          const errBody = await createRes.json().catch(() => null);
+        if (!createResult.ok) {
+          const errBody = (createResult.data ?? {}) as { error?: { message?: string } | string };
+          const detail = typeof errBody.error === "object" ? errBody.error?.message : errBody.error;
           throw new Error(
-            errBody?.error?.message || `POST /api/quota/pools failed: HTTP ${createRes.status}`
+            detail ||
+              (createResult.missing
+                ? quotaWrite.reason
+                : `POST /api/quota/pools failed: ${createResult.error ?? createResult.status}`)
           );
         }
-        const createData = (await createRes.json()) as { pool: { id: string } };
-        const newPoolId = createData.pool.id;
+        const createData = (createResult.data ?? {}) as { pool?: { id?: unknown } };
+        const newPoolId = createData.pool?.id;
+        if (typeof newPoolId !== "string" || newPoolId.length === 0) {
+          throw new Error("POST /api/quota/pools returned no pool id");
+        }
 
         // 2. PUT /api/quota/plans/[primaryConnectionId] — only when user edited dimensions
         if (dimensionsEdited && editDimensions.length > 0) {
-          const planRes = await fetch(`/api/quota/plans/${primaryConnectionId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ dimensions: editDimensions }),
-          });
-          if (!planRes.ok) {
-            const errBody = await planRes.json().catch(() => null);
+          const planResult = await fetchAisixJson(
+            resolveAisixRequestUrl(`/api/quota/plans/${encodeURIComponent(primaryConnectionId)}`),
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ dimensions: editDimensions }),
+            }
+          );
+          if (!planResult.ok) {
+            const errBody = (planResult.data ?? {}) as { error?: { message?: string } | string };
+            const detail =
+              typeof errBody.error === "object" ? errBody.error?.message : errBody.error;
             throw new Error(
-              errBody?.error?.message || `PUT /api/quota/plans failed: HTTP ${planRes.status}`
+              detail ||
+                (planResult.missing
+                  ? quotaWrite.reason
+                  : `PUT /api/quota/plans failed: ${planResult.error ?? planResult.status}`)
             );
           }
         }
 
         // 3. PATCH /api/quota/pools/[id] — allocations + exclusive flag
-        const patchRes = await fetch(`/api/quota/pools/${newPoolId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ allocations, exclusive }),
-        });
-        if (!patchRes.ok) {
-          const errBody = await patchRes.json().catch(() => null);
+        const patchResult = await fetchAisixJson(
+          resolveAisixRequestUrl(`/api/quota/pools/${encodeURIComponent(newPoolId)}`),
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ allocations, exclusive }),
+          }
+        );
+        if (!patchResult.ok) {
+          const errBody = (patchResult.data ?? {}) as { error?: { message?: string } | string };
+          const detail = typeof errBody.error === "object" ? errBody.error?.message : errBody.error;
           throw new Error(
-            errBody?.error?.message || `PATCH /api/quota/pools failed: HTTP ${patchRes.status}`
+            detail ||
+              (patchResult.missing
+                ? quotaWrite.reason
+                : `PATCH /api/quota/pools failed: ${patchResult.error ?? patchResult.status}`)
           );
         }
       } else {
@@ -572,35 +611,50 @@ export default function PoolWizard({
         // + optional PUT for plan dimensions when user edited them.
 
         // 1. PATCH /api/quota/pools/[id] — all editable fields in one call
-        const editPatchRes = await fetch(`/api/quota/pools/${editPool.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: effectivePoolName,
-            groupId: resolvedGroupId,
-            connectionIds,
-            allocations,
-            exclusive,
-          }),
-        });
-        if (!editPatchRes.ok) {
-          const errBody = await editPatchRes.json().catch(() => null);
+        const editPatchResult = await fetchAisixJson(
+          resolveAisixRequestUrl(`/api/quota/pools/${encodeURIComponent(editPool.id)}`),
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: effectivePoolName,
+              groupId: resolvedGroupId,
+              connectionIds,
+              allocations,
+              exclusive,
+            }),
+          }
+        );
+        if (!editPatchResult.ok) {
+          const errBody = (editPatchResult.data ?? {}) as { error?: { message?: string } | string };
+          const detail = typeof errBody.error === "object" ? errBody.error?.message : errBody.error;
           throw new Error(
-            errBody?.error?.message || `PATCH /api/quota/pools failed: HTTP ${editPatchRes.status}`
+            detail ||
+              (editPatchResult.missing
+                ? quotaWrite.reason
+                : `PATCH /api/quota/pools failed: ${editPatchResult.error ?? editPatchResult.status}`)
           );
         }
 
         // 2. PUT /api/quota/plans/[primaryConnectionId] — only when user actually edited dimensions
         if (dimensionsEdited && editDimensions.length > 0) {
-          const planRes = await fetch(`/api/quota/plans/${primaryConnectionId}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ dimensions: editDimensions }),
-          });
-          if (!planRes.ok) {
-            const errBody = await planRes.json().catch(() => null);
+          const planResult = await fetchAisixJson(
+            resolveAisixRequestUrl(`/api/quota/plans/${encodeURIComponent(primaryConnectionId)}`),
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ dimensions: editDimensions }),
+            }
+          );
+          if (!planResult.ok) {
+            const errBody = (planResult.data ?? {}) as { error?: { message?: string } | string };
+            const detail =
+              typeof errBody.error === "object" ? errBody.error?.message : errBody.error;
             throw new Error(
-              errBody?.error?.message || `PUT /api/quota/plans failed: HTTP ${planRes.status}`
+              detail ||
+                (planResult.missing
+                  ? quotaWrite.reason
+                  : `PUT /api/quota/plans failed: ${planResult.error ?? planResult.status}`)
             );
           }
         }
@@ -1087,7 +1141,7 @@ export default function PoolWizard({
                 variant="primary"
                 size="sm"
                 onClick={() => void handleFinish()}
-                disabled={totalWeight > 100 || saving}
+                disabled={!quotaWrite.supported || totalWeight > 100 || saving}
               >
                 {saving ? t("loading") : editPool ? t("saveChanges") : t("wizardCreatePool")}
               </Button>

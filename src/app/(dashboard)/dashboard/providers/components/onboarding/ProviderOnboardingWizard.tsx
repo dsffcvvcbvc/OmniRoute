@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -397,6 +397,59 @@ export default function ProviderOnboardingWizard() {
     setStep(option.authKind === "oauth" ? "oauth" : "credentials");
   };
 
+  // Preset-catalog handoff: the providers-page preset grid links here with
+  // `?preset=<id>&presetName=&presetBaseUrl=&presetAuth=`. Applied once on
+  // mount (guarded ref, StrictMode-safe): a known vendor is selected with its
+  // base URL prefilled, an unknown one lands in the OpenAI-compatible custom
+  // form. `window.location` (not `useSearchParams`) keeps this page free of a
+  // Suspense-boundary requirement for the static export.
+  const presetPrefillApplied = useRef(false);
+  // One-shot URL prefill, guarded by the ref above: it fills the form before
+  // the first paint so the operator never sees the empty state flash, and it
+  // never re-runs. SetState-in-effect is the point here, not an accident.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (presetPrefillApplied.current) return;
+    presetPrefillApplied.current = true;
+    let params: URLSearchParams;
+    try {
+      if (typeof window === "undefined") return;
+      params = new URLSearchParams(window.location.search);
+    } catch {
+      return;
+    }
+    const presetId = params.get("preset")?.trim();
+    if (!presetId) return;
+    const presetName = params.get("presetName")?.trim() || presetId;
+    const presetBaseUrl = params.get("presetBaseUrl")?.trim() || "";
+    const known = [...apiKeyOptions, ...oauthOptions].find(
+      (option) => option.id.toLowerCase() === presetId.toLowerCase()
+    );
+    if (known) {
+      selectProvider(known);
+      if (presetBaseUrl) {
+        setApiKeyForm((current) => ({ ...current, baseUrl: presetBaseUrl }));
+      }
+      return;
+    }
+    setKind("custom");
+    setQuery("");
+    setError(null);
+    setTestResult(null);
+    setCreatedConnection(null);
+    setSelectedProvider(null);
+    setApiKeyForm(EMPTY_API_KEY_FORM);
+    setCustomForm({
+      ...DEFAULT_CUSTOM_FORM,
+      mode: "openai",
+      name: presetName,
+      prefix: presetId.toLowerCase().replace(/[^a-z0-9-]+/g, "-"),
+      baseUrl: presetBaseUrl || DEFAULT_CUSTOM_FORM.baseUrl,
+    });
+    setStep("credentials");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- preset prefill runs once on mount
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
   const runConnectionTest = async (connection: OnboardingConnection) => {
     setStatus(text("onboardingTestingConnection", "Testing provider connection…"));
     const result = await testOnboardingConnection(connection.id);

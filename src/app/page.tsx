@@ -1,4 +1,7 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { Suspense, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 /**
  * Root entry. Zed's native-app sign-in always redirects the browser to the
@@ -7,25 +10,40 @@ import { redirect } from "next/navigation";
  * (see zed-hosted.ts), that redirect lands HERE. Forward the payload to the
  * /callback relay (which postMessages it to the waiting OAuth modal) instead of
  * the plain /dashboard redirect below, which would drop the query string.
+ *
+ * AGENT.md §3.3: the forward runs on the client. A Server Component can only
+ * read `?user_id=`/`?access_token=` by awaiting `searchParams`, which opts this
+ * page out of static generation and hard-fails `output: "export"` — and CI
+ * asserts `out/index.html` exists. Resolving the query in the browser is the
+ * same decision with a prerenderable root.
  */
-export default async function InitPage({
-  searchParams,
-}: {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const params = (await searchParams) || {};
-  const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (typeof value === "string") {
-      query.set(key, value);
-    } else if (Array.isArray(value)) {
-      for (const item of value) {
-        if (typeof item === "string") query.append(key, item);
-      }
-    }
+const DEFAULT_ENTRY_ROUTE = "/dashboard";
+
+export function resolveEntryRoute(params: URLSearchParams): string {
+  if (params.get("user_id") && params.get("access_token")) {
+    return `/callback?${params.toString()}`;
   }
-  if (query.get("user_id") && query.get("access_token")) {
-    redirect(`/callback?${query.toString()}`);
-  }
-  redirect("/dashboard");
+  return DEFAULT_ENTRY_ROUTE;
+}
+
+function EntryRedirector() {
+  const router = useRouter();
+  // `useSearchParams` must sit behind a Suspense boundary or the static export
+  // refuses to prerender the page.
+  const searchParams = useSearchParams();
+  const target = resolveEntryRoute(new URLSearchParams(searchParams));
+
+  useEffect(() => {
+    router.replace(target);
+  }, [router, target]);
+
+  return null;
+}
+
+export default function InitPage() {
+  return (
+    <Suspense fallback={null}>
+      <EntryRedirector />
+    </Suspense>
+  );
 }

@@ -52,9 +52,19 @@ export function getTransientBuildPaths(rootDir = projectRoot, env = process.env)
   if (env.OMNIROUTE_EXPORT === "1") {
     // AGENT.md §3.3: `output: "export"` cannot emit a Route Handler — Next
     // throws E301 ("dynamic/revalidate not configured on route") for any
-    // `route.ts` that is not static-gen enabled, and an embedded-service reverse
-    // proxy can never be. Move the dashboard's embed proxy aside for the export
-    // build (restored by the caller's `finally`, git-recoverable regardless).
+    // `route.ts` that is not static-gen enabled, and E278 outright for
+    // `dynamic = "force-dynamic"`. Nothing under the API surface can be
+    // (a request handler IS the per-request state), so the whole tree moves
+    // aside for the export build and is restored by the caller's `finally`
+    // (git-recoverable regardless).
+    paths.push({
+      label: "HTTP API Route Handlers (not exportable)",
+      sourcePath: path.join(rootDir, "src", "app", "api"),
+      backupPath: path.join(backupRoot, "api"),
+    });
+
+    // The embedded-service reverse proxy: same rule, and it is doubly so
+    // because it is a MITM tunnel rather than a handler.
     paths.push({
       label: "embedded-service reverse proxy (not exportable)",
       sourcePath: path.join(
@@ -70,6 +80,30 @@ export function getTransientBuildPaths(rootDir = projectRoot, env = process.env)
       ),
       backupPath: path.join(backupRoot, "embed"),
     });
+
+    // Root-level server endpoints with no static representation. Each is
+    // force-dynamic BY DESIGN (E278) or per-request (E301) — and that design
+    // is load-bearing for the live server, so flipping them to force-static to
+    // appease the export would regress the very thing they exist to do:
+    //   - healthz/livez/readyz: lifecycle probes. force-static would let Next
+    //     cache the body, so the probe would stop reflecting the live process
+    //     on the `output: "standalone"` build that actually serves it.
+    //   - authorize: the Trae SOLO loopback OAuth callback. It WRITES a
+    //     provider connection and needs next-intl request scope to render.
+    // A static SPA has no server to answer a probe or complete an OAuth
+    // handshake; the AISIX native core hosts the real server on its own port.
+    for (const [label, segment] of [
+      ["lifecycle probe endpoint (not exportable)", "healthz"],
+      ["lifecycle probe endpoint (not exportable)", "livez"],
+      ["lifecycle probe endpoint (not exportable)", "readyz"],
+      ["loopback OAuth callback (not exportable)", "authorize"],
+    ]) {
+      paths.push({
+        label,
+        sourcePath: path.join(rootDir, "src", "app", segment),
+        backupPath: path.join(backupRoot, segment),
+      });
+    }
   }
 
   return paths;
@@ -317,11 +351,32 @@ export async function main() {
       movedPaths.push(entry);
     }
 
+    if (process.env.OMNIROUTE_EXPORT === "1") {
+      // Required consequence of moving `src/app/api` aside: the instrumentation
+      // entrypoints reach INTO that tree at module scope —
+      // src/instrumentation.ts → src/instrumentation-node.ts imports
+      // `@/app/api/v1/models/catalog`, and it pulls
+      // src/lib/credentialHealth/scheduler.ts, which imports
+      // `@/app/api/providers/[id]/test/route`. With the tree gone those imports
+      // dangle and the build dies on module-not-found before the export phase
+      // even starts. Stubbing is also semantically right: instrumentation is the
+      // Node process bootstrap, and `output: "export"` produces a static bundle
+      // with no process to bootstrap. Same mechanism the contributor profile
+      // already uses to keep the startup graph out of a compile-only build.
+      stubbedPages.push(...stubContributorInstrumentation(projectRoot));
+      console.log(
+        "[build-next-isolated] Static export — instrumentation entrypoints stubbed (no Node runtime in out/)"
+      );
+    }
+
     if (isBackendOnlyBuild()) {
       console.log(
         "[build-next-isolated] OMNIROUTE_BUILD_BACKEND_ONLY set — building API only (dashboard UI stubbed)"
       );
-      stubbedPages = stubDashboardPages(projectRoot);
+      // Append, never assign: an export build can also be a backend-only build,
+      // and a plain assignment here would drop the instrumentation stubs from
+      // the restore list, leaving the working tree permanently stubbed.
+      stubbedPages = [...stubbedPages, ...stubDashboardPages(projectRoot)];
       if (isContributorBuild()) {
         stubbedPages.push(...stubContributorInstrumentation(projectRoot));
         console.log(

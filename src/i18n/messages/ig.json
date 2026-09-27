@@ -1902,7 +1902,9 @@
     "readinessStep3": "Detuo endpoint gị",
     "readinessStep4": "Zipụ arịrịọ nnwale",
     "readinessContinue": "Gaa n’ihu na nhazi",
-    "readinessDismiss": "Mechie maka ugbu a"
+    "readinessDismiss": "Mechie maka ugbu a",
+    "coreUnreachableBadge": "Core unreachable",
+    "coreUnreachableHint": "The admin plane is unreachable, so the setup state is unknown — not complete."
   },
   "analytics": {
     "title": "Nnyocha Data",
@@ -4811,7 +4813,21 @@
     "issueCount": "nsogbu {count}",
     "score": "Akara",
     "lastRequest": "Arịrịọ ikpeazụ",
-    "lastError": "Njehie ikpeazụ"
+    "lastError": "Njehie ikpeazụ",
+    "cooldownStatusTitle": "Keys in Cooldown (429)",
+    "cooldownStatusDescription": "Keys in Cooldown after 429; used for Failover/SSE/TTFT diagnostics.",
+    "cooldownColKey": "Key",
+    "cooldownColProvider": "Provider",
+    "cooldownColUntil": "Cooldown until",
+    "cooldownColReason": "Reason",
+    "cooldownEmpty": "No keys in Cooldown right now.",
+    "cooldownLoadFailed": "Failed to load Cooldown status: {error}",
+    "hotReloadTitle": "Resources Hot-Reload",
+    "hotReloadDescription": "Admin resources version; green badge means Hot-Reload applied.",
+    "hotReloadOk": "Hot-Reload OK",
+    "hotReloadUnavailable": "Unavailable",
+    "hotReloadAppliedAt": "Applied at",
+    "hotReloadError": "Resources admin is unreachable."
   },
   "telemetry": {
     "title": "Telemetrị Sistemụ",

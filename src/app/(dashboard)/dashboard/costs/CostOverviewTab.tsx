@@ -42,6 +42,13 @@ import { ApiKeyUsageLimitCard } from "./components/ApiKeyUsageLimitCard";
 import { MetricCard } from "./components/MetricCard";
 import { TopListCard } from "./components/TopListCard";
 import { useApiKeyUsageLimits } from "./useApiKeyUsageLimits";
+import {
+  aisixStatusModelsUrl,
+  fetchAisixJson,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
+import { adaptAisixTelemetry, type AisixTelemetry } from "@/shared/utils/aisixHealth";
 
 interface UsageAnalyticsSummary {
   totalCost: number;
@@ -351,45 +358,73 @@ export default function CostOverviewTab() {
     payload: apiKeyUsageLimits,
     loading: apiKeyUsageLimitsLoading,
     save: saveApiKeyUsageLimits,
+    unsupported: apiKeyLimitsUnsupported,
+    unsupportedReason: apiKeyLimitsUnsupportedReason,
   } = useApiKeyUsageLimits(selectedApiKeyId);
+  // `/api/usage/analytics` is a Next/SQLite report (cost + token breakdowns per
+  // provider/model/account/key). The AISIX gateway has no equivalent: `:9090`
+  // reports request/latency COUNTERS, which is a different dataset — mapping
+  // one onto the other would render invented dollar figures. So the page either
+  // reports "no native equivalent" or shows the counters the core DOES report.
+  const usageRead = resolveAisixSurfaceSupport("usage", "read");
+  const usageSupported = usageRead.supported;
+  const [nativeSignal, setNativeSignal] = useState<AisixTelemetry | null>(null);
+
+  // The one usage summary the core genuinely exposes, read through the same
+  // adapter the health page uses. Parsed tolerantly: a field the snapshot does
+  // not carry stays `null` and renders "—", never 0.
+  useEffect(() => {
+    if (usageSupported) return;
+    let cancelled = false;
+    void (async () => {
+      const result = await fetchAisixJson(aisixStatusModelsUrl(), { cache: "no-store" });
+      if (cancelled) return;
+      setNativeSignal(result.ok ? adaptAisixTelemetry(result.data) : null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [usageSupported]);
 
   useEffect(() => {
     let active = true;
 
     async function loadRange() {
-      try {
-        setLoading(true);
-        setSummaryLoading(true);
-        const params = new URLSearchParams({
-          range,
-          presets: "1d,7d,30d",
-          includeFlatRateEstimates: "true",
-        });
-        if (apiKeyFilter) params.set("apiKeyIds", apiKeyFilter);
-        const response = await fetch(`/api/usage/analytics?${params.toString()}`);
-        if (!response.ok) {
-          throw new Error(t("overviewLoadFailed"));
-        }
-        const payload = (await response.json()) as UsageAnalyticsPayload;
-        if (!active) return;
-        setAnalytics(payload);
-        if (payload.presetSummaries) {
-          setPresetCosts({
-            "1d": payload.presetSummaries["1d"]?.totalCost || 0,
-            "7d": payload.presetSummaries["7d"]?.totalCost || 0,
-            "30d": payload.presetSummaries["30d"]?.totalCost || 0,
-          });
-        }
-        setError(null);
-      } catch (loadError) {
-        if (!active) return;
-        setError(loadError instanceof Error ? loadError.message : t("overviewLoadFailed"));
-      } finally {
-        if (active) {
-          setLoading(false);
-          setSummaryLoading(false);
-        }
+      if (!usageSupported) {
+        setLoading(false);
+        setSummaryLoading(false);
+        return;
       }
+      setLoading(true);
+      setSummaryLoading(true);
+      const params = new URLSearchParams({
+        range,
+        presets: "1d,7d,30d",
+        includeFlatRateEstimates: "true",
+      });
+      if (apiKeyFilter) params.set("apiKeyIds", apiKeyFilter);
+      const result = await fetchAisixJson(
+        resolveAisixRequestUrl(`/api/usage/analytics?${params.toString()}`)
+      );
+      if (!active) return;
+      if (!result.ok) {
+        setError(result.missing ? usageRead.reason : (result.error ?? t("overviewLoadFailed")));
+        setLoading(false);
+        setSummaryLoading(false);
+        return;
+      }
+      const payload = (result.data ?? null) as UsageAnalyticsPayload | null;
+      setAnalytics(payload);
+      if (payload?.presetSummaries) {
+        setPresetCosts({
+          "1d": payload.presetSummaries["1d"]?.totalCost || 0,
+          "7d": payload.presetSummaries["7d"]?.totalCost || 0,
+          "30d": payload.presetSummaries["30d"]?.totalCost || 0,
+        });
+      }
+      setError(null);
+      setLoading(false);
+      setSummaryLoading(false);
     }
 
     void loadRange();
@@ -397,7 +432,7 @@ export default function CostOverviewTab() {
     return () => {
       active = false;
     };
-  }, [apiKeyFilter, range, t]);
+  }, [apiKeyFilter, range, t, usageSupported, usageRead.reason]);
 
   const selectedRangeLabel = t(
     RANGE_OPTIONS.find((option) => option.value === range)?.labelKey || "range30d"
@@ -497,6 +532,62 @@ export default function CostOverviewTab() {
 
   if (loading && !analytics) {
     return <CardSkeleton />;
+  }
+
+  // No native cost/usage analytics: say so once, show the counters the core does
+  // report, and do NOT render the cost tables — their `0` defaults would read as
+  // "you spent nothing", which is a fabricated answer rather than a missing one.
+  if (!usageSupported) {
+    return (
+      <div className="flex flex-col gap-6">
+        <Card className="p-6">
+          <div className="flex flex-col gap-2">
+            <h2 className="text-xl font-bold text-text-main">{t("overviewTitle")}</h2>
+            <p className="text-sm text-text-muted">{t("overviewDescription")}</p>
+          </div>
+        </Card>
+
+        <div
+          role="status"
+          data-testid="cost-usage-unavailable-banner"
+          className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-200"
+        >
+          <span className="material-symbols-outlined text-[18px] text-amber-500 shrink-0">
+            block
+          </span>
+          <span className="flex-1">{usageRead.reason}</span>
+        </div>
+
+        {/* The native signal the core DOES report (request/latency counters). */}
+        {nativeSignal?.hasReportedSignal ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <MetricCard
+              label={t("requestsInWindow")}
+              value={
+                nativeSignal.totalRequests === null
+                  ? "—"
+                  : new Intl.NumberFormat(locale).format(nativeSignal.totalRequests)
+              }
+            />
+            <MetricCard label={t("activeModels")} value={String(nativeSignal.modelCount)} />
+            <MetricCard
+              label={t("avgCostPerRequest")}
+              // The core reports no price per request: a dollar figure here
+              // would be invented, so the honest value is "—".
+              value="—"
+            />
+          </div>
+        ) : (
+          <EmptyState icon="payments" title={t("overviewTitle")} description={usageRead.reason} />
+        )}
+
+        {apiKeyLimitsUnsupported && apiKeyLimitsUnsupportedReason && (
+          <div className="rounded-lg border border-border bg-surface/40 px-4 py-3 text-xs text-text-muted">
+            {apiKeyLimitsUnsupportedReason}
+          </div>
+        )}
+      </div>
+    );
   }
 
   if (error && !analytics) {

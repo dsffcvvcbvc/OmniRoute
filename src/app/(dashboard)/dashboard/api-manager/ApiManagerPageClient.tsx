@@ -42,6 +42,12 @@ import ProviderConnectionPermissionList, {
 import RoutingEntryLink from "@/shared/components/routing/RoutingEntryLink";
 import { ALL_COMBOS_ACCESS_RULE } from "@/shared/constants/comboAccess";
 import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
+import {
+  aisixProviderKeysItemUrl,
+  aisixProviderKeysUrl,
+  isAisixMissingEndpointStatus,
+} from "@/shared/utils/aisixEndpoints";
+import { useNotificationStore } from "@/store/notificationStore";
 
 // Constants for validation
 const MAX_KEY_NAME_LENGTH = 200;
@@ -245,6 +251,13 @@ export default function ApiManagerPageClient() {
   const [combosLoadError, setCombosLoadError] = useState(false);
   const [connectionsLoadError, setConnectionsLoadError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Native keys-write capability (`POST/PATCH/DELETE :3001/admin/v1/provider_keys`):
+  // probed once via GET. "missing" (404/405) routes mutations straight to the
+  // legacy Next route; any other outcome attempts native first and falls back
+  // on 404/405. Non-2xx anywhere is reported loudly — never silent.
+  const [nativeKeysWrite, setNativeKeysWrite] = useState<"unknown" | "supported" | "missing">(
+    "unknown"
+  );
   const [usageStats, setUsageStats] = useState<Record<string, KeyUsageStats>>({});
   const [sessionCounts, setSessionCounts] = useState<Record<string, number>>({});
   const [deviceCounts, setDeviceCounts] = useState<Record<string, number>>({});
@@ -262,6 +275,7 @@ export default function ApiManagerPageClient() {
   const [quotaPoolGroup, setQuotaPoolGroup] = useState<Record<string, string>>({});
 
   const { copied, copy } = useCopyToClipboard();
+  const notify = useNotificationStore();
 
   const scrollCreateKeyFormToTop = useCallback(() => {
     const scrollContainer = createKeyFormRef.current?.parentElement;
@@ -584,6 +598,56 @@ export default function ApiManagerPageClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- initial dashboard load only
   }, []);
 
+  // Pre-send capability gate for keys-write: a single bounded GET tells whether
+  // the native `:3001/admin/v1/provider_keys` write surface exists on this core
+  // build. Never blocks rendering — mutations handle the unknown case by
+  // attempting native first and falling back loudly.
+  useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 10_000);
+    void (async () => {
+      try {
+        const res = await fetch(aisixProviderKeysUrl(), { signal: controller.signal });
+        if (cancelled) return;
+        if (isAisixMissingEndpointStatus(res.status)) setNativeKeysWrite("missing");
+        else if (res.ok) setNativeKeysWrite("supported");
+      } catch {
+        // Unknown (network/abort) — mutations attempt native, then legacy.
+      } finally {
+        window.clearTimeout(timeout);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      controller.abort();
+      window.clearTimeout(timeout);
+    };
+  }, []);
+
+  /**
+   * Native-first keys-write with legacy fallback. Tries
+   * `POST/PATCH/DELETE :3001/admin/v1/provider_keys[…]` unless the
+   * capability probe already proved it missing; on native 404/405 (or native
+   * network failure) falls back to the equivalent legacy `/api/keys[…]` route
+   * so the Next dev build keeps working. The returned response may still be
+   * non-2xx — every caller reports that loudly and leaves its buttons enabled
+   * for retry.
+   */
+  const keysWriteFetch = async (id: string | null, init: RequestInit): Promise<Response> => {
+    const legacy = id ? `/api/keys/${encodeURIComponent(id)}` : "/api/keys";
+    if (nativeKeysWrite !== "missing") {
+      try {
+        const res = await fetch(id ? aisixProviderKeysItemUrl(id) : aisixProviderKeysUrl(), init);
+        if (!isAisixMissingEndpointStatus(res.status)) return res;
+        setNativeKeysWrite("missing");
+      } catch {
+        // Native core unreachable — fall through to the legacy route.
+      }
+    }
+    return fetch(resolveAisixRequestUrl(legacy), init);
+  };
+
   const clearPageError = useCallback(() => setPageError(null), []);
 
   const keyCounts = useMemo(() => computeApiKeyCounts(keys), [keys]);
@@ -663,7 +727,7 @@ export default function ApiManagerPageClient() {
     setCreateError(null);
 
     try {
-      const res = await fetch(resolveAisixRequestUrl("/api/keys"), {
+      const res = await keysWriteFetch(null, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -676,10 +740,24 @@ export default function ApiManagerPageClient() {
           allowUsageCommand: newKeyAllowUsageCommand,
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
 
       if (res.ok) {
-        setCreatedKey(data.key);
+        // Native and legacy envelopes differ (`{key}` vs `{data:{key}}`) —
+        // accept either, and refuse loudly when neither carries the secret.
+        const created =
+          typeof data?.key === "string"
+            ? data.key
+            : typeof data?.data?.key === "string"
+              ? data.data.key
+              : null;
+        if (!created) {
+          const message = t("failedCreateKey");
+          setCreateError(message);
+          notify.error(message);
+          return;
+        }
+        setCreatedKey(created);
         await fetchData();
         setNewKeyName("");
         setNewKeyManageEnabled(false);
@@ -688,11 +766,15 @@ export default function ApiManagerPageClient() {
         setNewKeyAllowUsageCommand(false);
         setShowAddModal(false);
       } else {
-        setCreateError(extractApiErrorMessage(data, t("failedCreateKey")));
+        const message = extractApiErrorMessage(data, t("failedCreateKey"));
+        setCreateError(message);
+        notify.error(message);
       }
     } catch (error) {
       console.error("Error creating key:", error);
-      setCreateError(t("failedCreateKeyRetry"));
+      const message = t("failedCreateKeyRetry");
+      setCreateError(message);
+      notify.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -710,7 +792,7 @@ export default function ApiManagerPageClient() {
     clearPageError();
 
     try {
-      const res = await fetch(resolveAisixRequestUrl(`/api/keys/${encodeURIComponent(id)}`), {
+      const res = await keysWriteFetch(id, {
         method: "DELETE",
       });
       if (res.ok) {
@@ -724,12 +806,16 @@ export default function ApiManagerPageClient() {
         });
         setVisibleKeys((prev) => (prev.has(id) ? toggleKeyVisibility(prev, id) : prev));
       } else {
-        const data = await res.json();
-        setPageError(extractApiErrorMessage(data, t("failedDeleteKey")));
+        const data = await res.json().catch(() => null);
+        const message = extractApiErrorMessage(data, t("failedDeleteKey"));
+        setPageError(message);
+        notify.error(message);
       }
     } catch (error) {
       console.error("Error deleting key:", error);
-      setPageError(t("failedDeleteKeyRetry"));
+      const message = t("failedDeleteKeyRetry");
+      setPageError(message);
+      notify.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -903,55 +989,56 @@ export default function ApiManagerPageClient() {
     clearPageError();
 
     try {
-      const res = await fetch(
-        resolveAisixRequestUrl(`/api/keys/${encodeURIComponent(editingKey.id)}`),
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: sanitizedName,
-            modelAccessMode,
-            connectionAccessMode,
-            allowedModels: validModels,
-            blockedModels: validBlockedModels,
-            allowedCombos: validCombos,
-            allowedConnections: validConnections,
-            noLog,
-            autoResolve,
-            isActive,
-            throttleDelayMs: normalizedThrottleDelayMs,
-            isBanned,
-            expiresAt,
-            maxSessions: normalizedMaxSessions,
-            accessSchedule,
-            rateLimits,
-            scopes,
-            allowedEndpoints,
-            streamDefaultMode,
-            compressionEnabled,
-            allowAutoCombos,
-            catalogScope,
-            disableNonPublicModels,
-            allowUsageCommand,
-            usageLimitEnabled,
-            dailyUsageLimitUsd,
-            weeklyUsageLimitUsd,
-            chaosModeEnabled,
-          }),
-        }
-      );
+      const res = await keysWriteFetch(editingKey.id, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: sanitizedName,
+          modelAccessMode,
+          connectionAccessMode,
+          allowedModels: validModels,
+          blockedModels: validBlockedModels,
+          allowedCombos: validCombos,
+          allowedConnections: validConnections,
+          noLog,
+          autoResolve,
+          isActive,
+          throttleDelayMs: normalizedThrottleDelayMs,
+          isBanned,
+          expiresAt,
+          maxSessions: normalizedMaxSessions,
+          accessSchedule,
+          rateLimits,
+          scopes,
+          allowedEndpoints,
+          streamDefaultMode,
+          compressionEnabled,
+          allowAutoCombos,
+          catalogScope,
+          disableNonPublicModels,
+          allowUsageCommand,
+          usageLimitEnabled,
+          dailyUsageLimitUsd,
+          weeklyUsageLimitUsd,
+          chaosModeEnabled,
+        }),
+      });
 
       if (res.ok) {
         await fetchData();
         setShowPermissionsModal(false);
         setEditingKey(null);
       } else {
-        const data = await res.json();
-        setPageError(extractApiErrorMessage(data, t("failedUpdatePermissions")));
+        const data = await res.json().catch(() => null);
+        const message = extractApiErrorMessage(data, t("failedUpdatePermissions"));
+        setPageError(message);
+        notify.error(message);
       }
     } catch (error) {
       console.error("Error updating permissions:", error);
-      setPageError(t("failedUpdatePermissionsRetry"));
+      const message = t("failedUpdatePermissionsRetry");
+      setPageError(message);
+      notify.error(message);
     } finally {
       setIsSubmitting(false);
     }

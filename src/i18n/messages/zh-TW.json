@@ -1902,7 +1902,9 @@
     "readinessStep3": "複製您的端點",
     "readinessStep4": "傳送測試請求",
     "readinessContinue": "繼續設定",
-    "readinessDismiss": "暫時略過"
+    "readinessDismiss": "暫時略過",
+    "coreUnreachableBadge": "Core unreachable",
+    "coreUnreachableHint": "The admin plane is unreachable, so the setup state is unknown — not complete."
   },
   "analytics": {
     "title": "分析",
@@ -4811,7 +4813,21 @@
     "issueCount": "{count} 個問題",
     "score": "評分",
     "lastRequest": "最近請求",
-    "lastError": "最近錯誤"
+    "lastError": "最近錯誤",
+    "cooldownStatusTitle": "Keys in Cooldown (429)",
+    "cooldownStatusDescription": "Keys in Cooldown after 429; used for Failover/SSE/TTFT diagnostics.",
+    "cooldownColKey": "Key",
+    "cooldownColProvider": "Provider",
+    "cooldownColUntil": "Cooldown until",
+    "cooldownColReason": "Reason",
+    "cooldownEmpty": "No keys in Cooldown right now.",
+    "cooldownLoadFailed": "Failed to load Cooldown status: {error}",
+    "hotReloadTitle": "Resources Hot-Reload",
+    "hotReloadDescription": "Admin resources version; green badge means Hot-Reload applied.",
+    "hotReloadOk": "Hot-Reload OK",
+    "hotReloadUnavailable": "Unavailable",
+    "hotReloadAppliedAt": "Applied at",
+    "hotReloadError": "Resources admin is unreachable."
   },
   "telemetry": {
     "title": "系統遙測",

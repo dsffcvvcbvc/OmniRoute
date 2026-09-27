@@ -1,4 +1,7 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { Suspense, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const LEGACY_TAB_ROUTES: Record<string, string> = {
   advanced: "/dashboard/settings/advanced",
@@ -16,18 +19,32 @@ const LEGACY_TAB_ROUTES: Record<string, string> = {
   sidebar: "/dashboard/settings/sidebar",
 };
 
-type SettingsPageProps = {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
-};
+const DEFAULT_SETTINGS_ROUTE = "/dashboard/settings/general";
 
-function resolveSettingsRoute(value: string | undefined): string {
-  return value
-    ? LEGACY_TAB_ROUTES[value] || "/dashboard/settings/general"
-    : "/dashboard/settings/general";
+export function resolveSettingsRoute(value: string | undefined): string {
+  return value ? LEGACY_TAB_ROUTES[value] || DEFAULT_SETTINGS_ROUTE : DEFAULT_SETTINGS_ROUTE;
 }
 
-export default async function SettingsPage({ searchParams }: SettingsPageProps) {
-  const params = searchParams ? await searchParams : {};
-  const tab = Array.isArray(params.tab) ? params.tab[0] : params.tab;
-  redirect(resolveSettingsRoute(tab));
+// AGENT.md §3.3: `/dashboard/settings` forwards on the client — see the note on
+// the sibling `../context/page.tsx`. Awaiting `searchParams` in a Server
+// Component would make this page unprerenderable and hard-fail
+// `output: "export"`.
+function SettingsRedirector() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const target = resolveSettingsRoute(searchParams.get("tab") ?? undefined);
+
+  useEffect(() => {
+    router.replace(target);
+  }, [router, target]);
+
+  return null;
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SettingsRedirector />
+    </Suspense>
+  );
 }

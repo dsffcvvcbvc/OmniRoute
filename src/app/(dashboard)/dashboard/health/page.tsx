@@ -443,20 +443,22 @@ export default function HealthPage() {
               {t("sessionActivity")}
             </h2>
             <span className="text-xs text-text-muted">
-              {t("activeCount", { count: sessions?.activeCount ?? 0 })}
+              {/* The native core reports no session counters (`sessions` stays
+                  null) — render "—", never a fabricated 0. */}
+              {t("activeCount", { count: sessions?.activeCount ?? notAvailable })}
             </span>
           </div>
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="rounded-xl border border-border/40 bg-surface/30 p-3">
               <div className="text-xs text-text-muted">{t("stickyBoundSessions")}</div>
               <div className="text-2xl font-semibold text-text-main mt-1">
-                {sessions?.stickyBoundCount ?? 0}
+                {sessions?.stickyBoundCount ?? notAvailable}
               </div>
             </div>
             <div className="rounded-xl border border-border/40 bg-surface/30 p-3">
               <div className="text-xs text-text-muted">{t("sessionsByApiKey")}</div>
               <div className="text-2xl font-semibold text-text-main mt-1">
-                {Object.keys(sessions?.byApiKey || {}).length}
+                {sessions?.byApiKey ? Object.keys(sessions.byApiKey).length : notAvailable}
               </div>
             </div>
           </div>
@@ -497,32 +499,36 @@ export default function HealthPage() {
               {t("quotaMonitors")}
             </h2>
             <span className="text-xs text-text-muted">
-              {t("activeCount", { count: quotaMonitor?.active ?? 0 })}
+              {/* Same as sessions above: the native core reports no quota
+                  counters (`quotaMonitor` stays null) — "—", not 0. */}
+              {t("activeCount", { count: quotaMonitor?.active ?? notAvailable })}
             </span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
             <div className="rounded-xl border border-border/40 bg-surface/30 p-3">
               <div className="text-xs text-text-muted">{t("alerting")}</div>
               <div className="text-2xl font-semibold text-amber-400 mt-1">
-                {quotaMonitor?.alerting ?? 0}
+                {quotaMonitor?.alerting ?? notAvailable}
               </div>
             </div>
             <div className="rounded-xl border border-border/40 bg-surface/30 p-3">
               <div className="text-xs text-text-muted">{t("limitExhausted")}</div>
               <div className="text-2xl font-semibold text-red-400 mt-1">
-                {quotaMonitor?.exhausted ?? 0}
+                {quotaMonitor?.exhausted ?? notAvailable}
               </div>
             </div>
             <div className="rounded-xl border border-border/40 bg-surface/30 p-3">
               <div className="text-xs text-text-muted">{t("errors")}</div>
               <div className="text-2xl font-semibold text-orange-400 mt-1">
-                {quotaMonitor?.errors ?? 0}
+                {quotaMonitor?.errors ?? notAvailable}
               </div>
             </div>
             <div className="rounded-xl border border-border/40 bg-surface/30 p-3">
               <div className="text-xs text-text-muted">{t("providers")}</div>
               <div className="text-2xl font-semibold text-text-main mt-1">
-                {Object.keys(quotaMonitor?.byProvider || {}).length}
+                {quotaMonitor?.byProvider
+                  ? Object.keys(quotaMonitor.byProvider).length
+                  : notAvailable}
               </div>
             </div>
           </div>

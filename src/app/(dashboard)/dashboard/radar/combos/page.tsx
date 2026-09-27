@@ -12,6 +12,11 @@ import {
   type RadarComboSuggestion,
 } from "@/lib/radar/comboSuggestions";
 import { Card } from "@/shared/components";
+import {
+  fetchAisixJson,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
 
 interface RadarCatalogPayload {
   entries?: MergedEntry[];
@@ -33,39 +38,50 @@ export default function RadarCombosPage() {
   const [loading, setLoading] = useState(true);
   const [creatingName, setCreatingName] = useState<string | null>(null);
   const [error, setError] = useState("");
+  // Guided combos are built FROM the Radar catalog, which the AISIX gateway does
+  // not expose. The combo write itself has an optional native surface (see the
+  // combos page), but with no catalog there is nothing to suggest — so the whole
+  // page refuses instead of creating suggestions from an empty list.
+  const radarRead = resolveAisixSurfaceSupport("radar", "read");
+  const radarWrite = resolveAisixSurfaceSupport("radar", "write");
+  const radarSupported = radarRead.supported;
 
   useEffect(() => {
     async function load() {
-      try {
-        const [catalogResponse, optionsResponse] = await Promise.all([
-          fetch("/api/radar/catalog"),
-          fetch("/api/combos/builder/options"),
-        ]);
-        if (catalogResponse.status === 404) {
-          setFlagOff(true);
-          return;
-        }
-        if (!catalogResponse.ok || !optionsResponse.ok) throw new Error("load_failed");
-
-        const catalog = (await catalogResponse.json()) as RadarCatalogPayload;
-        const options = (await optionsResponse.json()) as ComboBuilderOptionsPayload;
-        if (!Array.isArray(catalog.entries) || !Array.isArray(options.providers)) {
-          throw new Error("invalid_shape");
-        }
-
-        setEntries(catalog.entries);
-        setProviders(options.providers);
-        setExistingNames(comboNames(options));
-        setHasCatalog(catalog.meta != null);
-      } catch {
-        setError(t("loadFailed"));
-      } finally {
+      if (!radarSupported) {
         setLoading(false);
+        return;
       }
+      const [catalogResult, optionsResult] = await Promise.all([
+        fetchAisixJson(resolveAisixRequestUrl("/api/radar/catalog")),
+        fetchAisixJson(resolveAisixRequestUrl("/api/combos/builder/options")),
+      ]);
+      if (catalogResult.missing) {
+        setFlagOff(true);
+        return;
+      }
+      if (!catalogResult.ok) {
+        setError(catalogResult.error || t("loadFailed"));
+        return;
+      }
+      if (!optionsResult.ok) {
+        setError(optionsResult.error || t("loadFailed"));
+        return;
+      }
+      const catalog = (catalogResult.data ?? {}) as RadarCatalogPayload;
+      const options = (optionsResult.data ?? {}) as ComboBuilderOptionsPayload;
+      if (!Array.isArray(catalog.entries) || !Array.isArray(options.providers)) {
+        setError(t("loadFailed"));
+        return;
+      }
+      setEntries(catalog.entries);
+      setProviders(options.providers);
+      setExistingNames(comboNames(options));
+      setHasCatalog(catalog.meta != null);
     }
 
-    void load();
-  }, [t]);
+    void load().finally(() => setLoading(false));
+  }, [t, radarSupported]);
 
   const suggestions = useMemo(
     () => buildRadarComboSuggestions({ entries, providers, existingComboNames: existingNames }),
@@ -73,48 +89,76 @@ export default function RadarCombosPage() {
   );
 
   const refreshExistingName = useCallback(async (name: string): Promise<boolean> => {
-    try {
-      const response = await fetch("/api/combos/builder/options");
-      if (!response.ok) return false;
-      const options = (await response.json()) as ComboBuilderOptionsPayload;
-      if (!Array.isArray(options.comboRefs)) return false;
-      const names = comboNames(options);
-      if (![...names].some((candidate) => candidate.toLowerCase() === name.toLowerCase())) {
-        return false;
-      }
-      setExistingNames(names);
-      return true;
-    } catch {
+    const result = await fetchAisixJson(resolveAisixRequestUrl("/api/combos/builder/options"));
+    if (!result.ok) return false;
+    const options = (result.data ?? {}) as ComboBuilderOptionsPayload;
+    if (!Array.isArray(options.comboRefs)) return false;
+    const names = comboNames(options);
+    if (![...names].some((candidate) => candidate.toLowerCase() === name.toLowerCase())) {
       return false;
     }
+    setExistingNames(names);
+    return true;
   }, []);
 
   const createSuggestion = useCallback(
     async (suggestion: RadarComboSuggestion) => {
+      if (!radarWrite.supported) {
+        setError(radarWrite.reason);
+        return;
+      }
       setCreatingName(suggestion.name);
       setError("");
       try {
-        const response = await fetch("/api/combos", {
+        const result = await fetchAisixJson(resolveAisixRequestUrl("/api/combos"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(suggestion.payload),
         });
-        if (!response.ok) {
-          if (response.status === 400 && (await refreshExistingName(suggestion.name))) return;
-          throw new Error("create_failed");
+        if (!result.ok) {
+          if (result.status === 400 && (await refreshExistingName(suggestion.name))) return;
+          setError(result.error || t("createFailed"));
+          return;
         }
         setExistingNames((current) => new Set([...current, suggestion.name]));
         setCreatedNames((current) => new Set([...current, suggestion.name]));
-      } catch {
-        setError(t("createFailed"));
       } finally {
         setCreatingName(null);
       }
     },
-    [refreshExistingName, t]
+    [refreshExistingName, t, radarWrite.supported, radarWrite.reason]
   );
 
   if (flagOff) notFound();
+
+  if (!radarSupported) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-3">
+          <Link
+            href="/dashboard/radar"
+            className="text-sm text-text-muted hover:text-text-main transition-colors w-fit"
+          >
+            ← {t("backToRadar")}
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold">{t("title")}</h1>
+            <p className="text-sm text-text-muted mt-1">{t("subtitle")}</p>
+          </div>
+        </div>
+        <div
+          role="status"
+          data-testid="radar-guided-combos-unavailable"
+          className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-200"
+        >
+          {radarRead.reason}
+        </div>
+        <Card>
+          <p className="text-center text-text-muted py-8">{t("noSuggestions")}</p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">

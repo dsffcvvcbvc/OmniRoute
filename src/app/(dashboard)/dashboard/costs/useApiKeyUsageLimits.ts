@@ -1,6 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  fetchAisixJson,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
 import type {
   ApiKeyUsageLimitPayload,
   ApiKeyUsageLimitSavePayload,
@@ -9,38 +14,47 @@ import type {
 export function useApiKeyUsageLimits(selectedApiKeyId: string | null) {
   const [payload, setPayload] = useState<ApiKeyUsageLimitPayload | null>(null);
   const [loading, setLoading] = useState(false);
+  // Per-key spend limits are stored with OmniRoute's own API keys, which the
+  // AISIX gateway does not expose (they are NOT `:3001/admin/v1/provider_keys`,
+  // which hold upstream provider credentials). So both the read and the PATCH
+  // are unavailable: the read degrades to `null` and the write refuses loudly
+  // instead of firing a guaranteed 404 at the save button.
+  const limitsRead = resolveAisixSurfaceSupport("keys", "read");
+  const limitsWrite = resolveAisixSurfaceSupport("keys", "write");
 
   const load = useCallback(async () => {
-    if (!selectedApiKeyId) {
+    if (!selectedApiKeyId || !limitsRead.supported) {
       setPayload(null);
       return;
     }
     setLoading(true);
-    try {
-      const response = await fetch(
-        `/api/keys/${encodeURIComponent(selectedApiKeyId)}/usage-limits`
-      );
-      if (!response.ok) throw new Error("Failed to load API key usage limits");
-      setPayload((await response.json()) as ApiKeyUsageLimitPayload);
-    } catch {
-      setPayload(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedApiKeyId]);
+    const result = await fetchAisixJson(
+      resolveAisixRequestUrl(`/api/keys/${encodeURIComponent(selectedApiKeyId)}/usage-limits`)
+    );
+    setPayload(result.ok ? ((result.data ?? null) as ApiKeyUsageLimitPayload) : null);
+    setLoading(false);
+  }, [selectedApiKeyId, limitsRead.supported]);
 
   const save = useCallback(
-    async (next: ApiKeyUsageLimitSavePayload) => {
+    async (_next: ApiKeyUsageLimitSavePayload) => {
       if (!selectedApiKeyId) return;
-      const response = await fetch(`/api/keys/${encodeURIComponent(selectedApiKeyId)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(next),
-      });
-      if (!response.ok) throw new Error("Failed to save API key usage limits");
+      if (!limitsWrite.supported) {
+        throw new Error(limitsWrite.reason);
+      }
+      const result = await fetchAisixJson(
+        resolveAisixRequestUrl(`/api/keys/${encodeURIComponent(selectedApiKeyId)}`),
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(_next),
+        }
+      );
+      if (!result.ok) {
+        throw new Error(result.missing ? limitsWrite.reason : `HTTP ${result.status || 0}`.trim());
+      }
       await load();
     },
-    [load, selectedApiKeyId]
+    [load, selectedApiKeyId, limitsWrite.supported, limitsWrite.reason]
   );
 
   useEffect(() => {
@@ -51,5 +65,11 @@ export function useApiKeyUsageLimits(selectedApiKeyId: string | null) {
     })();
   }, [load]);
 
-  return { payload, loading, save };
+  return {
+    payload,
+    loading,
+    save,
+    unsupported: !limitsRead.supported,
+    unsupportedReason: limitsRead.supported ? null : limitsRead.reason,
+  };
 }

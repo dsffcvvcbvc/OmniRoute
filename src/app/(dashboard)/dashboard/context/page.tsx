@@ -1,9 +1,19 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { Suspense, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // `/dashboard/context` is a hub with only sub-routes (settings, combos, ultra,
 // …) and no page of its own, so Next.js RSC prefetches of the bare parent
 // route 404'd (#5298). Redirect the parent to its canonical sub-route, honoring
 // a legacy `?tab=` query for deep links.
+//
+// AGENT.md §3.3: this page is a Client Component that forwards on the client.
+// A Server Component here could only honour `?tab=` by awaiting `searchParams`,
+// which opts the page out of static generation and hard-fails
+// `output: "export"`. Reading the query in the browser is the same resolution
+// with a prerenderable page. The resolver stays a pure exported function
+// (regression-guarded by tests/unit/dashboard/context-parent-redirect-5298.test.ts).
 const CONTEXT_TAB_ROUTES: Record<string, string> = {
   settings: "/dashboard/context/settings",
   combos: "/dashboard/context/combos",
@@ -25,12 +35,24 @@ export function resolveContextRoute(value: string | undefined): string {
   return value ? CONTEXT_TAB_ROUTES[value] || DEFAULT_CONTEXT_ROUTE : DEFAULT_CONTEXT_ROUTE;
 }
 
-type ContextPageProps = {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
-};
+function ContextRedirector() {
+  const router = useRouter();
+  // `useSearchParams` must sit behind a Suspense boundary or the static export
+  // refuses to prerender the page.
+  const searchParams = useSearchParams();
+  const target = resolveContextRoute(searchParams.get("tab") ?? undefined);
 
-export default async function ContextPage({ searchParams }: ContextPageProps) {
-  const params = searchParams ? await searchParams : {};
-  const tab = Array.isArray(params.tab) ? params.tab[0] : params.tab;
-  redirect(resolveContextRoute(tab));
+  useEffect(() => {
+    router.replace(target);
+  }, [router, target]);
+
+  return null;
+}
+
+export default function ContextPage() {
+  return (
+    <Suspense fallback={null}>
+      <ContextRedirector />
+    </Suspense>
+  );
 }

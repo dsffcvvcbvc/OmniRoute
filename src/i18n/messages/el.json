@@ -1902,7 +1902,9 @@
     "readinessStep3": "Αντιγράψτε το endpoint σας",
     "readinessStep4": "Στείλτε ένα δοκιμαστικό αίτημα",
     "readinessContinue": "Συνεχίστε τη ρύθμιση",
-    "readinessDismiss": "Απόκρυψη προς το παρόν"
+    "readinessDismiss": "Απόκρυψη προς το παρόν",
+    "coreUnreachableBadge": "Core unreachable",
+    "coreUnreachableHint": "The admin plane is unreachable, so the setup state is unknown — not complete."
   },
   "analytics": {
     "title": "Αναλυτικά στοιχεία",
@@ -4811,7 +4813,21 @@
     "issueCount": "{count} προβλήματα",
     "score": "Βαθμολογία",
     "lastRequest": "Τελευταίο αίτημα",
-    "lastError": "Τελευταίο σφάλμα"
+    "lastError": "Τελευταίο σφάλμα",
+    "cooldownStatusTitle": "Keys in Cooldown (429)",
+    "cooldownStatusDescription": "Keys in Cooldown after 429; used for Failover/SSE/TTFT diagnostics.",
+    "cooldownColKey": "Key",
+    "cooldownColProvider": "Provider",
+    "cooldownColUntil": "Cooldown until",
+    "cooldownColReason": "Reason",
+    "cooldownEmpty": "No keys in Cooldown right now.",
+    "cooldownLoadFailed": "Failed to load Cooldown status: {error}",
+    "hotReloadTitle": "Resources Hot-Reload",
+    "hotReloadDescription": "Admin resources version; green badge means Hot-Reload applied.",
+    "hotReloadOk": "Hot-Reload OK",
+    "hotReloadUnavailable": "Unavailable",
+    "hotReloadAppliedAt": "Applied at",
+    "hotReloadError": "Resources admin is unreachable."
   },
   "telemetry": {
     "title": "Τηλεμετρία Συστήματος",

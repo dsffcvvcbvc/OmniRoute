@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { cn } from "@/shared/utils/cn";
@@ -21,7 +22,18 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "openwa", label: "open-wa", icon: "chat" },
 ];
 
+// AGENT.md §3.3: the active tab comes from `?tab=`, so `useSearchParams()` sits
+// behind a Suspense boundary — without it `output: "export"` refuses to
+// prerender this page. The boundary wraps the tab consumer, not the export.
 export default function ServicesPage() {
+  return (
+    <Suspense fallback={null}>
+      <ServicesTabs />
+    </Suspense>
+  );
+}
+
+function ServicesTabs() {
   const t = useTranslations("embeddedServices");
   const sp = useSearchParams();
   const router = useRouter();

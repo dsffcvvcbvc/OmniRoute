@@ -171,7 +171,12 @@ test("model catalog is available from the OmniProxy sidebar and can be hidden", 
   assert.equal(sidebarVisibility.HIDEABLE_SIDEBAR_ITEM_IDS.includes("model-catalog"), true);
 });
 
-test("legacy dashboard routes redirect to their consolidated surfaces", async () => {
+// AGENT.md §3.3: a Server Component `redirect()` cannot be prerendered for
+// `output: "export"`, so each of these legacy routes now forwards through a
+// static-export-safe path — `<StaticRedirect to=…>` when the target is a
+// compile-time constant, and a client `router.replace` behind `<Suspense>` when
+// the target is derived from `?tab=`. The destinations are unchanged.
+test("legacy dashboard routes forward to their consolidated surfaces", async () => {
   const autoComboPage = await readFile(
     join(repoRoot, "src/app/(dashboard)/dashboard/auto-combo/page.tsx"),
     "utf8"
@@ -185,14 +190,15 @@ test("legacy dashboard routes redirect to their consolidated surfaces", async ()
     "utf8"
   );
 
-  assert.match(autoComboPage, /redirect\("\/dashboard\/combos\?filter=intelligent"\)/);
-  assert.match(usagePage, /redirect\("\/dashboard\/logs"\)/);
-  assert.match(settingsPage, /redirect\(resolveSettingsRoute\(tab\)\)/);
+  assert.match(autoComboPage, /<StaticRedirect to="\/dashboard\/combos\?filter=intelligent"/);
+  assert.match(usagePage, /<StaticRedirect to="\/dashboard\/logs"/);
+  assert.match(settingsPage, /resolveSettingsRoute\(searchParams\.get\("tab"\)/);
+  assert.match(settingsPage, /router\.replace\(target\)/);
   assert.match(settingsPage, /\/dashboard\/settings\/general/);
 
   const compressionPage = await readFile(
     join(repoRoot, "src/app/(dashboard)/dashboard/compression/page.tsx"),
     "utf8"
   );
-  assert.match(compressionPage, /redirect\("\/dashboard\/context\/caveman"\)/);
+  assert.match(compressionPage, /<StaticRedirect to="\/dashboard\/context\/caveman"/);
 });

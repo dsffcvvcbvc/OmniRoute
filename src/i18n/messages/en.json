@@ -1903,7 +1903,9 @@
     "readinessStep3": "Copy your endpoint",
     "readinessStep4": "Send a test request",
     "readinessContinue": "Continue setup",
-    "readinessDismiss": "Dismiss for now"
+    "readinessDismiss": "Dismiss for now",
+    "coreUnreachableBadge": "Core unreachable",
+    "coreUnreachableHint": "The admin plane is unreachable, so the setup state is unknown — not complete."
   },
   "analytics": {
     "title": "Analytics",

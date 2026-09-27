@@ -2,6 +2,12 @@
 
 import { useEffect } from "react";
 import type { QuotaPool, PoolAllocation, Policy } from "@/lib/quota/dimensions";
+import { useNotificationStore } from "@/store/notificationStore";
+import {
+  fetchAisixJson,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
 
 const LS_KEY = "omniroute:quota-share:pools";
 
@@ -34,14 +40,9 @@ interface PoolCreate {
 export function adaptLsPoolToApiSchema(lsPool: LsPool): PoolCreate {
   const connectionId = lsPool.connectionId || "";
   const name =
-    lsPool.accountLabel ||
-    lsPool.provider ||
-    lsPool.connectionId?.slice(0, 12) ||
-    "Migrated pool";
+    lsPool.accountLabel || lsPool.provider || lsPool.connectionId?.slice(0, 12) || "Migrated pool";
   const policy: Policy =
-    lsPool.policy === "soft" || lsPool.policy === "burst"
-      ? (lsPool.policy as Policy)
-      : "hard";
+    lsPool.policy === "soft" || lsPool.policy === "burst" ? (lsPool.policy as Policy) : "hard";
 
   const allocations: PoolAllocation[] = (lsPool.allocations || [])
     .filter((a) => a.apiKeyId)
@@ -63,6 +64,9 @@ export function useLocalStoragePoolMigration({
   pools,
   mutate,
 }: UseLocalStoragePoolMigrationInput): void {
+  const notify = useNotificationStore();
+  const quotaWrite = resolveAisixSurfaceSupport("quota", "write");
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const raw = window.localStorage.getItem(LS_KEY);
@@ -71,6 +75,18 @@ export function useLocalStoragePoolMigration({
     // Idempotency: if DB already has pools, do not migrate
     if (pools.length > 0) {
       // Leave localStorage key intact (safety — let user verify before cleanup)
+      return;
+    }
+
+    // The migration POSTs into the quota-pools collection, which the AISIX
+    // gateway does not have. Sending it anyway meant one guaranteed 404 per
+    // pool, silently swallowed by a `.catch(() => {})` that then also left the
+    // data in localStorage forever with no explanation. Refuse loudly instead
+    // and keep the payload for a build that can store it.
+    if (!quotaWrite.supported) {
+      notify.error(
+        `AISIX-шлюз: миграция пулов недоступна. ${quotaWrite.reason} Данные сохранены локально.`
+      );
       return;
     }
 
@@ -90,21 +106,21 @@ export function useLocalStoragePoolMigration({
     // POST batch — migrate all pools
     Promise.all(
       lsPools.map((p) =>
-        fetch("/api/quota/pools", {
+        fetchAisixJson(resolveAisixRequestUrl("/api/quota/pools"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(adaptLsPoolToApiSchema(p as LsPool)),
-        }).then((r) => r.ok)
+        })
       )
-    )
-      .then((results) => {
-        if (results.every(Boolean)) {
-          window.localStorage.removeItem(LS_KEY);
-          void mutate();
-        }
-      })
-      .catch(() => {
-        // fail silent — try again on next load
-      });
-  }, [pools.length, mutate]);
+    ).then((results) => {
+      // Only drop the localStorage copy once EVERY pool was stored; a partial
+      // batch would silently lose the pools that failed.
+      if (results.every((result) => result.ok)) {
+        window.localStorage.removeItem(LS_KEY);
+        void mutate();
+        return;
+      }
+      notify.error("Миграция пулов: часть записей не сохранена — локальная копия сохранена.");
+    });
+  }, [pools.length, mutate, notify, quotaWrite.supported, quotaWrite.reason]);
 }

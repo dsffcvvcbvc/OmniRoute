@@ -1902,7 +1902,9 @@
     "readinessStep3": "ଆପଣଙ୍କ ଏଣ୍ଡପଏଣ୍ଟ କପି କରନ୍ତୁ",
     "readinessStep4": "ଏକ ପରୀକ୍ଷାମୂଳକ ଅନୁରୋଧ ପଠାନ୍ତୁ",
     "readinessContinue": "ସେଟଅପ୍ ଜାରି ରଖନ୍ତୁ",
-    "readinessDismiss": "ବର୍ତ୍ତମାନ ପାଇଁ ବନ୍ଦ କରନ୍ତୁ"
+    "readinessDismiss": "ବର୍ତ୍ତମାନ ପାଇଁ ବନ୍ଦ କରନ୍ତୁ",
+    "coreUnreachableBadge": "Core unreachable",
+    "coreUnreachableHint": "The admin plane is unreachable, so the setup state is unknown — not complete."
   },
   "analytics": {
     "title": "ବିଶ୍ଳେଷଣ",
@@ -4811,7 +4813,21 @@
     "issueCount": "{count}ଟି ସମସ୍ୟା",
     "score": "ସ୍କୋର୍",
     "lastRequest": "ଶେଷ ଅନୁରୋଧ",
-    "lastError": "ଶେଷ ତ୍ରୁଟି"
+    "lastError": "ଶେଷ ତ୍ରୁଟି",
+    "cooldownStatusTitle": "Keys in Cooldown (429)",
+    "cooldownStatusDescription": "Keys in Cooldown after 429; used for Failover/SSE/TTFT diagnostics.",
+    "cooldownColKey": "Key",
+    "cooldownColProvider": "Provider",
+    "cooldownColUntil": "Cooldown until",
+    "cooldownColReason": "Reason",
+    "cooldownEmpty": "No keys in Cooldown right now.",
+    "cooldownLoadFailed": "Failed to load Cooldown status: {error}",
+    "hotReloadTitle": "Resources Hot-Reload",
+    "hotReloadDescription": "Admin resources version; green badge means Hot-Reload applied.",
+    "hotReloadOk": "Hot-Reload OK",
+    "hotReloadUnavailable": "Unavailable",
+    "hotReloadAppliedAt": "Applied at",
+    "hotReloadError": "Resources admin is unreachable."
   },
   "telemetry": {
     "title": "ସିଷ୍ଟମ୍ ଟେଲିମେଟ୍ରି",

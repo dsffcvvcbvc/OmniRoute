@@ -7,6 +7,11 @@ import Badge from "@/shared/components/Badge";
 import Button from "@/shared/components/Button";
 import { useNotificationStore } from "@/store/notificationStore";
 import { useDisplayBaseUrl } from "@/shared/hooks";
+import {
+  fetchAisixJson,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
 
 interface RelayToken {
   id: string;
@@ -31,19 +36,52 @@ export default function RelayProxyClient() {
   const [newTokenData, setNewTokenData] = useState<{ rawToken: string; name: string } | null>(null);
   const [form, setForm] = useState({ name: "", description: "", maxRpm: "60", maxRpd: "10000" });
   const addNotification = useNotificationStore((s) => s.addNotification);
+  // Relay tokens are a Next.js-only subsystem: the Rust core has no relay proxy,
+  // so `/api/relay/tokens*` is a guaranteed 404 in the static SPA. The page
+  // therefore states that up front and every mutation refuses BEFORE sending
+  // (and with its buttons disabled) instead of firing requests whose 404 was
+  // previously swallowed into an empty token list.
+  const relayRead = resolveAisixSurfaceSupport("relay", "read");
+  const relayWrite = resolveAisixSurfaceSupport("relay", "write");
+  const relaySupported = relayRead.supported;
+  const writeSupported = relayWrite.supported;
+
+  const refuseRelayWrite = useCallback(
+    (action: string): boolean => {
+      if (writeSupported) return false;
+      addNotification({ type: "error", message: `AISIX-шлюз: ${action}. ${relayWrite.reason}` });
+      return true;
+    },
+    [writeSupported, addNotification, relayWrite.reason]
+  );
 
   const fetchTokens = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/relay/tokens");
-      const data = await res.json();
-      setTokens(Array.isArray(data) ? data : []);
-    } catch {
-      setTokens([]);
-    } finally {
+    if (!relaySupported) {
       setLoading(false);
+      return;
     }
-  }, []);
+    setLoading(true);
+    const result = await fetchAisixJson(resolveAisixRequestUrl("/api/relay/tokens"));
+    if (!result.ok) {
+      // A 404 here is the definitive "no relay surface" answer: surface it
+      // instead of degrading to an empty table that looks like "no tokens yet".
+      addNotification({
+        type: "error",
+        // Literal, not t(): the gateway-only messages deliberately bypass the
+        // message catalog (see the combos page's combos-write refusals) so no
+        // per-locale key has to be added for a build that only AISIX ships.
+        message: result.missing
+          ? relayRead.reason
+          : `Ошибка загрузки токенов relay (${result.error})`,
+      });
+      setTokens([]);
+      setLoading(false);
+      return;
+    }
+    const data = result.data;
+    setTokens(Array.isArray(data) ? (data as RelayToken[]) : []);
+    setLoading(false);
+  }, [relaySupported, relayRead.reason, addNotification]);
 
   useEffect(() => {
     void (async () => {
@@ -53,54 +91,72 @@ export default function RelayProxyClient() {
 
   const createToken = async () => {
     if (!form.name.trim()) return;
-    try {
-      const res = await fetch("/api/relay/tokens", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          description: form.description,
-          maxRequestsPerMinute: Number(form.maxRpm),
-          maxRequestsPerDay: Number(form.maxRpd),
-        }),
+    if (refuseRelayWrite(t("createButton"))) return;
+    const result = await fetchAisixJson(resolveAisixRequestUrl("/api/relay/tokens"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: form.name,
+        description: form.description,
+        maxRequestsPerMinute: Number(form.maxRpm),
+        maxRequestsPerDay: Number(form.maxRpd),
+      }),
+    });
+    if (!result.ok) {
+      addNotification({
+        type: "error",
+        message: result.missing ? relayWrite.reason : t("createFailed"),
       });
-      const data = await res.json();
-      if (res.ok) {
-        setNewTokenData({ rawToken: data.rawToken, name: data.name });
-        setForm({ name: "", description: "", maxRpm: "60", maxRpd: "10000" });
-        setShowCreate(false);
-        addNotification({ type: "success", message: t("created") });
-        void fetchTokens();
-      } else {
-        addNotification({ type: "error", message: data.error || t("createFailed") });
-      }
-    } catch {
-      addNotification({ type: "error", message: t("createFailed") });
+      return;
     }
+    const data = (result.data ?? {}) as { rawToken?: unknown; name?: unknown };
+    if (typeof data.rawToken !== "string") {
+      addNotification({ type: "error", message: t("createFailed") });
+      return;
+    }
+    setNewTokenData({ rawToken: data.rawToken, name: String(data.name ?? form.name) });
+    setForm({ name: "", description: "", maxRpm: "60", maxRpd: "10000" });
+    setShowCreate(false);
+    addNotification({ type: "success", message: t("created") });
+    void fetchTokens();
   };
 
   const toggleToken = async (id: string, enabled: boolean) => {
-    try {
-      await fetch(`/api/relay/tokens/${id}`, {
+    if (refuseRelayWrite(t("disable"))) return;
+    const result = await fetchAisixJson(
+      resolveAisixRequestUrl(`/api/relay/tokens/${encodeURIComponent(id)}`),
+      {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled }),
+      }
+    );
+    if (!result.ok) {
+      addNotification({
+        type: "error",
+        message: result.missing ? relayWrite.reason : t("toggleFailed"),
       });
-      void fetchTokens();
-    } catch {
-      addNotification({ type: "error", message: t("toggleFailed") });
+      return;
     }
+    void fetchTokens();
   };
 
   const deleteToken = async (id: string) => {
     if (!confirm(t("deleteConfirm"))) return;
-    try {
-      await fetch(`/api/relay/tokens/${id}`, { method: "DELETE" });
-      addNotification({ type: "success", message: t("deleted") });
-      void fetchTokens();
-    } catch {
-      addNotification({ type: "error", message: t("deleteFailed") });
+    if (refuseRelayWrite(t("delete"))) return;
+    const result = await fetchAisixJson(
+      resolveAisixRequestUrl(`/api/relay/tokens/${encodeURIComponent(id)}`),
+      { method: "DELETE" }
+    );
+    if (!result.ok) {
+      addNotification({
+        type: "error",
+        message: result.missing ? relayWrite.reason : t("deleteFailed"),
+      });
+      return;
     }
+    addNotification({ type: "success", message: t("deleted") });
+    void fetchTokens();
   };
 
   return (
@@ -110,10 +166,24 @@ export default function RelayProxyClient() {
           <h1 className="text-xl font-bold">{t("title")}</h1>
           <p className="text-sm text-text-muted mt-1">{t("description")}</p>
         </div>
-        <Button onClick={() => setShowCreate(!showCreate)}>
+        <Button onClick={() => setShowCreate(!showCreate)} disabled={!writeSupported}>
           {showCreate ? t("cancel") : t("newToken")}
         </Button>
       </div>
+
+      {/* AISIX SPA: the relay subsystem is not part of the Rust core. */}
+      {!relaySupported && (
+        <div
+          role="status"
+          data-testid="relay-unavailable-banner"
+          className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-200"
+        >
+          <span className="material-symbols-outlined text-[18px] text-amber-500 shrink-0">
+            block
+          </span>
+          <span className="flex-1">{relayRead.reason}</span>
+        </div>
+      )}
 
       {/* Create Form */}
       {showCreate && (
@@ -158,7 +228,7 @@ export default function RelayProxyClient() {
                 />
               </div>
             </div>
-            <Button onClick={createToken} disabled={!form.name.trim()}>
+            <Button onClick={createToken} disabled={!writeSupported || !form.name.trim()}>
               {t("createButton")}
             </Button>
           </div>
@@ -211,6 +281,8 @@ export default function RelayProxyClient() {
           </h2>
           {loading ? (
             <p className="text-sm text-text-muted">{t("loading")}</p>
+          ) : !relaySupported ? (
+            <p className="text-sm text-text-muted">{relayRead.reason}</p>
           ) : tokens.length === 0 ? (
             <p className="text-sm text-text-muted">{t("empty")}</p>
           ) : (
@@ -243,13 +315,15 @@ export default function RelayProxyClient() {
                     </Badge>
                     <button
                       onClick={() => toggleToken(token.id, !token.enabled)}
-                      className="text-xs text-primary hover:underline"
+                      disabled={!writeSupported}
+                      className="text-xs text-primary hover:underline disabled:opacity-40"
                     >
                       {token.enabled ? t("disable") : t("enable")}
                     </button>
                     <button
                       onClick={() => deleteToken(token.id)}
-                      className="text-xs text-red-500 hover:underline"
+                      disabled={!writeSupported}
+                      className="text-xs text-red-500 hover:underline disabled:opacity-40"
                     >
                       {t("delete")}
                     </button>

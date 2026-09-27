@@ -16,6 +16,13 @@ import type { NextRequest } from "next/server";
 import { getFleetSkills } from "@/lib/conductor/fleetSkills";
 import { getBaseUrl } from "@/lib/wellKnown";
 
+// AGENT.md §3.3: `output: "export"` refuses any Route Handler that is not
+// static-gen enabled (Next E301). The v1.0 card is a pure discovery document
+// with no per-request state, so it prerenders to
+// `out/.well-known/agent-card.json` — see the v0.3 card in ./agent.json/route.ts
+// for why the request-less `getBaseUrl()`/`getFleetSkills()` calls are safe.
+export const dynamic = "force-static";
+
 const PACKAGE_VERSION = process.env.npm_package_version || "1.8.1";
 
 /**
