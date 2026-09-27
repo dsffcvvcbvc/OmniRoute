@@ -88,7 +88,7 @@ import { getComboStepTarget } from "@/lib/combos/steps";
 import { DEAD_COMBO_CONFIG_KEYS } from "@/lib/combos/deadConfigKeys";
 import { modelFamily } from "@/lib/combos/invariants";
 import { resolveProviderAlias } from "@omniroute/open-sse/services/providerAlias.ts";
-import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
+import { resolveAisixRequestUrl, resolveAisixSurfaceSupport } from "@/shared/utils/aisixEndpoints";
 import {
   AISIX_COMBO_DEFAULT_STRATEGY,
   AISIX_COMBO_REFUSED_DOCUMENT_FIELDS,

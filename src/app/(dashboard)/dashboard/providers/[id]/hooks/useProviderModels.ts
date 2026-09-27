@@ -16,7 +16,7 @@
 import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useNotificationStore } from "@/store/notificationStore";
-import { resolveAisixSurfaceSupport } from "@/shared/utils/aisixEndpoints";
+import { resolveAisixRequestUrl, resolveAisixSurfaceSupport } from "@/shared/utils/aisixEndpoints";
 import { parseAisixProviderModels } from "@/shared/utils/aisixNativeCatalog";
 import { providerText, type CompatModelRow } from "../providerPageHelpers";
 
