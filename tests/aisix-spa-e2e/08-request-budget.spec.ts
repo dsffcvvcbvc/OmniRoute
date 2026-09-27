@@ -134,7 +134,6 @@ test.describe("request budget and fault tolerance", () => {
     // The affordance is the same amber `role="status"` banner the other
     // gateway-only surfaces already use, which is why it is looked up by role
     // rather than by a component-specific testid.
-    const watch = new PageWatch(page);
     await page.goto("/dashboard/providers/openai", { waitUntil: "load", timeout: 90_000 });
     await readContent(page, { minLength: 120, timeoutMs: 90_000 });
 
