@@ -247,10 +247,26 @@ function parseWriteResult(body: unknown): AisixProviderKeyWriteResult | null {
   };
 }
 
+/**
+ * The DELETE envelope is NOT the write envelope: the handler answers
+ * `{id, status: "deleted", version}` and carries no document, because there is
+ * no row left to describe. Parsing it with `parseWriteResult` would report a
+ * successful delete as an unreadable success body — the key would look like it
+ * still exists.
+ */
+function parseDeleteResult(body: unknown): { id: string; version: number } | null {
+  if (!isRecord(body)) return null;
+  const id = toTrimmedString(body.id);
+  if (!id) return null;
+  if (toTrimmedString(body.status) !== "deleted") return null;
+  return { id, version: toRevision(body.version) };
+}
+
 async function sendWrite(
   url: string,
   method: string,
-  body: unknown
+  body: unknown,
+  parse: (payload: unknown) => ProviderKeyWriteResult | null = parseWriteResult
 ): Promise<ProviderKeyWriteOutcome> {
   let response: Response;
   try {
@@ -274,7 +290,7 @@ async function sendWrite(
   const status = response.status;
   const payload = await response.json().catch(() => null);
   if (response.ok) {
-    const result = parseWriteResult(payload);
+    const result = parse(payload);
     if (result) return { ok: true, status, result, failure: null, reason: null };
     // 2xx with a body we cannot read is NOT a success: reporting it as one is how
     // a write that never landed gets shown as landed.
@@ -368,5 +384,16 @@ export function updateProviderKey(
  * model dispatching with no credential. `reason` carries the dependent names.
  */
 export function deleteProviderKey(id: string): Promise<ProviderKeyWriteOutcome> {
-  return sendWrite(aisixProviderKeysItemUrl(id), "DELETE", {});
+  return sendWrite(aisixProviderKeysItemUrl(id), "DELETE", {}, (payload) => {
+    const deleted = parseDeleteResult(payload);
+    if (!deleted) return null;
+    // There is no document left to return, so the outcome reports the identity
+    // the gateway echoed instead — which is what the caller removes from its list.
+    return {
+      id: deleted.id,
+      revision: 0,
+      version: deleted.version,
+      value: { display_name: "", api_key: "" },
+    };
+  });
 }

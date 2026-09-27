@@ -188,6 +188,38 @@ test("R4/R8: a 2xx with a readable body is ok and carries the server's document"
   }
 });
 
+test("R4: the DELETE envelope is parsed as a delete, not as a write", async () => {
+  // The live handler answers `{id, status, version}` and carries NO document,
+  // because there is no row left to describe. Parsing that with the write
+  // parser reports a successful delete as an unreadable body — which makes a
+  // deleted key look like it is still there. Caught against the real gateway.
+  const original = globalThis.fetch;
+  globalThis.fetch = withFetch(jsonResponse(200, { id: "gone-id", status: "deleted", version: 9 }));
+  try {
+    const outcome = await keys.deleteProviderKey("gone-id");
+    assert.equal(outcome.ok, true);
+    assert.equal(outcome.failure, null);
+    // The identity the server echoed is what the caller removes from its list.
+    assert.equal(outcome.result?.id, "gone-id");
+    assert.equal(outcome.result?.version, 9);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test("R4: a 2xx that is neither a write nor a delete envelope is not a success", async () => {
+  const original = globalThis.fetch;
+  globalThis.fetch = withFetch(jsonResponse(200, { id: "x", status: "queued" }));
+  try {
+    // `status` must be exactly "deleted" — anything else is a shape this client
+    // does not understand, and guessing "it worked" is how a key survives a
+    // delete the gateway did not actually perform.
+    assert.equal((await keys.deleteProviderKey("x")).ok, false);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
 test("R8: a 2xx whose body cannot be read is NOT reported as a success", async () => {
   const original = globalThis.fetch;
   globalThis.fetch = withFetch(jsonResponse(200, { unexpected: "shape" }));
