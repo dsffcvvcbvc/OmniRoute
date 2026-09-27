@@ -1135,26 +1135,26 @@ function CombosPageContent() {
     void (async () => {
       await fetchData();
     })();
-    fetch(resolveAisixRequestUrl("/api/settings"))
-      .then((r) => (r.ok ? r.json() : null))
-      .then((settings) => {
-        if (!settings) {
-          setSettingsLoadError(true);
-          return;
-        }
-        setComboConfigMode(normalizeComboConfigMode(settings.comboConfigMode));
-        setRoutingSettings(settings);
-      })
-      .catch(() => {
-        setComboConfigMode("guided");
-        setSettingsLoadError(true);
-      });
     // Routing/compression/proxy config is OmniRoute's own SQLite settings, and
-    // the gateway has no readable settings collection. The reads are skipped
-    // rather than fired into a guaranteed 404, and the page's EXISTING
-    // `*LoadError` states are set directly — they already render as "this could
-    // not be read", which is exactly the truth here.
+    // the gateway has no readable settings collection. All three reads are
+    // skipped rather than fired into a guaranteed 404; the page's EXISTING
+    // `*LoadError` flags are DERIVED from that same declaration (see above), so
+    // the banner still renders and still says "showing built-in defaults".
     if (settingsSupported) {
+      fetch(resolveAisixRequestUrl("/api/settings"))
+        .then((r) => (r.ok ? r.json() : null))
+        .then((settings) => {
+          if (!settings) {
+            setSettingsLoadError(true);
+            return;
+          }
+          setComboConfigMode(normalizeComboConfigMode(settings.comboConfigMode));
+          setRoutingSettings(settings);
+        })
+        .catch(() => {
+          setComboConfigMode("guided");
+          setSettingsLoadError(true);
+        });
       fetch(resolveAisixRequestUrl("/api/settings/compression"))
         .then((r) => (r.ok ? r.json() : null))
         .then((settings) => {

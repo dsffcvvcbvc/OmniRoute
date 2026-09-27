@@ -27,6 +27,7 @@ import { ModelVisibilityToolbar } from "./ModelRow";
 import { sortModelsFreeFirst, isModelFreeBadge } from "@/shared/utils/freeModels";
 import { useStrictFreeBadge } from "./useStrictFreeBadge";
 import PassthroughModelRow, { type PassthroughModelRowProps } from "./PassthroughModelRow";
+import { resolveAisixSurfaceSupport } from "@/shared/utils/aisixEndpoints";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -90,6 +91,13 @@ export interface CompatibleModelsSectionProps {
 async function fetchProviderContextOverrides(
   providerId: string
 ): Promise<Record<string, number> | null> {
+  // `modelContextOverrides` is an operator-authored per-model context-window
+  // override living in OmniRoute's own SQLite. The core's catalog documents carry
+  // no such field, so there is nothing to repoint this at — the read is refused
+  // rather than fired into a guaranteed 404. The outcome is the one a failed read
+  // already produced (the badges stay absent, editing still works), which is why
+  // this is a skip and not a fabricated "0 overrides".
+  if (!resolveAisixSurfaceSupport("settings", "read").supported) return null;
   try {
     const res = await fetch(`/api/provider-models?provider=${encodeURIComponent(providerId)}`);
     if (!res.ok) return null;
