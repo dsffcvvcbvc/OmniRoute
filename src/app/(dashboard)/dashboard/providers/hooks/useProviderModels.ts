@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
+import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
+import { parseAisixOpenAiModelList } from "@/shared/utils/aisixNativeCatalog";
 
 export interface ProviderModel {
   id: string;
@@ -23,9 +25,34 @@ interface UseProviderModelsResult {
   retry: () => void;
 }
 
+/** The provider-model list URL, on whichever plane this deployment answers it. */
+function modelsUrl(providerId: string): string {
+  return resolveAisixRequestUrl(`/api/v1/providers/${encodeURIComponent(providerId)}/models`);
+}
+
+/**
+ * `{ data: [...] }` on a Next deployment; the core's catalog documents on an
+ * AISIX one. Both shapes pass through here so the hook has one list contract.
+ */
+function readModelList(payload: unknown, providerId: string): ProviderModel[] {
+  if (payload && typeof payload === "object" && "data" in payload) {
+    const data = (payload as { data?: ProviderModel[] }).data;
+    return Array.isArray(data) ? data : [];
+  }
+  return parseAisixOpenAiModelList(payload, providerId).data as ProviderModel[];
+}
+
 /**
  * useProviderModels — fetch models for a specific provider via
  * GET /api/v1/providers/{providerId}/models.
+ *
+ * On the AISIX static export that legacy route does not exist. It is repointed
+ * at the core's `GET /admin/v1/models` — the same provider↔model relation — and
+ * reshaped into the OpenAI-shaped `{ data: [...] }` this hook's consumer
+ * expects, per-provider, by `parseAisixOpenAiModelList`. Previously the
+ * OpenAI-shaped path fell through to the `/api/v1/*` → data-plane rule, and
+ * `/v1/providers/…` is not part of that plane, so the picker's list was a
+ * guaranteed 404 rendered as "this provider offers no models".
  *
  * Falls back to an empty list on error so the playground is still usable.
  * The hook is stable for the lifetime of the component (only re-fetches if
@@ -47,7 +74,7 @@ export function useProviderModels(providerId: string): UseProviderModelsResult {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/v1/providers/${encodeURIComponent(providerId)}/models`);
+        const res = await fetch(modelsUrl(providerId));
         if (!res.ok) {
           const body = (await res.json().catch(() => null)) as {
             error?: { message?: string };
@@ -56,10 +83,8 @@ export function useProviderModels(providerId: string): UseProviderModelsResult {
           if (!cancelled) setError(msg);
           return;
         }
-        const data = (await res.json()) as { data?: ProviderModel[] };
+        const list = readModelList(await res.json(), providerId);
         if (cancelled) return;
-
-        let list = data.data ?? [];
 
         // Auto-sync from upstream if local catalog is empty
         if (list.length === 0) {
@@ -95,13 +120,11 @@ export function useProviderModels(providerId: string): UseProviderModelsResult {
                 );
 
                 if (syncRes.ok && !cancelled) {
-                  const refetchRes = await fetch(
-                    `/api/v1/providers/${encodeURIComponent(providerId)}/models`
-                  );
+                  const refetchRes = await fetch(modelsUrl(providerId));
                   if (refetchRes.ok && !cancelled) {
-                    const refetchData = (await refetchRes.json()) as { data?: ProviderModel[] };
+                    const refetchList = readModelList(await refetchRes.json(), providerId);
                     if (!cancelled) {
-                      setModels(refetchData.data ?? []);
+                      setModels(refetchList);
                     }
                   }
                 }

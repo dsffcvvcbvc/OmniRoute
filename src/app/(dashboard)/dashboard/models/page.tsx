@@ -14,6 +14,8 @@ import {
   type CatalogSortField,
 } from "./modelCatalogUtils";
 import ModelCatalogTable from "./ModelCatalogTable";
+import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
+import { toAisixCatalogBuckets } from "@/shared/utils/aisixNativeCatalog";
 
 const PAGE_SIZE = 50;
 
@@ -43,13 +45,19 @@ export default function ModelCatalogPage() {
     requestController.current = controller;
 
     try {
-      const response = await fetch("/api/models/catalog", { signal: controller.signal });
+      // Repointed at the core's `GET /admin/v1/models` on the AISIX static
+      // export. The legacy route is a Next.js/SQLite projection, so on a static
+      // host the whole model-catalog page rendered its "failed to load" state —
+      // for a gateway that holds 198 catalog rows it could have shown.
+      const response = await fetch(resolveAisixRequestUrl("/api/models/catalog"), {
+        signal: controller.signal,
+      });
       if (!response.ok) throw new Error("catalog request failed");
       const payload: unknown = await response.json();
       const catalog =
         typeof payload === "object" && payload !== null && "catalog" in payload
           ? payload.catalog
-          : null;
+          : toAisixCatalogBuckets(payload);
       setModels(flattenCatalog(catalog));
       setError(false);
     } catch {

@@ -145,7 +145,7 @@ export function LlmChatCard({
   onControlsChange,
 }: Props) {
   const t = useTranslations("miniPlayground");
-  const { keys } = useApiKey();
+  const { keys, keysSupported, keysUnsupportedReason } = useApiKey();
   const { models, loading, error, retry } = useProviderModels(providerId);
 
   const [internalSelectedKey, setInternalSelectedKey] = useState<string>("");
@@ -407,7 +407,9 @@ export function LlmChatCard({
               disabled={loading}
               className="min-w-0 flex-1 rounded-md border border-border bg-bg-subtle text-xs px-2 py-1 text-text-main focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-60"
             >
-              {modelOptions.length === 0 && !loading && <option value="">{initialModel || "—"}</option>}
+              {modelOptions.length === 0 && !loading && (
+                <option value="">{initialModel || "—"}</option>
+              )}
               {loading && <option value="">{t("loading") ?? "Loading…"}</option>}
               {modelOptions.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -447,6 +449,26 @@ export function LlmChatCard({
                 ))}
               </select>
             </div>
+          )}
+          {/*
+            The gateway keeps the consumer-key resource but exposes only
+            `key_hash`, never a plaintext a playground could present. The select
+            is then correctly empty — and an empty select where a credential
+            control used to be is a blank region, so the refusal is stated
+            instead. See `AisixUnsupportedDomain` → `keys`.
+          */}
+          {!keysSupported && keysUnsupportedReason && (
+            <span
+              role="status"
+              data-testid="playground-keys-unsupported"
+              data-unsupported="keys"
+              className="flex items-center gap-1.5 text-xs text-text-muted"
+            >
+              <span className="material-symbols-outlined text-[14px]" aria-hidden="true">
+                key_off
+              </span>
+              {keysUnsupportedReason}
+            </span>
           )}
           {/* Clear button */}
           {messages.length > 0 && (

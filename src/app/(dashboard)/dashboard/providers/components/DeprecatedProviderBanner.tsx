@@ -4,12 +4,10 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button, Card, ConfirmModal } from "@/shared/components";
 import { useNotificationStore } from "@/store/notificationStore";
+import { aisixUnsupportedWrite, resolveAisixSurfaceSupport } from "@/shared/utils/aisixEndpoints";
 import type { DeprecatedProviderLeftoverGroup } from "@/lib/providers/deprecatedProviderCleanup";
 
-type ProviderMessageTranslator = ((
-  key: string,
-  values?: Record<string, unknown>
-) => string) & {
+type ProviderMessageTranslator = ((key: string, values?: Record<string, unknown>) => string) & {
   has?: (key: string) => boolean;
 };
 
@@ -31,7 +29,6 @@ function providerText(
   return fallback;
 }
 
-
 export default function DeprecatedProviderBanner() {
   const t = useTranslations("providers") as ProviderMessageTranslator;
   const notify = useNotificationStore();
@@ -41,6 +38,17 @@ export default function DeprecatedProviderBanner() {
   const [purging, setPurging] = useState(false);
 
   useEffect(() => {
+    // "Leftovers" means connection rows still present in OmniRoute's own SQLite
+    // after a provider was removed. An AISIX gateway has no such database — its
+    // resources live in `resources.yaml` and are not pruned by this route — so
+    // the read is skipped rather than fired into a guaranteed 404.
+    //
+    // The banner renders nothing on this host, and that absence is not a claim
+    // that there is nothing to clean up: the concept does not exist here. The
+    // refusal for OmniRoute's own database surfaces belongs on the settings page
+    // (`AisixUnsupportedDomain` → `storage`/`settings`), which is where an
+    // operator goes to ask what the gateway stores.
+    if (!resolveAisixSurfaceSupport("deprecated", "read").supported) return;
     let cancelled = false;
     void fetch("/api/providers/deprecated", { credentials: "same-origin" })
       .then((res) => (res.ok ? res.json() : { leftovers: [] }))
@@ -60,6 +68,10 @@ export default function DeprecatedProviderBanner() {
   if (visible.length === 0) return null;
 
   async function purge(provider: string) {
+    if (!resolveAisixSurfaceSupport("deprecated", "write").supported) {
+      notify.error(aisixUnsupportedWrite("deprecated").reason);
+      return;
+    }
     setPurging(true);
     try {
       const res = await fetch("/api/providers/deprecated", {
@@ -70,9 +82,7 @@ export default function DeprecatedProviderBanner() {
       });
       if (res.ok) {
         setLeftovers((prev) => prev.filter((row) => row.provider !== provider));
-        notify.success(
-          providerText(t, "purgeLeftoversSuccess", "Leftover connections removed.")
-        );
+        notify.success(providerText(t, "purgeLeftoversSuccess", "Leftover connections removed."));
       } else {
         notify.error(
           providerText(t, "purgeLeftoversFailed", "Failed to purge leftover connections.")
@@ -109,9 +119,7 @@ export default function DeprecatedProviderBanner() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() =>
-                  setDismissed((prev) => ({ ...prev, [row.provider]: true }))
-                }
+                onClick={() => setDismissed((prev) => ({ ...prev, [row.provider]: true }))}
               >
                 {providerText(t, "dismissForSession", "Dismiss for this session")}
               </Button>

@@ -11,6 +11,7 @@
 import { useState, useEffect } from "react";
 import { useRef } from "react";
 import { useTranslations } from "next-intl";
+import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
 
 export default function MaintenanceBanner() {
   const [show, setShow] = useState(false);
@@ -28,7 +29,15 @@ export default function MaintenanceBanner() {
         // heavy /api/monitoring/health observability endpoint. The heavy
         // endpoint can exceed the 8s client timeout under normal load
         // (e.g. Logs page 3s polling), causing false-positive banners.
-        const res = await fetch("/api/health/ping", {
+        //
+        // `resolveAisixRequestUrl` repoints this at the AISIX core's own
+        // `/livez` in the static SPA export. That is not a rename: the legacy
+        // route answered "the Next process can reach its SQLite file", and a
+        // static host has no Next process — every probe 404'd, so this banner
+        // counted two consecutive "failures" and told the operator their
+        // healthy gateway was down. `/livez` answers the question that is
+        // actually being asked.
+        const res = await fetch(resolveAisixRequestUrl("/api/health/ping"), {
           signal: controller.signal,
           cache: "no-store",
         });

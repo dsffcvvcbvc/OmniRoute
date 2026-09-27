@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
+import { adaptAisixCoreHealth } from "@/shared/utils/aisixHealth";
 
 export default function DegradationBadge() {
   const [isDegraded, setDegraded] = useState(false);
@@ -11,10 +13,16 @@ export default function DegradationBadge() {
   useEffect(() => {
     const checkDegradation = async () => {
       try {
-        const res = await fetch("/api/health/degradation?summary=true");
+        // Repointed at `GET /admin/v1/health` in the static SPA export. The
+        // legacy `/api/health/degradation` route is a Next.js-only read of the
+        // SQLite degradation table, so on a static host it 404'd — and because
+        // the badge only ever acted on `res.ok`, a 404 read as "not degraded".
+        // The core DOES report degradation, so the answer was available and the
+        // badge was discarding it.
+        const res = await fetch(resolveAisixRequestUrl("/api/health/degradation?summary=true"));
         if (res.ok) {
           const data = await res.json();
-          setDegraded(data.isDegraded);
+          setDegraded(adaptAisixCoreHealth(data).isDegraded);
         }
       } catch (err) {
         // Ignore error

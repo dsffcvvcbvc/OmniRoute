@@ -70,6 +70,7 @@ import {
   buildCompactProviderEntriesForPage,
   getCompactProviderAuthType,
 } from "./providerCompactMode";
+import { aisixUnsupportedWrite, resolveAisixSurfaceSupport } from "@/shared/utils/aisixEndpoints";
 
 type DashboardProviderInfo = {
   id?: string;
@@ -203,6 +204,14 @@ async function loadOauthEnvRepairStatus(): Promise<{
   available: boolean;
   missingCount: number;
 } | null> {
+  // The repair wizard rewrites the OAuth client secrets in the NEXT PROCESS's own
+  // `.env` file. An AISIX gateway is a Rust binary configured through
+  // `admin_keys`/`resources.yaml` — there is no `.env` for it to repair, and no
+  // `config.yaml` counterpart to write. So the read is skipped rather than fired
+  // into a guaranteed 404, and `null` here is a FINAL answer (the card stays
+  // hidden) rather than "not reported": the wizard is absent on this host, not
+  // merely idle. See `AisixUnsupportedDomain` → `credentials`.
+  if (!resolveAisixSurfaceSupport("credentials", "read").supported) return null;
   try {
     const res = await fetch("/api/system/env/repair", { cache: "no-store" });
     const data = await res.json();
@@ -354,6 +363,12 @@ function ProvidersPageContent() {
 
   const handleRepairEnv = async () => {
     if (!oauthEnvRepairStatus?.available || repairingEnv) return;
+    // Belt-and-braces: the read above already refuses, but a write must never be
+    // the thing that discovers the surface is absent.
+    if (!resolveAisixSurfaceSupport("credentials", "write").supported) {
+      notify.error(aisixUnsupportedWrite("credentials").reason);
+      return;
+    }
 
     setRepairingEnv(true);
     try {

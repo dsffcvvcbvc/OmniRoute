@@ -9,6 +9,7 @@ import {
   isAuthRequiredResponse,
   AuthRequiredBanner,
 } from "./systemStorageAuth";
+import { resolveAisixSurfaceSupport } from "@/shared/utils/aisixEndpoints";
 
 // Whitelist mirrored from src/lib/db/cleanup.ts::RESET_USAGE_HISTORY_PERIODS.
 const RESET_USAGE_PERIOD_VALUES = [
@@ -76,6 +77,7 @@ export default function SystemStorageTab() {
   const locale = useLocale();
   const t = useTranslations("settings");
   const tc = useTranslations("common");
+  const storageSupport = resolveAisixSurfaceSupport("storage", "read");
   const [storageHealth, setStorageHealth] = useState({
     driver: "sqlite",
     dbPath: "~/.omniroute/storage.sqlite",
@@ -490,7 +492,14 @@ export default function SystemStorageTab() {
     }
   };
 
+  // `driver`/`dbPath`/`sizeBytes` above are INITIALISED with concrete SQLite
+  // values, so a failed read does not blank this tab — it leaves a confident
+  // "sqlite · ~/.omniroute/storage.sqlite · 0 bytes · OK" on a host that has no
+  // SQLite at all. That is a fabricated reading, and it is the reason the gate
+  // below has to be an early RETURN rather than another null check: the whole tab
+  // is a report about a database this gateway does not have.
   useEffect(() => {
+    if (!storageSupport.supported) return;
     let cancelled = false;
     void (async () => {
       const data = await fetchStorageHealthData();
@@ -503,7 +512,33 @@ export default function SystemStorageTab() {
     return () => {
       cancelled = true;
     };
-  }, [applyStorageHealth, applyDatabaseSettings]);
+  }, [applyStorageHealth, applyDatabaseSettings, storageSupport.supported]);
+
+  // After every hook, so the rules of hooks hold. Replaces a whole tab whose
+  // numbers would all be invented.
+  if (!storageSupport.supported) {
+    return (
+      <Card>
+        <div
+          role="status"
+          data-testid="system-storage-unsupported"
+          data-unsupported="storage"
+          className="flex items-start gap-3 text-sm"
+        >
+          <span
+            className="material-symbols-outlined text-[20px] text-text-muted"
+            aria-hidden="true"
+          >
+            cloud_off
+          </span>
+          <div className="min-w-0">
+            <h3 className="text-base font-semibold text-text-main">{t("systemStorage")}</h3>
+            <p className="mt-1 text-xs leading-relaxed text-text-muted">{storageSupport.reason}</p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   /** Triggers a browser file download from an existing Blob. */
   const triggerDownload = (blob: Blob, filename: string) => {

@@ -16,6 +16,8 @@
 import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useNotificationStore } from "@/store/notificationStore";
+import { resolveAisixSurfaceSupport } from "@/shared/utils/aisixEndpoints";
+import { parseAisixProviderModels } from "@/shared/utils/aisixNativeCatalog";
 import { providerText, type CompatModelRow } from "../providerPageHelpers";
 
 // ──── types ─────────────────────────────────────────────────────────────────
@@ -30,6 +32,10 @@ export interface UseProviderModelsReturn {
   syncedAvailableModels: any[];
   syncedCatalogAuthoritative: boolean;
   modelAliases: Record<string, string>;
+  /** `false` when the gateway has no model-alias surface at all. */
+  modelAliasesSupported: boolean;
+  /** Operator-facing refusal, or `null` while the surface is supported. */
+  modelAliasesUnsupportedReason: string | null;
   fetchProviderModelMeta: () => Promise<void>;
   fetchAliases: () => Promise<void>;
   handleSetAlias: (modelId: string, alias: string, providerAlias?: string) => Promise<void>;
@@ -42,6 +48,7 @@ export function useProviderModels(
 ): UseProviderModelsReturn {
   const t = useTranslations("providers");
   const notify = useNotificationStore();
+  const modelAliasesSupport = resolveAisixSurfaceSupport("modelAliases", "read");
 
   const [modelMeta, setModelMeta] = useState<ModelMeta>({
     customModels: [],
@@ -58,6 +65,13 @@ export function useProviderModels(
   const [modelAliases, setModelAliases] = useState<Record<string, string>>({});
 
   const fetchAliases = useCallback(async () => {
+    // The model→alias map is a Next.js join table with no core counterpart
+    // (see `AisixUnsupportedDomain` → `modelAliases`). On the AISIX export the
+    // read is skipped outright instead of being fired into a guaranteed 404, and
+    // `modelAliasesUnsupportedReason` lets the page SAY so — an alias list that
+    // is empty because nothing was read and one that is empty because there are
+    // no aliases are different claims, and the form must not conflate them.
+    if (!modelAliasesSupport.supported) return;
     try {
       const res = await fetch("/api/models/alias");
       const data = await res.json();
@@ -67,10 +81,18 @@ export function useProviderModels(
     } catch (error) {
       console.log("Error fetching aliases:", error);
     }
-  }, []);
+  }, [modelAliasesSupport.supported]);
+
+  // Every alias write refuses through the same declaration, before any request.
+  const refuseAliasWrite = useCallback((): boolean => {
+    if (modelAliasesSupport.supported) return false;
+    notify.error(`AISIX-шлюз: ${modelAliasesSupport.reason}`);
+    return true;
+  }, [modelAliasesSupport, notify]);
 
   const handleSetAlias = useCallback(
     async (modelId: string, alias: string, providerAlias?: string) => {
+      if (refuseAliasWrite()) return;
       const qualifiedModel = providerAlias
         ? modelId.includes("/")
           ? `${providerAlias}/${modelId.split("/").slice(1).join("/")}`
@@ -96,11 +118,12 @@ export function useProviderModels(
         notify.error(providerText(t, "networkErrorSettingAlias", "Network error setting alias"));
       }
     },
-    [fetchAliases, t, notify]
+    [fetchAliases, t, notify, refuseAliasWrite]
   );
 
   const handleDeleteAlias = useCallback(
     async (alias: string) => {
+      if (refuseAliasWrite()) return;
       try {
         const res = await fetch(`/api/models/alias?alias=${encodeURIComponent(alias)}`, {
           method: "DELETE",
@@ -119,38 +142,34 @@ export function useProviderModels(
         notify.error(providerText(t, "networkErrorDeletingAlias", "Network error deleting alias"));
       }
     },
-    [fetchAliases, t, notify]
+    [fetchAliases, t, notify, refuseAliasWrite]
   );
 
   const fetchProviderModelMeta = useCallback(async () => {
     if (isSearchProvider) return;
+    // Both reads are the SAME relation on the AISIX core, and both legacy
+    // routes are absent from a static export. Repointed at
+    // `GET /admin/v1/models` and split per-provider by
+    // `parseAisixProviderModels` — the core ignores `?provider=`, so the split
+    // is arithmetic over the one document rather than a second 404.
+    const catalogUrl = resolveAisixRequestUrl(
+      `/api/provider-models?provider=${encodeURIComponent(providerId)}`
+    );
     try {
-      const res = await fetch(`/api/provider-models?provider=${encodeURIComponent(providerId)}`, {
-        cache: "no-store",
-      });
+      const res = await fetch(catalogUrl, { cache: "no-store" });
       if (!res.ok) return;
       const data = await res.json();
+      const projected = parseAisixProviderModels(data, providerId);
       setModelMeta({
-        customModels: data.models || [],
-        modelCompatOverrides: data.modelCompatOverrides || [],
+        customModels: projected.models,
+        modelCompatOverrides: projected.modelCompatOverrides,
       });
-      try {
-        const syncRes = await fetch(
-          `/api/synced-available-models?provider=${encodeURIComponent(providerId)}`,
-          { cache: "no-store" }
-        );
-        if (syncRes.ok) {
-          const syncData = await syncRes.json();
-          if (Array.isArray(syncData.models)) {
-            setSyncedCatalog({
-              providerId,
-              models: syncData.models,
-              authoritative: syncData.authoritative === true,
-            });
-          }
-        }
-      } catch {
-        // A transient dashboard request failure must not resurrect retired static models.
+      if (projected.authoritative) {
+        setSyncedCatalog({
+          providerId,
+          models: projected.models,
+          authoritative: true,
+        });
       }
     } catch (e) {
       console.error("fetchProviderModelMeta", e);
@@ -162,6 +181,11 @@ export function useProviderModels(
     syncedAvailableModels,
     syncedCatalogAuthoritative,
     modelAliases,
+    /** `false` on the AISIX export — the page renders `reason` instead of an empty alias list. */
+    modelAliasesSupported: modelAliasesSupport.supported,
+    modelAliasesUnsupportedReason: modelAliasesSupport.supported
+      ? null
+      : modelAliasesSupport.reason,
     fetchProviderModelMeta,
     fetchAliases,
     handleSetAlias,

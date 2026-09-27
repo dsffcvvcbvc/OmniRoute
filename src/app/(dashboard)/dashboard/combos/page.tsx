@@ -970,9 +970,18 @@ function CombosPageContent() {
   // the SPA these reads 404 and the defaults below would render as if they were
   // freshly loaded settings. Separate error flags keep "empty" (defaults) and
   // "failed" (defaults + badge) visibly distinct — stale must never look fresh.
-  const [settingsLoadError, setSettingsLoadError] = useState(false);
-  const [compressionLoadError, setCompressionLoadError] = useState(false);
-  const [proxyConfigLoadError, setProxyConfigLoadError] = useState(false);
+  const [settingsLoadFailed, setSettingsLoadError] = useState(false);
+  const [compressionLoadFailed, setCompressionLoadError] = useState(false);
+  const [proxyConfigLoadFailed, setProxyConfigLoadError] = useState(false);
+  // On the AISIX gateway the settings reads are skipped, not attempted, so the
+  // error flags are DERIVED from the same declaration the skip branches on.
+  // Setting them from inside the effect instead would be a synchronous
+  // setState-in-effect and, worse, would make a declared-unsupported surface
+  // look like a read that happened to fail — two different operator situations.
+  const settingsSupported = resolveAisixSurfaceSupport("settings", "read").supported;
+  const settingsLoadError = settingsLoadFailed || !settingsSupported;
+  const compressionLoadError = compressionLoadFailed || !settingsSupported;
+  const proxyConfigLoadError = proxyConfigLoadFailed || !settingsSupported;
   // Native combos-write capability (`POST/PATCH/DELETE :3001/admin/v1/combos*`):
   // `true` once a probe or a mutation proves the core has no such surface.
   // While true, every write refuses BEFORE sending (pre-send gate) and the
@@ -1140,30 +1149,37 @@ function CombosPageContent() {
         setComboConfigMode("guided");
         setSettingsLoadError(true);
       });
-    fetch(resolveAisixRequestUrl("/api/settings/compression"))
-      .then((r) => (r.ok ? r.json() : null))
-      .then((settings) => {
-        if (!settings) {
+    // Routing/compression/proxy config is OmniRoute's own SQLite settings, and
+    // the gateway has no readable settings collection. The reads are skipped
+    // rather than fired into a guaranteed 404, and the page's EXISTING
+    // `*LoadError` states are set directly — they already render as "this could
+    // not be read", which is exactly the truth here.
+    if (settingsSupported) {
+      fetch(resolveAisixRequestUrl("/api/settings/compression"))
+        .then((r) => (r.ok ? r.json() : null))
+        .then((settings) => {
+          if (!settings) {
+            setCompressionLoadError(true);
+            return;
+          }
+          setPromptCompressionEnabled(settings?.enabled === true);
+        })
+        .catch(() => {
+          setPromptCompressionEnabled(false);
           setCompressionLoadError(true);
-          return;
-        }
-        setPromptCompressionEnabled(settings?.enabled === true);
-      })
-      .catch(() => {
-        setPromptCompressionEnabled(false);
-        setCompressionLoadError(true);
-      });
-    fetch(resolveAisixRequestUrl("/api/settings/proxy"))
-      .then((r) => (r.ok ? r.json() : null))
-      .then((c) => {
-        if (!c) {
-          setProxyConfigLoadError(true);
-          return;
-        }
-        setProxyConfig(c);
-      })
-      .catch(() => setProxyConfigLoadError(true));
-  }, [sessionEpoch]);
+        });
+      fetch(resolveAisixRequestUrl("/api/settings/proxy"))
+        .then((r) => (r.ok ? r.json() : null))
+        .then((c) => {
+          if (!c) {
+            setProxyConfigLoadError(true);
+            return;
+          }
+          setProxyConfig(c);
+        })
+        .catch(() => setProxyConfigLoadError(true));
+    }
+  }, [sessionEpoch, settingsSupported]);
 
   // Pre-send gate for combos-write: once the core has proved it exposes no
   // combos-write surface (404/405 on the read or on any mutation below),
