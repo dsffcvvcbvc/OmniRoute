@@ -184,8 +184,17 @@ export function resolveAisixRequestUrl(legacyUrl: string): string {
  *   - `keys`   — OmniRoute's own inbound API keys. NOT the same thing as
  *                `:3001/admin/v1/provider_keys` (upstream provider
  *                credentials), so it must never be mapped onto them.
+ *   - `providerRules` — the per-provider tuning rows on the provider detail
+ *                page: param filters, web-search/fetch interception rules and
+ *                the Claude Code discovery-alias gate. Each is a SQLite row
+ *                behind a Next-only route, and the export ships no
+ *                `src/app/api/**` at all (`getTransientBuildPaths`), so on a
+ *                static host all three GETs are a guaranteed 404. They are
+ *                permanent by architecture, not transient: a page that retries
+ *                one is spinning on a certainty.
  */
-export type AisixUnsupportedDomain = "radar" | "quota" | "usage" | "logs" | "relay" | "keys";
+export type AisixUnsupportedDomain =
+  "radar" | "quota" | "usage" | "logs" | "relay" | "keys" | "providerRules";
 
 /**
  * Result of asking "can this surface be reached through the AISIX gateway?".
@@ -206,6 +215,8 @@ const AISIX_UNSUPPORTED_REASON: Record<AisixUnsupportedDomain, string> = {
   relay:
     "Relay-прокси (токены ретрансляции) не входит в AISIX-шлюз: у Rust-ядра нет этой подсистемы.",
   keys: "Ключи API OmniRoute (входящие) не входят в AISIX-шлюз: /admin/v1/provider_keys — это ключи вышестоящих провайдеров, а не потребительские ключи.",
+  providerRules:
+    "Правила провайдера (фильтры параметров, перехват web_search/web_fetch, алиасы Claude Code) хранятся в SQLite за Next.js-маршрутами, которых нет в статической сборке AISIX — читать и менять их здесь нельзя.",
 };
 
 /**
