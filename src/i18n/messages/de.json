@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Der Anbieterschlüssel wurde aktualisiert. Das Gateway hat dieses Dokument zurückgegeben.",
     "providerKeysDeleted": "Der Anbieterschlüssel wurde gelöscht.",
     "providerKeysDeleteTitle": "Anbieterschlüssel löschen",
-    "providerKeysDeleteConfirm": "Anbieterschlüssel „{name}“ löschen? Ein Modell oder eine Passthrough-Route, die noch darauf verweist, lässt das Gateway mit 409 ablehnen."
+    "providerKeysDeleteConfirm": "Anbieterschlüssel „{name}“ löschen? Ein Modell oder eine Passthrough-Route, die noch darauf verweist, lässt das Gateway mit 409 ablehnen.",
+    "adminAuthSignIn": "Anmelden"
   },
   "settings": {
     "title": "Einstellungen",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Schließen"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Deaktiviert die Generierung von Denkstufenvarianten (z. B. -low, -medium, -high) im /v1/models-Katalog.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Für Anbieter, deren Kontingent nach Ausgangsadresse berechnet wird, sortiert ein Poolmitglied, das die beobachtete Ausgangsadresse mit einem kürzlich abgelehnten Mitglied teilt, direkt unter die gesunden Mitglieder. Nur Reihenfolge, nie Ausschluss. Benötigt PROXY_SKIP_RECENTLY_FAILED, das das Abweigerungssignal erzeugt, das es liest. Standardmäßig aus: Die Auswahlreihenfolge ist genau die einfache Rotation."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Für Anbieter, deren Kontingent nach Ausgangsadresse berechnet wird, sortiert ein Poolmitglied, das die beobachtete Ausgangsadresse mit einem kürzlich abgelehnten Mitglied teilt, direkt unter die gesunden Mitglieder. Nur Reihenfolge, nie Ausschluss. Benötigt PROXY_SKIP_RECENTLY_FAILED, das das Abweigerungssignal erzeugt, das es liest. Standardmäßig aus: Die Auswahlreihenfolge ist genau die einfache Rotation.",
+  "adminAuth": {
+    "title": "Beim Gateway anmelden",
+    "intro": "Das Dashboard liest die Admin-API des Gateways. Gib einen Admin-Schlüssel aus admin.admin_keys in der Gateway-Konfiguration ein.",
+    "keyLabel": "Admin-Schlüssel",
+    "keyHint": "Der Schlüssel wird einmal gesendet und in diesem Browser nicht gespeichert: Das Gateway setzt ein HttpOnly-Sitzungs-Cookie, das Seitenskripte nicht lesen können.",
+    "submit": "Anmelden",
+    "cancel": "Abbrechen",
+    "signingIn": "Anmeldung läuft…",
+    "signingOut": "Abmeldung läuft…",
+    "emptyKey": "Gib den Admin-Schlüssel ein.",
+    "wrongKey": "Dieser Schlüssel wurde nicht akzeptiert. Prüfe admin.admin_keys in der Gateway-Konfiguration und versuche es erneut.",
+    "badRequest": "Das Gateway hat die Anfrage selbst abgelehnt (400) — nicht den Schlüssel. Das ist ein Fehler im Dashboard; bitte melde ihn.",
+    "forbidden": "Das Gateway hat diese Anfrage als Cross-Origin abgelehnt (403). Ein vom selben Gateway ausgeliefertes Dashboard kann das nicht auslösen; bitte melde es.",
+    "sessionNotKept": "Das Gateway hat den Schlüssel angenommen, der Browser hat das Sitzungs-Cookie aber nicht behalten, das Dashboard ist also weiter abgemeldet. Das passiert, wenn das Gateway das Cookie über eine einfache HTTP-Verbindung als Secure markiert: setze admin.tls am Admin-Listener oder liefere das Dashboard über HTTPS aus.",
+    "unreachable": "Das Gateway hat nicht geantwortet. Prüfe, ob es läuft, und versuche es erneut.",
+    "signedIn": "Beim Gateway angemeldet.",
+    "lifetimeNote": "Eine Sitzung dauert bis zu 8 Stunden und liegt im Prozess des Gateways; sie endet also beim nächsten Neustart oder Deployment. Dann wird der Schlüssel erneut abgefragt.",
+    "signOut": "Abmelden",
+    "signInAction": "Anmelden",
+    "endedNote": "Deine Sitzung ist abgelaufen. Gateway-Sitzungen dauern bis zu 8 Stunden und überstehen keinen Neustart; dass der Schlüssel erneut abgefragt wird, ist daher erwartbar."
+  }
 }

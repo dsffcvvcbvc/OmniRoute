@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Ključ pružatelja je ažuriran. Gateway je vratio ovaj dokument.",
     "providerKeysDeleted": "Ključ pružatelja je izbrisan.",
     "providerKeysDeleteTitle": "Izbriši ključ pružatelja",
-    "providerKeysDeleteConfirm": "Izbriši ključ pružatelja \"{name}\"? Bilo koji model ili passthrough ruta koja ga i dalje referencira natjerat će gateway da odbije sa 409."
+    "providerKeysDeleteConfirm": "Izbriši ključ pružatelja \"{name}\"? Bilo koji model ili passthrough ruta koja ga i dalje referencira natjerat će gateway da odbije sa 409.",
+    "adminAuthSignIn": "Prijavi se"
   },
   "settings": {
     "title": "Postavke",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Odbaci"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Onemogući generiranje varijanti razine razmišljanja (npr. -low, -medium, -high) u katalogu /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Za davatelje čija se kvota obračunava prema izlaznoj adresi, člana bazena koji dijeli zapaženu izlaznu adresu s nedavno odbijenim članom poredajte neposredno ispod zdravih članova. Samo redoslijed — nikada izostavljanje. Zahtijeva PROXY_SKIP_RECENTLY_FAILED, koji proizvodi signal odbijanja koji čita. Isključeno po zadanom: redoslijed odabira je točno obična rotacija."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Za davatelje čija se kvota obračunava prema izlaznoj adresi, člana bazena koji dijeli zapaženu izlaznu adresu s nedavno odbijenim članom poredajte neposredno ispod zdravih članova. Samo redoslijed — nikada izostavljanje. Zahtijeva PROXY_SKIP_RECENTLY_FAILED, koji proizvodi signal odbijanja koji čita. Isključeno po zadanom: redoslijed odabira je točno obična rotacija.",
+  "adminAuth": {
+    "title": "Prijava na prolaz",
+    "intro": "Kontrolna ploča čita admin API prolaza. Unesite administratorski ključ iz admin.admin_keys u konfiguraciji prolaza.",
+    "keyLabel": "Administratorski ključ",
+    "keyHint": "Ključ se šalje jednom i ne sprema se u ovom pregledniku: prolaz postavlja HttpOnly sesijsku kolačić koju skripte stranice ne mogu pročitati.",
+    "submit": "Prijavi se",
+    "cancel": "Odustani",
+    "signingIn": "Prijava…",
+    "signingOut": "Odjava…",
+    "emptyKey": "Unesite administratorski ključ.",
+    "wrongKey": "Taj ključ nije prihvaćen. Provjerite admin.admin_keys u konfiguraciji prolaza i pokušajte ponovno.",
+    "badRequest": "Prolaz je odbio sam zahtjev (400) — nije ključ. To je greška kontrolne ploče; prijavite je.",
+    "forbidden": "Prolaz je odbio zahtjev kao s drugog izvora (403). Ploča koju poslužuje isti prolaz to ne može proizvesti; prijavite to.",
+    "sessionNotKept": "Prolaz je prihvatio ključ, ali preglednik nije zadržao sesijsku kolačić pa je kontrolna ploča i dalje odjavljena. To se događa kada prolaz označi kolačić kao Secure preko obične HTTP veze: postavite admin.tls na administratorski prihvatnik ili poslužite ploču preko HTTPS-a.",
+    "unreachable": "Prolaz nije odgovorio. Provjerite radi li, pa pokušajte ponovno.",
+    "signedIn": "Prijavljeni ste na prolaz.",
+    "lifetimeNote": "Sesija traje do 8 sati i čuva se u procesu prolaza pa završava pri svakom ponovnom pokretanju ili objavi. Tada će ključ ponovno biti zatražen.",
+    "signOut": "Odjavi se",
+    "signInAction": "Prijavi se",
+    "endedNote": "Vaša sesija je istekla. Sesije prolaza traju do 8 sati i ne preživljavaju ponovno pokretanje pa je ponovna tražnja ključa očekivana."
+  }
 }

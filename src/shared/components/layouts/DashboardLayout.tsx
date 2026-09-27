@@ -8,6 +8,7 @@ import Breadcrumbs from "../Breadcrumbs";
 import MaintenanceBanner from "../MaintenanceBanner";
 import CommandPalette from "../CommandPalette";
 import NavigationProgress from "../NavigationProgress";
+import AdminSessionGate from "../AdminSessionGate";
 import { useIsElectron } from "@/shared/hooks/useElectron";
 import {
   installDashboardCsrfFetch,
@@ -119,6 +120,12 @@ export default function DashboardLayout({ children }) {
           onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         />
         {!isE2EMode && <MaintenanceBanner />}
+        {/* The gateway key prompt and the session-lifetime strip. One place, so
+            every admin surface reaches the same prompt and the same honest
+            answer about a 401 — the per-page "withheld, not empty" banners keep
+            their own state, and this is the shared way out of it. It renders
+            nothing outside the AISIX static export (see `isAisixSpaExport`). */}
+        <AdminSessionGate />
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar p-4 sm:p-6 lg:p-10">
           {/* Fluid up to a 4K cap (3840px): content follows the viewport on large
               monitors and only centers (side gutters) beyond ~4K, instead of the prior

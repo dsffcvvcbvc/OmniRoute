@@ -108,6 +108,8 @@ import {
   type ComboWriteFailureKind,
 } from "@/shared/utils/aisixCombos";
 import { useTranslations } from "next-intl";
+import { requestAdminLogin } from "@/shared/utils/aisixAdminAuth";
+import { useAisixSessionEpoch } from "@/shared/hooks/useAisixAdminSession";
 
 const ModelSelectModal = dynamic(() => import("@/shared/components/ModelSelectModal"), {
   ssr: false,
@@ -1112,6 +1114,11 @@ function CombosPageContent() {
     }
   };
 
+  // A successful key exchange bumps the session epoch and this effect re-runs on
+  // it, so the combos are re-read without the operator reloading by hand. Without
+  // it this page would keep its "withheld" 401 state after a login that worked.
+  const sessionEpoch = useAisixSessionEpoch();
+
   // Mount load — placed after fetchData so the effect does not read the binding in its
   // TDZ (react-hooks/immutability); the call sits behind an async boundary
   // (react-hooks/set-state-in-effect).
@@ -1156,7 +1163,7 @@ function CombosPageContent() {
         setProxyConfig(c);
       })
       .catch(() => setProxyConfigLoadError(true));
-  }, []);
+  }, [sessionEpoch]);
 
   // Pre-send gate for combos-write: once the core has proved it exposes no
   // combos-write surface (404/405 on the read or on any mutation below),
@@ -1532,6 +1539,15 @@ function CombosPageContent() {
           <span className="flex-1">
             {text("gatewayAdminKeyRequired", AISIX_COMBO_TEXT.gatewayAdminKeyRequired)}
           </span>
+          <Button
+            size="sm"
+            variant="primary"
+            icon="login"
+            onClick={requestAdminLogin}
+            data-testid="combos-sign-in"
+          >
+            {text("adminAuthSignIn", "Sign in")}
+          </Button>
         </div>
       )}
 

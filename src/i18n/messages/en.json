@@ -6599,7 +6599,8 @@
     "providerKeysUpdated": "Provider key updated. The gateway returned this document.",
     "providerKeysDeleted": "Provider key deleted.",
     "providerKeysDeleteTitle": "Delete provider key",
-    "providerKeysDeleteConfirm": "Delete provider key \"{name}\"? A model or passthrough route that still references it makes the gateway refuse with 409."
+    "providerKeysDeleteConfirm": "Delete provider key \"{name}\"? A model or passthrough route that still references it makes the gateway refuse with 409.",
+    "adminAuthSignIn": "Sign in"
   },
   "settings": {
     "title": "Settings",
@@ -14507,5 +14508,26 @@
     "partnerLinkNote": "Partner link",
     "dismissAriaLabel": "Dismiss"
   },
-  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Disable the generation of thinking level variants (e.g. -low, -medium, -high) in the /v1/models catalog."
+  "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Disable the generation of thinking level variants (e.g. -low, -medium, -high) in the /v1/models catalog.",
+  "adminAuth": {
+    "title": "Sign in to the gateway",
+    "intro": "The dashboard reads the gateway's admin API. Enter the admin key from admin.admin_keys in the gateway configuration.",
+    "keyLabel": "Admin key",
+    "keyHint": "The key is sent once and never stored in this browser: the gateway sets an HttpOnly session cookie that page scripts cannot read.",
+    "submit": "Sign in",
+    "cancel": "Cancel",
+    "signingIn": "Signing in…",
+    "signingOut": "Signing out…",
+    "emptyKey": "Enter the admin key.",
+    "wrongKey": "That key was not accepted. Check admin.admin_keys in the gateway configuration and try again.",
+    "badRequest": "The gateway rejected the request itself (400) — not the key. That is a dashboard defect; please report it.",
+    "forbidden": "The gateway refused this request as cross-origin (403). A dashboard served by the same gateway cannot produce that; please report it.",
+    "sessionNotKept": "The gateway accepted the key, but the browser did not keep the session cookie, so the dashboard is still signed out. This is what happens when the gateway marks the cookie Secure over a plain-HTTP connection: configure admin.tls on the admin listener, or serve the dashboard over HTTPS.",
+    "unreachable": "The gateway did not answer. Check that it is running, then try again.",
+    "signedIn": "Signed in to the gateway.",
+    "lifetimeNote": "A session lasts up to 8 hours and is held in the gateway process, so it ends at the next restart or redeploy. You will be asked for the key again then.",
+    "signOut": "Sign out",
+    "signInAction": "Sign in",
+    "endedNote": "Your session ended. Gateway sessions last up to 8 hours and do not survive a restart, so being asked again is expected."
+  }
 }

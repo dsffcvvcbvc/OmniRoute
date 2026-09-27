@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Palveluntarjoajan avain päivitettiin. Yhdyskytkin palautti tämän asiakirjan.",
     "providerKeysDeleted": "Palveluntarjoajan avain poistettiin.",
     "providerKeysDeleteTitle": "Poista palveluntarjoajan avain",
-    "providerKeysDeleteConfirm": "Poistetaanko palveluntarrojan avain ”{name}”? Mikä tahansa malli tai läpäisyreitti, joka viittaa siihen yhä, saa yhdyskytkimen hylkäämään sen koodilla 409."
+    "providerKeysDeleteConfirm": "Poistetaanko palveluntarrojan avain ”{name}”? Mikä tahansa malli tai läpäisyreitti, joka viittaa siihen yhä, saa yhdyskytkimen hylkäämään sen koodilla 409.",
+    "adminAuthSignIn": "Kirjaudu"
   },
   "settings": {
     "title": "Asetukset",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Sulje"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Poista käytöstä ajattelutason varianttien (esim. -low, -medium, -high) luonti /v1/models-luettelossa.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Palveluntarjoajille, joiden kiintiö lasketaan poistumisosoitteen mukaan, sijoita alta- jaon jäsen, joka jakaa havaitun poistumisosoitteen äskettäin hylätyn jäsenen kanssa, juuri terveiden jäsenten alle. Vain järjestys — ei koskaan poisjättö. Vaatii PROXY_SKIP_RECENTLY_FAILED:n, joka tuottaa sen lukeman hylkäyssignaalin. Oletuksena pois päältä: valintajärjestys on täsmälleen tavallinen kierto."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Palveluntarjoajille, joiden kiintiö lasketaan poistumisosoitteen mukaan, sijoita alta- jaon jäsen, joka jakaa havaitun poistumisosoitteen äskettäin hylätyn jäsenen kanssa, juuri terveiden jäsenten alle. Vain järjestys — ei koskaan poisjättö. Vaatii PROXY_SKIP_RECENTLY_FAILED:n, joka tuottaa sen lukeman hylkäyssignaalin. Oletuksena pois päältä: valintajärjestys on täsmälleen tavallinen kierto.",
+  "adminAuth": {
+    "title": "Kirjaudu yhdyskäytävään",
+    "intro": "Kojelukku lukee yhdyskytkävän ylläpito-APIa. Anna yhdyskytkävän asetuksista admin.admin_keys ylläpitovainu.",
+    "keyLabel": "Ylläpitovainu",
+    "keyHint": "Vainu lähetetään kerran eikä sitä tallenneta tähän selaimeen: yhdyskytkävä asettaa HttpOnly-istuntosektorin, jota sivun skriptit eivät pysty lukemaan.",
+    "submit": "Kirjaudu",
+    "cancel": "Peruuta",
+    "signingIn": "Kirjautuu…",
+    "signingOut": "Kirjautuu ulos…",
+    "emptyKey": "Anna ylläpitovainu.",
+    "wrongKey": "Tätä vainua ei hyväksytty. Tarkista yhdyskytkävän asetuksista admin.admin_keys ja yritä uudelleen.",
+    "badRequest": "Yhdyskytkävä hylkäsi itse pyynnön (400) — ei vainun. Tämä on kojelukun virhe; ilmoita siitä.",
+    "forbidden": "Yhdyskytkävä hylkäsi pyynnön toisesta alkuperästä (403) tulleena. Saman yhdyskytkävän tarjoama kojelukku ei voi tuottaa tätä; ilmoita siitä.",
+    "sessionNotKept": "Yhdyskytkävä hyväksyi vainun, mutta selain ei säilyttänyt istuntosektoria, joten kojelukku on yhä kirjautumatta. Näin käy, kun yhdyskytkävä merkitsee sektorin Secure-merkinnällä tavallisen HTTP-yhteyden yli: aseta admin.tls ylläpito-kuuntelijaan tai tarjoa kojelukku HTTPS:n kautta.",
+    "unreachable": "Yhdyskytkävä ei vastannut. Tarkista, että se on käynnissä, ja yritä uudelleen.",
+    "signedIn": "Kirjauduttu yhdyskytkävään.",
+    "lifetimeNote": "Istunto kestää enintään 8 tuntia ja säilytetään yhdyskytkävän prosessissa, joten se päättyy seuraavaan uudelleenkäynnistykseen tai julkaisuun. Silloin vainu kysytään uudelleen.",
+    "signOut": "Kirjaudu ulos",
+    "signInAction": "Kirjaudu",
+    "endedNote": "Istuntosi päättyi. Yhdyskytkävän istunnot kestävät enintään 8 tuntia eivätkä selviä uudelleenkäynnistyksestä, joten vainun uudelleen kysyminen on odotettavaa."
+  }
 }

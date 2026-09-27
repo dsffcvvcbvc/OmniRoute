@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Kľúč poskytovateľa bol aktualizovaný. Brána vrátila tento dokument.",
     "providerKeysDeleted": "Kľúč poskytovateľa bol odstránený.",
     "providerKeysDeleteTitle": "Odstrániť kľúč poskytovateľa",
-    "providerKeysDeleteConfirm": "Odstrániť kľúč poskytovateľa „{name}“? Akýkoľvek model alebo passthrough trasa, ktorá naň stále odkazuje, prinúti bránu odmietnuť s 409."
+    "providerKeysDeleteConfirm": "Odstrániť kľúč poskytovateľa „{name}“? Akýkoľvek model alebo passthrough trasa, ktorá naň stále odkazuje, prinúti bránu odmietnuť s 409.",
+    "adminAuthSignIn": "Prihlásiť sa"
   },
   "settings": {
     "title": "Nastavenia",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Zavrieť"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Zakázať generovanie variantov úrovne uvažovania (napr. -low, -medium, -high) v katalógu /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Pre poskytovateľov, ktorých kvóta sa počíta podľa výstupnej adresy, člena poolu, ktorý zdieľa pozorovanú výstupnú adresu s nedávno odmietnutým členom, umiestnite tesne pod zdravých členov. Len poradie — nikdy vylúčenie. Vyžaduje PROXY_SKIP_RECENTLY_FAILED, ktorý vytvára signál odmietnutia, ktorý číta. V predvolenom stave vypnuté: poradie výberu je presne bežná rotácia."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Pre poskytovateľov, ktorých kvóta sa počíta podľa výstupnej adresy, člena poolu, ktorý zdieľa pozorovanú výstupnú adresu s nedávno odmietnutým členom, umiestnite tesne pod zdravých členov. Len poradie — nikdy vylúčenie. Vyžaduje PROXY_SKIP_RECENTLY_FAILED, ktorý vytvára signál odmietnutia, ktorý číta. V predvolenom stave vypnuté: poradie výberu je presne bežná rotácia.",
+  "adminAuth": {
+    "title": "Prihlásenie do brány",
+    "intro": "Panel číta adminské API brány. Zadajte administrátorský kľúč z admin.admin_keys v konfigurácii brány.",
+    "keyLabel": "Administrátsky kľúč",
+    "keyHint": "Kľúč sa odosiela raz a v tomto prehliadači sa neuchováva: brána nastaví reláciu HttpOnly, ktorú skripty stránky nedokážu prečítať.",
+    "submit": "Prihlásiť sa",
+    "cancel": "Zrušiť",
+    "signingIn": "Prihlasovanie…",
+    "signingOut": "Odhlasovanie…",
+    "emptyKey": "Zadajte administrátorský kľúč.",
+    "wrongKey": "Tento kľúč nebol prijatý. Skontrolujte admin.admin_keys v konfigurácii brány a skúste to znova.",
+    "badRequest": "Brána odmietla samotnú požiadavku (400) — nie kľúč. Ide o chybu panelu; nahlaste ju, prosím.",
+    "forbidden": "Brána odmietla túto požiadavku ako pochádzajúcu z iného pôvodu (403). Panel obsluhovaný touto istou bránou to nemôže spôsobiť; nahlaste to, prosím.",
+    "sessionNotKept": "Brána kľúč prijala, ale prehliadač reláciu neponechal, takže panel je stále odhlásený. To sa stáva, keď brána označí reláciu ako Secure cez nešifrované HTTP: nastavte admin.tls na načúvateľa správy alebo obslúžte panel cez HTTPS.",
+    "unreachable": "Brána neodpovedala. Skontrolujte, či beží, a skúste to znova.",
+    "signedIn": "Prihlásené do brány.",
+    "lifetimeNote": "Relácia trvá až 8 hodín a je uložená v procese brány, takže skončí pri ďalšom reštarte alebo nasadení. Potom bude kľúč požadovaný znova.",
+    "signOut": "Odhlásiť sa",
+    "signInAction": "Prihlásiť sa",
+    "endedNote": "Vaša relácia skončila. Relácie brány trvajú až 8 hodín a reštart neprežijú, takže opätovné vyžiadanie kľúča sa očakáva."
+  }
 }

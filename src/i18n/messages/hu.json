@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "A szolgáltatókulcs frissült. Az átjáró visszaadta ezt a dokumentumot.",
     "providerKeysDeleted": "A szolgáltatókulcs törölve lett.",
     "providerKeysDeleteTitle": "Szolgáltatókulcs törlése",
-    "providerKeysDeleteConfirm": "Törli a(z) {name} szolgáltatókulcsot? Ha bármelyik modell vagy passthrough útvonal még rá hivatkozik, az átjáró 409-csal elutasítja."
+    "providerKeysDeleteConfirm": "Törli a(z) {name} szolgáltatókulcsot? Ha bármelyik modell vagy passthrough útvonal még rá hivatkozik, az átjáró 409-csal elutasítja.",
+    "adminAuthSignIn": "Bejelentkezés"
   },
   "settings": {
     "title": "Beállítások elemre",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Bezárás"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Letiltja a gondolkodási szint szerinti változatok (pl. -low, -medium, -high) létrehozását a /v1/models katalógusban.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Azoknál a szolgáltatóknál, akiknek a kvótáját kilépési cím alapján számolják, azt a készlet-tagot, aki azonos megfigyelt kilépési címet oszt egy nemrég elutasított taggal, helyezd közvetlenül az egészséges tagok alá. Csak sorrend — kizárás soha. Ehhez PROXY_SKIP_RECENTLY_FAILED kell, amely az általa olvasott elutasítási jelet állítja elő. Alapértelmezés szerint kikapcsolva: a kiválasztási sorrend pontosan a szokásos forgatás."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Azoknál a szolgáltatóknál, akiknek a kvótáját kilépési cím alapján számolják, azt a készlet-tagot, aki azonos megfigyelt kilépési címet oszt egy nemrég elutasított taggal, helyezd közvetlenül az egészséges tagok alá. Csak sorrend — kizárás soha. Ehhez PROXY_SKIP_RECENTLY_FAILED kell, amely az általa olvasott elutasítási jelet állítja elő. Alapértelmezés szerint kikapcsolva: a kiválasztási sorrend pontosan a szokásos forgatás.",
+  "adminAuth": {
+    "title": "Bejelentkezés az átjáróhoz",
+    "intro": "Az irányítópult az átjáró admin API-ját olvassa. Ad meg az átjáró beállításaiban, az admin.admin_keys listában szereplő admin kulcsot.",
+    "keyLabel": "Admin kulcs",
+    "keyHint": "A kulcs egyszer halad át, és nem tárolódik ebben a böngészőben: az átjáró HttpOnly munkameneti sütit állít be, amelyet az oldal parancsfájljai nem tudnak elolvasni.",
+    "submit": "Bejelentkezés",
+    "cancel": "Mégse",
+    "signingIn": "Bejelentkezés…",
+    "signingOut": "Kijelentkezés…",
+    "emptyKey": "Adja meg az admin kulcsot.",
+    "wrongKey": "Ezt a kulcsot nem fogadták el. Nézze meg az átjáró beállításaiban az admin.admin_keys listát, és próbálja újra.",
+    "badRequest": "Az átjáró magát a kérést utasította el (400) — nem a kulcsot. Ez az irányítópult hibája; kérjük, jelezze.",
+    "forbidden": "Az átjáró más eredetű kérésként utasította el ezt (403). Ugyanez az átjáró nem szolgálhat ki olyan irányítópultot, amely ezt előidézi; kérjük, jelezze.",
+    "sessionNotKept": "Az átjáró elfogadta a kulcsot, de a böngésző nem tartotta meg a munkameneti sütit, így az irányítópult továbbra is kijelentkezve van. Ez akkor fordul elő, ha az átjáró titkosítatlan HTTP-kapcsolat felett Secure jelöléssel ellátja a sütit: állítsa be az admin.tls értéket az adminisztrációs figyelőn, vagy szolgálja ki az irányítópultot HTTPS-en.",
+    "unreachable": "Az átjáró nem válaszolt. Ellenőrizze, hogy fut-e, majd próbálja újra.",
+    "signedIn": "Bejelentkezve az átjáróba.",
+    "lifetimeNote": "A munkamenet legfeljebb 8 óráig tart, és az átjáró folyamatában tárolódik, így a következő újraindításkor vagy kiadáskor véget ér. Ekkor újra meg kell adni a kulcsot.",
+    "signOut": "Kijelentkezés",
+    "signInAction": "Bejelentkezés",
+    "endedNote": "A munkamenete véget ért. Az átjáró munkamenetei legfeljebb 8 óráig tartanak, és nem élik túl az újraindítást, ezért a kulcs újrakérése várható."
+  }
 }

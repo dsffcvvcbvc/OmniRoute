@@ -14,7 +14,7 @@
  */
 
 import { aisixPresetProvidersUrl, isAisixMissingEndpointStatus } from "./aisixEndpoints";
-import { fetchWithTimeout } from "./fetchTimeout";
+import { aisixAdminFetch } from "./aisixAdminAuth";
 
 /** One preset vendor entry, normalized from whatever envelope the core sends. */
 export interface AisixPresetProvider {
@@ -197,10 +197,9 @@ export async function fetchPresetProviders(
   timeoutMs: number = PRESET_FETCH_TIMEOUT_MS
 ): Promise<PresetProvidersResult> {
   try {
-    const res = await fetchWithTimeout(aisixPresetProvidersUrl(), {
-      timeoutMs,
-      fetchFn: fetchImpl,
-    });
+    // Through the shared admin transport, so this catalog's 401 raises the one
+    // global signed-out signal like every other admin read.
+    const res = await aisixAdminFetch(aisixPresetProvidersUrl(), { timeoutMs, fetchFn: fetchImpl });
     if (isAisixMissingEndpointStatus(res.status)) {
       return { presets: [], missing: true, status: res.status };
     }

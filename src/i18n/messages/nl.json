@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Provider-sleutel bijgewerkt. De gateway heeft dit document terugggegeven.",
     "providerKeysDeleted": "Provider-sleutel verwijderd.",
     "providerKeysDeleteTitle": "Provider-sleutel verwijderen",
-    "providerKeysDeleteConfirm": "Provider-sleutel \"{name}\" verwijderen? Elk model of passthrough-route dat er nog naar verwijst laat de gateway met 409 weigeren."
+    "providerKeysDeleteConfirm": "Provider-sleutel \"{name}\" verwijderen? Elk model of passthrough-route dat er nog naar verwijst laat de gateway met 409 weigeren.",
+    "adminAuthSignIn": "Inloggen"
   },
   "settings": {
     "title": "Instellingen",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Sluiten"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Schakel het genereren van varianten op denkniveau (bijv. -low, -medium, -high) in de catalogus /v1/models uit.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Voor aanbieders waarvan het quota op uitgaand adres wordt berekend, plaats je een poolmember die het waargenomen uitgaande adres deelt met een recent geweigerd lid vlak onder de gezonde leden. Alleen volgorde, nooit uitsluiting. Vereist PROXY_SKIP_RECENTLY_FAILED, dat het afwijzingssignaal levert dat het leest. Standaard uit: de selectievolgorde is precies de gewone rotatie."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Voor aanbieders waarvan het quota op uitgaand adres wordt berekend, plaats je een poolmember die het waargenomen uitgaande adres deelt met een recent geweigerd lid vlak onder de gezonde leden. Alleen volgorde, nooit uitsluiting. Vereist PROXY_SKIP_RECENTLY_FAILED, dat het afwijzingssignaal levert dat het leest. Standaard uit: de selectievolgorde is precies de gewone rotatie.",
+  "adminAuth": {
+    "title": "Inloggen bij de gateway",
+    "intro": "Het dashboard leest de beheer-API van de gateway. Voer een beheersleutel in uit admin.admin_keys in de gatewayconfiguratie.",
+    "keyLabel": "Beheersleutel",
+    "keyHint": "De sleutel wordt één keer verstuurd en niet in deze browser bewaard: de gateway stelt een HttpOnly-sessiecookie in die scripts van de pagina niet kunnen lezen.",
+    "submit": "Inloggen",
+    "cancel": "Annuleren",
+    "signingIn": "Bezig met inloggen…",
+    "signingOut": "Bezig met uitloggen…",
+    "emptyKey": "Voer de beheersleutel in.",
+    "wrongKey": "Die sleutel is niet geaccepteerd. Controleer admin.admin_keys in de gatewayconfiguratie en probeer het opnieuw.",
+    "badRequest": "De gateway heeft het verzoek zelf geweigerd (400) — niet de sleutel. Dat is een defect in het dashboard; meld het alsjeblieft.",
+    "forbidden": "De gateway heeft dit verzoek geweigerd omdat het van een andere herkomst komt (403). Een dashboard dat dezelfde gateway serveert kan dat niet doen; meld het alsjeblieft.",
+    "sessionNotKept": "De gateway accepteerde de sleutel, maar de browser bewaarde de sessiecookie niet, dus het dashboard is nog steeds uitgelogd. Dit gebeurt wanneer de gateway de cookie Secure markeert over een gewone HTTP-verbinding: stel admin.tls in op de beheerlistener, of serveer het dashboard via HTTPS.",
+    "unreachable": "De gateway antwoordde niet. Controleer of hij draait en probeer het opnieuw.",
+    "signedIn": "Ingelogd bij de gateway.",
+    "lifetimeNote": "Een sessie duurt maximaal 8 uur en wordt in het proces van de gateway bewaard, dus die eindigt bij de volgende herstart of uitrol. Dan wordt de sleutel opnieuw gevraagd.",
+    "signOut": "Uitloggen",
+    "signInAction": "Inloggen",
+    "endedNote": "Je sessie is beëindigd. Gateway-sessies duren maximaal 8 uur en overleven geen herstart, dus dat de sleutel opnieuw wordt gevraagd is verwachtbaar."
+  }
 }

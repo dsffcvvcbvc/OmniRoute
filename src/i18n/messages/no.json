@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Leverandørnøkkel oppdatert. Gatewayen returnerte dette dokumentet.",
     "providerKeysDeleted": "Leverandørnøkkel slettet.",
     "providerKeysDeleteTitle": "Slett leverandørnøkkel",
-    "providerKeysDeleteConfirm": "Slette leverandørnøkkelen «{name}»? Alle modeller eller passthrough-ruter som fortsatt viser til den, får gatewayen til å svare 409."
+    "providerKeysDeleteConfirm": "Slette leverandørnøkkelen «{name}»? Alle modeller eller passthrough-ruter som fortsatt viser til den, får gatewayen til å svare 409.",
+    "adminAuthSignIn": "Logg inn"
   },
   "settings": {
     "title": "Innstillinger",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Lukk"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Deaktiver generering av varianter for resonneringsnivå (f.eks. -low, -medium, -high) i /v1/models-katalogen.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "For leverandører hvis kvote telles etter utgående adresse, plasserer du et poolmedlem som deler den observerte utgående adressen med et nylig avvist medlem rett under de friske medlemmene. Bare rekkefølge, aldri utelattelse. Krever PROXY_SKIP_RECENTLY_FAILED, som produserer avvisningssignalet den leser. Av som standard: rekkefølgen for utvalg er nøyaktig den vanlige rotasjonen."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "For leverandører hvis kvote telles etter utgående adresse, plasserer du et poolmedlem som deler den observerte utgående adressen med et nylig avvist medlem rett under de friske medlemmene. Bare rekkefølge, aldri utelattelse. Krever PROXY_SKIP_RECENTLY_FAILED, som produserer avvisningssignalet den leser. Av som standard: rekkefølgen for utvalg er nøyaktig den vanlige rotasjonen.",
+  "adminAuth": {
+    "title": "Logg inn på gatewayen",
+    "intro": "Dashbordet leser gatewayens admin-API. Skriv inn en administrasjonsnøkkel fra admin.admin_keys i gateway-konfigurasjonen.",
+    "keyLabel": "Administrasjonsnøkkel",
+    "keyHint": "Nøkkelen sendes én gang og lagres ikke i denne nettleseren: gatewayen setter en HttpOnly-sesjonskapsl som ikke kan leses av skriptene på siden.",
+    "submit": "Logg inn",
+    "cancel": "Avbryt",
+    "signingIn": "Logger inn…",
+    "signingOut": "Logger ut…",
+    "emptyKey": "Skriv inn administrasjonsnøkkelen.",
+    "wrongKey": "Nøkkelen ble ikke godtatt. Sjekk admin.admin_keys i gateway-konfigurasjonen, og prøv igjen.",
+    "badRequest": "Gatewayen avviste selve forespørselen (400) — ikke nøkkelen. Dette er en feil i dashbordet; meld det inn.",
+    "forbidden": "Gatewayen avviste denne forespørselen som om den kom fra en annen opprinnelse (403). Et dashbord som serveres av samme gateway kan ikke gjøre det; meld det inn.",
+    "sessionNotKept": "Gatewayen godtok nøkkelen, men nettleseren beholdt ikke sesjonskapslen, så dashbordet er fortsatt utlogget. Dette skjer når gatewayen merker kapslen som Secure over en vanlig HTTP-tilkobling: sett admin.tls på administrasjonslytteren, eller server dashbordet over HTTPS.",
+    "unreachable": "Gatewayen svarte ikke. Sjekk at den kjører, og prøv igjen.",
+    "signedIn": "Innlogget på gatewayen.",
+    "lifetimeNote": "En sesjon varer i opptil 8 timer og ligger i gatewayens prosess, så den slutter ved neste omstart eller utrulling. Da blir nøkkelen spurt om på nytt.",
+    "signOut": "Logg ut",
+    "signInAction": "Logg inn",
+    "endedNote": "Sesjonen din er over. Gateway-sesjoner varer i opptil 8 timer og overlever ikke en omstart, så det er forventet at nøkkelen spørres om på nytt."
+  }
 }

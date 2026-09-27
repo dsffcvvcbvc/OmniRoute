@@ -46,6 +46,8 @@ import {
   getCodexGlobalServiceMode,
   type CodexGlobalServiceMode,
 } from "@/lib/providers/codexFastTier";
+import { requestAdminLogin } from "@/shared/utils/aisixAdminAuth";
+import { useAisixSessionEpoch } from "@/shared/hooks/useAisixAdminSession";
 import dynamic from "next/dynamic";
 const AddCompatibleProviderModal = dynamic(
   () => import("./components/AddCompatibleProviderModal"),
@@ -224,6 +226,13 @@ function ProvidersPageContent() {
   const [codexGlobalServiceMode, setCodexGlobalServiceMode] =
     useState<CodexGlobalServiceMode>("none");
   const [loading, setLoading] = useState(true);
+  // The admin plane refused (401/403): the list below is WITHHELD, not empty.
+  // Rendered as such rather than as "no providers configured", which a 401
+  // cannot support.
+  const [adminDenied, setAdminDenied] = useState(false);
+  // A successful key exchange bumps the epoch and this page re-reads, so the
+  // withheld state clears itself instead of waiting for a manual reload.
+  const adminSessionEpoch = useAisixSessionEpoch();
   const [showAllProviders, setShowAllProviders] = useState(false);
   const [showAddCompatibleModal, setShowAddCompatibleModal] = useState(false);
   const [showAddAnthropicCompatibleModal, setShowAddAnthropicCompatibleModal] = useState(false);
@@ -300,6 +309,7 @@ function ProvidersPageContent() {
         if (data.blockedProviders) setBlockedProviders(data.blockedProviders);
         setCodexGlobalServiceMode(getCodexGlobalServiceMode(data.settings));
         setOpenRouterProviderStats(data.openRouterProviderStats);
+        setAdminDenied(data.adminDenied);
       } catch (error) {
         console.log("Error fetching data:", error);
       } finally {
@@ -307,7 +317,7 @@ function ProvidersPageContent() {
       }
     };
     fetchData();
-  }, []);
+  }, [adminSessionEpoch]);
 
   useEffect(() => {
     if (!shouldSyncProviderDisplayMode(displayModePreferenceReady, loading)) return;
@@ -1013,6 +1023,33 @@ function ProvidersPageContent() {
               <span>{providerText(t, "noProvidersMatch", "No providers match your search.")}</span>
             </div>
           )
+        ) : adminDenied ? (
+          /* The admin plane answered 401/403. Rendering the sections below would
+             draw "this gateway has no providers", which is a claim about the
+             operator's configuration that a refused read cannot support. */
+          <div
+            className="flex flex-wrap items-center gap-3 py-6 px-4 border border-dashed border-amber-500/40 rounded-xl text-sm"
+            data-testid="providers-admin-denied"
+            role="status"
+          >
+            <span className="material-symbols-outlined text-[18px] text-amber-500">lock</span>
+            <span className="text-text-main flex-1 min-w-[240px]">
+              {providerText(
+                t,
+                "aisixAdminKeyRequired",
+                "The gateway answered 401: this list needs an admin session. The providers below are withheld, not empty."
+              )}
+            </span>
+            <Button
+              size="sm"
+              variant="primary"
+              icon="login"
+              onClick={requestAdminLogin}
+              data-testid="providers-sign-in"
+            >
+              {providerText(t, "adminAuthSignIn", "Sign in")}
+            </Button>
+          </div>
         ) : (
           <>
             {/* API Key Compatible Providers — dynamic (OpenAI/Anthropic compatible) */}

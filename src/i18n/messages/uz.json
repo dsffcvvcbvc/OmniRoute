@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Provayder kaliti yangilandi. Gateway bu hujjatni qaytardi.",
     "providerKeysDeleted": "Provayder kaliti o'chirildi.",
     "providerKeysDeleteTitle": "Provayder kalitini o'chirish",
-    "providerKeysDeleteConfirm": "«{name}» provayder kalitini o'chirilsizmi? Agar biror model yoki passthrough marshruti hali hamon unga muroja qilsa, gateway 409 bilan rad qiladi."
+    "providerKeysDeleteConfirm": "«{name}» provayder kalitini o'chirilsizmi? Agar biror model yoki passthrough marshruti hali hamon unga muroja qilsa, gateway 409 bilan rad qiladi.",
+    "adminAuthSignIn": "Kirish"
   },
   "settings": {
     "title": "Sozlamalar",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Yopish"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models katalogida fikrlash darajasi variantlarini (masalan, -low, -medium, -high) yaratishni o‘chirib qo‘ying.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Kvotasi chiqish manzili bo'yicha hisoblanadigan provayderlar uchun, yaqinda rad etilgan azo bilan bir xil kuzatilgan chiqish manziliga ega bo'lgan guruh a'zosini sog'a'm a'zolar ostiga joylashtiring. Faqat tartib, hech qachon chiqarib tashlanmaydi. Bu uchun PROXY_SKIP_RECENTLY_FAILED kerak, u o'qigan rad javobini yaratadi. Standart bo'yicha o'chiq: tanlash tartibi aynan oddiy aylanishdir."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Kvotasi chiqish manzili bo'yicha hisoblanadigan provayderlar uchun, yaqinda rad etilgan azo bilan bir xil kuzatilgan chiqish manziliga ega bo'lgan guruh a'zosini sog'a'm a'zolar ostiga joylashtiring. Faqat tartib, hech qachon chiqarib tashlanmaydi. Bu uchun PROXY_SKIP_RECENTLY_FAILED kerak, u o'qigan rad javobini yaratadi. Standart bo'yicha o'chiq: tanlash tartibi aynan oddiy aylanishdir.",
+  "adminAuth": {
+    "title": "Gateway'ga kirish",
+    "intro": "Boshqaruv paneli gateway'ning ma'muriy API'sini o'qiydi. Gateway sozlamalaridagi admin.admin_keys ro'yxatidan bir administrator kalitini kiriting.",
+    "keyLabel": "Administrator kaliti",
+    "keyHint": "Kalit faqat bir marta yuboriladi va ushbu brauzerda saqlanmaydi: gateway sahifa skriptlari o'qa olmaydigan HttpOnly sessiya cookie'sini o'rnatadi.",
+    "submit": "Kirish",
+    "cancel": "Bekor qilish",
+    "signingIn": "Kirilmoqda…",
+    "signingOut": "Chiqilmoqda…",
+    "emptyKey": "Administrator kalitini kiriting.",
+    "wrongKey": "Ushbu kalit qabul qilinmadi. Gateway sozlamalaridagi admin.admin_keys ro'yxatini tekshirib, qayta urinib ko'ring.",
+    "badRequest": "Gateway so'rovning o'zini rad etdi (400) — kalitni emas. Bu panelning nuqsoni; iltimos, xabar bering.",
+    "forbidden": "Gateway ushbu so'rovni boshqa manbadan kelgan deb rad etdi (403). Xuddi shu gateway tomonidan beriladigan panel buni keltira olmaydi; iltimos, xabar bering.",
+    "sessionNotKept": "Gateway kalitni qabul qildi, lekin brauzer sessiya cookie'sini saqlamadi, shuning uchun panel hali ham tashqarida. Bu gateway cookie'ni oddiy HTTP ulanishida Secure deb belgilaganda yuz beradi: ma'muriy tinglovchiga admin.tls ni so'lang, yoki panelni HTTPS orqali tarqating.",
+    "unreachable": "Gateway javob bermadi. U ishlayotganini tekshiring, keyin qayta urinib ko'ring.",
+    "signedIn": "Gateway'ga kirdingiz.",
+    "lifetimeNote": "Sessiya eng ko'pi bilan 8 soat davom etadi va gateway jarayonida saqlanadi, shuning uchun keyingi qayta ishga tushirish yoki yangilashda tugaydi. O vaqtda kalit yana so'raladi.",
+    "signOut": "Chiqish",
+    "signInAction": "Kirish",
+    "endedNote": "Sessiyangiz tugadi. Gateway sessiyalari eng ko'pi bilan 8 soat davom etadi va qayta ishga tushirishdan o'tmaydi, shuning uchun kalitning yana so'ralishi kutilgan holat."
+  }
 }

@@ -7,6 +7,8 @@ import { Button, Card, Input } from "@/shared/components";
 import { fetchPresetProviders, type AisixPresetProvider } from "@/shared/utils/aisixPresets";
 import { matchesSearch } from "@/shared/utils/turkishText";
 import { providerText, type ProviderMessageTranslator } from "../[id]/providerCredentialText";
+import { requestAdminLogin } from "@/shared/utils/aisixAdminAuth";
+import { useAisixSessionEpoch } from "@/shared/hooks/useAisixAdminSession";
 
 /**
  * `missing`  — the core build has no `preset_providers` endpoint (404/405).
@@ -79,6 +81,9 @@ export default function PresetProvidersSection({
   const [reloadToken, setReloadToken] = useState(0);
   const [query, setQuery] = useState("");
   const [authFilter, setAuthFilter] = useState<string | null>(null);
+  // A successful exchange bumps the epoch, which re-runs the catalog effect
+  // below. Without it the grid would stay withheld until a manual reload.
+  const sessionEpoch = useAisixSessionEpoch();
 
   const configuredIds = useMemo(() => {
     const ids = new Set<string>();
@@ -117,7 +122,7 @@ export default function PresetProvidersSection({
     return () => {
       cancelled = true;
     };
-  }, [reloadToken]);
+  }, [reloadToken, sessionEpoch]);
 
   const unprovisioned = useMemo(
     () => presets.filter((preset) => !isPresetConfigured(preset, configuredIds)),
@@ -208,6 +213,15 @@ export default function PresetProvidersSection({
           </span>
           <Button
             size="sm"
+            variant="primary"
+            icon="login"
+            onClick={requestAdminLogin}
+            data-testid="preset-providers-sign-in"
+          >
+            {text("adminAuthSignIn", "Sign in")}
+          </Button>
+          <Button
+            size="sm"
             variant="secondary"
             icon="refresh"
             onClick={() => {
@@ -231,6 +245,15 @@ export default function PresetProvidersSection({
               "Failed to load the preset catalog. The list is unknown — not empty."
             )}
           </span>
+          <Button
+            size="sm"
+            variant="primary"
+            icon="login"
+            onClick={requestAdminLogin}
+            data-testid="preset-providers-sign-in"
+          >
+            {text("adminAuthSignIn", "Sign in")}
+          </Button>
           <Button
             size="sm"
             variant="secondary"

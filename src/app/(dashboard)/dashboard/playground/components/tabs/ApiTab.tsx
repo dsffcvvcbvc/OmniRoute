@@ -13,6 +13,7 @@ import { pickDisplayValue } from "@/shared/utils/maskEmail";
 import useEmailPrivacyStore from "@/store/emailPrivacyStore";
 import dynamic from "next/dynamic";
 import { aisixDataPlaneUrl, aisixProviderKeysUrl } from "@/shared/utils/aisixEndpoints";
+import { aisixAdminFetch } from "@/shared/utils/aisixAdminAuth";
 import { coreUnreachableMessage, isCoreUnreachableError } from "./chatTabEndpointRequest";
 
 // Monaco editor lazy-loaded (ssr: false) to avoid SSR issues (F10 requirement)
@@ -278,7 +279,7 @@ export default function ApiTab(_props: ApiTabProps) {
         console.error("[ApiTab] Failed to load models:", err);
       });
 
-    fetch(aisixProviderKeysUrl())
+    aisixAdminFetch(aisixProviderKeysUrl())
       .then((res) => res.json())
       .then((data: { connections?: ConnectionOption[] }) => {
         const conns: ConnectionOption[] = [];

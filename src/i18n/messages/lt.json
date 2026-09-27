@@ -6598,7 +6598,8 @@
     "providerKeysDeleted": "Tiekėjo raktas ištrintas.",
     "providerKeysDeleteTitle": "Ištrinti tiekėjo raktą",
     "providerKeysDeleteConfirm": "Ištrinti tiekėjo raktą „{name}“? Bet kuris modelis ar passthrough maršrutas, kuris dar jį mini, privalės vartus atsakyti 409.",
-    "providerKeysNotPersisted": "Pritaikyta atmintyje, bet NEĮRAŠYTA į diską: išteklių faile yra eilučių, kurių vienos individualaus rakto rašymo operacija negali atkurti. Bus prarasta įkėlus iš naujo — naudokite POST /admin/v1/resources."
+    "providerKeysNotPersisted": "Pritaikyta atmintyje, bet NEĮRAŠYTA į diską: išteklių faile yra eilučių, kurių vienos individualaus rakto rašymo operacija negali atkurti. Bus prarasta įkėlus iš naujo — naudokite POST /admin/v1/resources.",
+    "adminAuthSignIn": "Prisijungti"
   },
   "settings": {
     "title": "Nustatymai",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Uždaryti"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Išjungti mąstymo lygio variantų (pvz., -low, -medium, -high) generavimą /v1/models kataloge.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Tiems teikėjams, kurių kvota skaičiuojama pagal išeigos adresą, baseelio narys, kuris dalijasi stebimu išeigos adresu neseniai atmestu nariu, reikia įstatyti tiesiai po sveikais nariais. Tik tvarka — niekada nepašalinamas. Reikia PROXY_SKIP_RECENTLY_FAILED, kuris sukuria skaitomą atmetimo signalą. Pagal numatytąjį išjungta: pasirinkimo tvarka yra tiksliai įprasta rotacija."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Tiems teikėjams, kurių kvota skaičiuojama pagal išeigos adresą, baseelio narys, kuris dalijasi stebimu išeigos adresu neseniai atmestu nariu, reikia įstatyti tiesiai po sveikais nariais. Tik tvarka — niekada nepašalinamas. Reikia PROXY_SKIP_RECENTLY_FAILED, kuris sukuria skaitomą atmetimo signalą. Pagal numatytąjį išjungta: pasirinkimo tvarka yra tiksliai įprasta rotacija.",
+  "adminAuth": {
+    "title": "Prisijungti prie vartuvų",
+    "intro": "Skydelis skaito vartuvų administracinę API. Įveskite administratoriaus raktą iš admin.admin_keys vartuvų konfigūracijoje.",
+    "keyLabel": "Administratoriaus raktas",
+    "keyHint": "Raktas siunčiamas tik vieną kartą ir neišsaugomas šioje naršyklėje: vartuvai nustato HttpOnly seanso slapuką, kurio puslapio scenarijai negali perskaityti.",
+    "submit": "Prisijungti",
+    "cancel": "Atšaukti",
+    "signingIn": "Prisijungiama…",
+    "signingOut": "Atsijungtiama…",
+    "emptyKey": "Įveskite administratoriaus raktą.",
+    "wrongKey": "Šis raktas nebuvo priimtas. Patikrinkite admin.admin_keys vartuvų konfigūracijoje ir pabandykite dar kartą.",
+    "badRequest": "Vartuvai atmetė patį užklausą (400), o ne raktą. Tai skydelio defektas; praneškite apie tai.",
+    "forbidden": "Vartuvai šią užklausą atmetė kaip kilusią iš kito šaltinio (403). To paties vartuvų teikiamas skydelis to padaryti negali; praneškite apie tai.",
+    "sessionNotKept": "Vartuvai raktą priėmė, bet naršyklė neišsaugojo seanso slapuko, todėl skydelis vis dar yra atjungtas. Taip nutinka, kai vartuvai pažymi slapuką Secure per paprastą HTTP ryšį: nustatykite admin.tls administraciniame klausytoje arba teikite skydelį per HTTPS.",
+    "unreachable": "Vartuvai neatsakė. Patikrinkite, ar jie veikia, ir bandykite dar kartą.",
+    "signedIn": "Prisijungta prie vartuvų.",
+    "lifetimeNote": "Sensas trunka iki 8 valandų ir saugomas vartuvų procese, todėl baigiasi po kito perkėlimo ar diegimo. Tada raktas bus paprašytas iš naujo.",
+    "signOut": "Atsijungti",
+    "signInAction": "Prisijungti",
+    "endedNote": "Jūsų sesonas baigėsi. Vartuvų sesonai trunka iki 8 valandų ir neišgyvena perkėlimo, todėl pakartotinis rakto prašymas yra tikėtinas."
+  }
 }

@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Clé de fournisseur mise à jour. La passerelle a renvoyé ce document.",
     "providerKeysDeleted": "Clé de fournisseur supprimée.",
     "providerKeysDeleteTitle": "Supprimer la clé de fournisseur",
-    "providerKeysDeleteConfirm": "Supprimer la clé de fournisseur « {name} » ? Tout modèle ou route de passthrough qui la référence encore fera répondre 409 à la passerelle."
+    "providerKeysDeleteConfirm": "Supprimer la clé de fournisseur « {name} » ? Tout modèle ou route de passthrough qui la référence encore fera répondre 409 à la passerelle.",
+    "adminAuthSignIn": "Se connecter"
   },
   "settings": {
     "title": "Paramètres",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Fermer"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Désactiver la génération des variantes de niveau de réflexion (par ex. -low, -medium, -high) dans le catalogue /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Pour les fournisseurs dont le quota est calculé par adresse de sortie, classez un membre du pool partageant l'adresse de sortie observée avec un membre récemment refusé juste sous les membres sains. Ordre uniquement, jamais d'exclusion. Nécessite PROXY_SKIP_RECENTLY_FAILED, qui produit le signal de refus qu'il lit. Désactivé par défaut : l'ordre de sélection est exactement la rotation simple."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Pour les fournisseurs dont le quota est calculé par adresse de sortie, classez un membre du pool partageant l'adresse de sortie observée avec un membre récemment refusé juste sous les membres sains. Ordre uniquement, jamais d'exclusion. Nécessite PROXY_SKIP_RECENTLY_FAILED, qui produit le signal de refus qu'il lit. Désactivé par défaut : l'ordre de sélection est exactement la rotation simple.",
+  "adminAuth": {
+    "title": "Se connecter à la passerelle",
+    "intro": "Le tableau de bord lit l'API d'administration de la passerelle. Saisissez une clé d'administration issue de admin.admin_keys dans la configuration de la passerelle.",
+    "keyLabel": "Clé d'administration",
+    "keyHint": "La clé est envoyée une seule fois et n'est pas conservée dans ce navigateur : la passerelle définit un cookie de session HttpOnly que les scripts de la page ne peuvent pas lire.",
+    "submit": "Se connecter",
+    "cancel": "Annuler",
+    "signingIn": "Connexion…",
+    "signingOut": "Déconnexion…",
+    "emptyKey": "Saisissez la clé d'administration.",
+    "wrongKey": "Cette clé n'a pas été acceptée. Vérifiez admin.admin_keys dans la configuration de la passerelle et réessayez.",
+    "badRequest": "La passerelle a refusé la requête elle-même (400) — pas la clé. C'est un défaut du tableau de bord ; veuillez le signaler.",
+    "forbidden": "La passerelle a refusé cette requête comme provenant d'une autre origine (403). Un tableau de bord servi par la même passerelle ne peut pas produire cela ; veuillez le signaler.",
+    "sessionNotKept": "La passerelle a accepté la clé, mais le navigateur n'a pas conservé le cookie de session : le tableau de bord reste donc déconnecté. Cela arrive quand la passerelle marque le cookie Secure sur une connexion HTTP en clair : configurez admin.tls sur l'écouteur d'administration, ou servez le tableau de bord en HTTPS.",
+    "unreachable": "La passerelle n'a pas répondu. Vérifiez qu'elle fonctionne, puis réessayez.",
+    "signedIn": "Connecté à la passerelle.",
+    "lifetimeNote": "Une session dure jusqu'à 8 heures et est conservée dans le processus de la passerelle : elle se termine donc au prochain redémarrage ou déploiement. La clé vous sera redemandée à ce moment-là.",
+    "signOut": "Se déconnecter",
+    "signInAction": "Se connecter",
+    "endedNote": "Votre session est terminée. Les sessions de la passerelle durent jusqu'à 8 heures et ne survivent pas à un redémarrage : il est donc normal que la clé soit redemandée."
+  }
 }

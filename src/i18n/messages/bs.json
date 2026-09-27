@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Ključ dobavljača je ažuriran. Gateway je vratio ovaj dokument.",
     "providerKeysDeleted": "Ključ dobavljača je obrisan.",
     "providerKeysDeleteTitle": "Obriši ključ dobavljača",
-    "providerKeysDeleteConfirm": "Obrisati ključ dobavljača \"{name}\"? Bilo koji model ili passthrough ruta koja ga i dalje referencira natjerat će gateway da odbije sa 409."
+    "providerKeysDeleteConfirm": "Obrisati ključ dobavljača \"{name}\"? Bilo koji model ili passthrough ruta koja ga i dalje referencira natjerat će gateway da odbije sa 409.",
+    "adminAuthSignIn": "Prijavi se"
   },
   "settings": {
     "title": "Postavke",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Zatvori"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Onemogućite generisanje varijanti nivoa razmišljanja (npr. -low, -medium, -high) u /v1/models katalogu.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Za dobavljače čija se kvota računa prema izlaznoj adresi, člana bazena koji dijeli zapaženu izlaznu adresu s nedavno odbijenim članom rangirajte odmah ispod zdravih članova. Samo redoslijed — nikada isključenje. Zahtijeva PROXY_SKIP_RECENTLY_FAILED, koji proizvodi signal odbijanja koji čita. Isključeno po zadanom: redoslijed odabira je točno obična rotacija."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Za dobavljače čija se kvota računa prema izlaznoj adresi, člana bazena koji dijeli zapaženu izlaznu adresu s nedavno odbijenim članom rangirajte odmah ispod zdravih članova. Samo redoslijed — nikada isključenje. Zahtijeva PROXY_SKIP_RECENTLY_FAILED, koji proizvodi signal odbijanja koji čita. Isključeno po zadanom: redoslijed odabira je točno obična rotacija.",
+  "adminAuth": {
+    "title": "Prijava na gejtvej",
+    "intro": "Kontrolna tabla čita admin API gejtvea. Unesite administratorski ključ iz admin.admin_keys u konfiguraciji gejtvea.",
+    "keyLabel": "Administratorski ključ",
+    "keyHint": "Ključ se šalje jednom i ne čuva se u ovom pregledaču: gejtvej postavlja HttpOnly sesijsku kolačić koju skripte stranice ne mogu pročitati.",
+    "submit": "Prijavi se",
+    "cancel": "Otkaži",
+    "signingIn": "Prijava…",
+    "signingOut": "Odjava…",
+    "emptyKey": "Unesite administratorski ključ.",
+    "wrongKey": "Ovaj ključ nije prihvaćen. Provjerite admin.admin_keys u konfiguraciji gejtveja i pokušajte ponovo.",
+    "badRequest": "Gejtvej je odbio sam zahtjev (400) — nije ključ. To je greška kontrolne table; prijavite je.",
+    "forbidden": "Gejtvej je odbio zahtjev kao da je iz drugog izvora (403). Kontrolna tabla koju poslužuje isti gejtvej to ne može proizvesti; prijavite to.",
+    "sessionNotKept": "Gejtvej je prihvatio ključ, ali pregledač nije zadržao sesijsku kolačić, pa je kontrolna tabla i dalje odjavljena. To se dešava kada gejtvej označi kolačić kao Secure preko obične HTTP veze: postavite admin.tls na administratorski slušalac ili poslužite kontrolnu tablu preko HTTPS-a.",
+    "unreachable": "Gejtvej nije odgovorio. Provjerite da li radi, pa pokušajte ponovo.",
+    "signedIn": "Prijavljeni ste na gejtvej.",
+    "lifetimeNote": "Sesija traje do 8 sati i čuva se u procesu gejtveja, pa se završava pri svakom ponovnom pokretanju ili objavi. Tada će ključ ponovo biti zatražen.",
+    "signOut": "Odjavi se",
+    "signInAction": "Prijavi se",
+    "endedNote": "Vaša sesija je istekla. Sesije gejtveja traju do 8 sati i ne preživljavaju ponovno pokretanje, pa je ponovni zahtjev za ključ očekivan."
+  }
 }

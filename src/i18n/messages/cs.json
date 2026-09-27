@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Klíč poskytovatele byl aktualizován. Brána vrátila tento dokument.",
     "providerKeysDeleted": "Klíč poskytovatele byl smazán.",
     "providerKeysDeleteTitle": "Smazat klíč poskytovatele",
-    "providerKeysDeleteConfirm": "Smazat klíč poskytovatele „{name}“? Jakýkoli model nebo passthrough trasa, která na něj stále odkazuje, přimě gateway odmítnout s 409."
+    "providerKeysDeleteConfirm": "Smazat klíč poskytovatele „{name}“? Jakýkoli model nebo passthrough trasa, která na něj stále odkazuje, přimě gateway odmítnout s 409.",
+    "adminAuthSignIn": "Přihlásit se"
   },
   "settings": {
     "title": "Nastavení",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Zavřít"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Zakázat generování variant úrovně uvažování (např. -low, -medium, -high) v katalogu /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "U poskytovatelů, jejichž kvóta se počítá podle výstupní adresy, zařaďte člena poolu, který sdílí pozorovanou výstupní adresu s nedávno odmítnutým členem, těsně pod zdravé členy. Pouze pořadí — nikdy vyloučení. Vyžaduje PROXY_SKIP_RECENTLY_FAILED, který vytváří signál odmítnutí, který čte. Ve výchozím stavu vypnuto: pořadí výběru je přesně běžná rotace."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "U poskytovatelů, jejichž kvóta se počítá podle výstupní adresy, zařaďte člena poolu, který sdílí pozorovanou výstupní adresu s nedávno odmítnutým členem, těsně pod zdravé členy. Pouze pořadí — nikdy vyloučení. Vyžaduje PROXY_SKIP_RECENTLY_FAILED, který vytváří signál odmítnutí, který čte. Ve výchozím stavu vypnuto: pořadí výběru je přesně běžná rotace.",
+  "adminAuth": {
+    "title": "Přihlášení k bráně",
+    "intro": "Ovládací panel načítá administrátorské API brány. Zadejte administrátorský klíč z admin.admin_keys v konfiguraci brány.",
+    "keyLabel": "Administrátorský klíč",
+    "keyHint": "Klíč se odešle jednou a v tomto prohlížeči se neukládá: brána nastaví relaci HttpOnly, kterou skripty stránky nedokážou přečíst.",
+    "submit": "Přihlásit se",
+    "cancel": "Zrušit",
+    "signingIn": "Přihlašuji…",
+    "signingOut": "Odhlašuji…",
+    "emptyKey": "Zadejte administrátorský klíč.",
+    "wrongKey": "Tento klíč nebyl přijat. Zkontrolujte admin.admin_keys v konfiguraci brány a zkuste to znovu.",
+    "badRequest": "Brána odmítla samotný požadavek (400) — nikoli klíč. Jde o vadu ovládacího panelu; nahlaste ji prosím.",
+    "forbidden": "Brána odmítla požadavek jako pocházející z jiného původu (403). Panel obsluhovaný toutéž branou to nemůže způsobit; nahlaste to prosím.",
+    "sessionNotKept": "Brána klíč přijala, ale prohlížeč relaci neponechal, takže panel je stále odhlášen. To se stává, když brána označí relaci jako Secure přes nešifrované HTTP: nastavte admin.tls na naslouchací administrativy nebo obsluhujte panel přes HTTPS.",
+    "unreachable": "Brána neodpověděla. Zkontrolujte, zda běží, a zkuste to znovu.",
+    "signedIn": "Přihlášeno k bráně.",
+    "lifetimeNote": "Relace trvá až 8 hodin a je uložena v procesu brány, takže skončí při dalším restartu nebo nasazení. Pak bude klíč požadován znovu.",
+    "signOut": "Odhlásit se",
+    "signInAction": "Přihlásit se",
+    "endedNote": "Vaše relace skončila. Relace brány trvají až 8 hodin a přežití restart nepřežijí, takže opětovné vyzádání klíče je očekávané."
+  }
 }

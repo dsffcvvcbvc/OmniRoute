@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Kunci penyedia diperbarui. Gateway mengembalikan dokumen ini.",
     "providerKeysDeleted": "Kunci penyedia dihapus.",
     "providerKeysDeleteTitle": "Hapus kunci penyedia",
-    "providerKeysDeleteConfirm": "Hapus kunci penyedia \"{name}\"? Model atau rute passthrough apa pun yang masih merujuknya akan membuat gateway menolak dengan 409."
+    "providerKeysDeleteConfirm": "Hapus kunci penyedia \"{name}\"? Model atau rute passthrough apa pun yang masih merujuknya akan membuat gateway menolak dengan 409.",
+    "adminAuthSignIn": "Masuk"
   },
   "settings": {
     "title": "Pengaturan",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Tutup"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Nonaktifkan pembuatan varian tingkat pemikiran (misalnya -low, -medium, -high) dalam katalog /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Untuk penyedia yang kuota-nya dihitung berdasarkan alamat keluar, letakkan anggota pool yang berbagi alamat keluar teramati dengan anggota yang baru ditolak tepat di bawah anggota yang sehat. Hanya urutan, tidak pernah dikeluarkan. Membutuhkan PROXY_SKIP_RECENTLY_FAILED, yang menghasilkan sinyal penolakan yang dibaca. Mati secara bawaan: urutan pemilihan persis rotasi biasa."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Untuk penyedia yang kuota-nya dihitung berdasarkan alamat keluar, letakkan anggota pool yang berbagi alamat keluar teramati dengan anggota yang baru ditolak tepat di bawah anggota yang sehat. Hanya urutan, tidak pernah dikeluarkan. Membutuhkan PROXY_SKIP_RECENTLY_FAILED, yang menghasilkan sinyal penolakan yang dibaca. Mati secara bawaan: urutan pemilihan persis rotasi biasa.",
+  "adminAuth": {
+    "title": "Masuk ke gateway",
+    "intro": "Dasbor membaca admin API gateway. Masukkan kunci admin dari admin.admin_keys pada konfigurasi gateway.",
+    "keyLabel": "Kunci admin",
+    "keyHint": "Kunci dikirim satu kali dan tidak disimpan di peramban ini: gateway menetapkan cookie sesi HttpOnly yang tidak dapat dibaca oleh skrip halaman.",
+    "submit": "Masuk",
+    "cancel": "Batal",
+    "signingIn": "Sedang masuk…",
+    "signingOut": "Sedang keluar…",
+    "emptyKey": "Masukkan kunci admin.",
+    "wrongKey": "Kunci itu tidak diterima. Periksa admin.admin_keys pada konfigurasi gateway, lalu coba lagi.",
+    "badRequest": "Gateway menolak permintaan itu sendiri (400) — bukan kuncinya. Ini cacat dasbor; mohon laporkan.",
+    "forbidden": "Gateway menolak permintaan ini sebagai berasal dari asal lain (403). Dasbor yang disajikan oleh gateway yang sama tidak dapat|attendanceinya; mohon laporkan.",
+    "sessionNotKept": "Gateway menerima kuncinya, tetapi peramban tidak menyimpan cookie sesi, jadi dasbor masih keluar. Ini terjadi ketika gateway menandai cookie sebagai Secure melalui koneksi HTTP biasa: atur admin.tls pada pendengar admin, atau sajikan dasbor melalui HTTPS.",
+    "unreachable": "Gateway tidak menjawab. Pastikan ia berjalan, lalu coba lagi.",
+    "signedIn": "Sudah masuk ke gateway.",
+    "lifetimeNote": "Sesi berlangsung hingga 8 jam dan disimpan dalam proses gateway, sehingga berakhir saat mulai ulang atau penerapan berikutnya. Pada saat itu kunci akan diminta lagi.",
+    "signOut": "Keluar",
+    "signInAction": "Masuk",
+    "endedNote": "Sesi Anda berakhir. Sesi gateway berlangsung hingga 8 jam dan tidak bertahan melewati mulai ulang, sehingga kunci diminta lagi adalah hal yang wajar."
+  }
 }

@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Teenuse võti on värskendatud. Võrgustik tagastas selle dokumendi.",
     "providerKeysDeleted": "Teenuse võti kustutati.",
     "providerKeysDeleteTitle": "Kustuta teenuse võti",
-    "providerKeysDeleteConfirm": "Kas kustutada teenuse võti „{name}“? Iga mudel või läbipass marsruut, mis sellele endiselt viitab, paneb võrgustiku 409-ga keelduma."
+    "providerKeysDeleteConfirm": "Kas kustutada teenuse võti „{name}“? Iga mudel või läbipass marsruut, mis sellele endiselt viitab, paneb võrgustiku 409-ga keelduma.",
+    "adminAuthSignIn": "Logi sisse"
   },
   "settings": {
     "title": "Seaded",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Sulge"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Keela mõtlemistaseme variantide (nt -low, -medium, -high) loomine /v1/models kataloogis.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Väljundaadressi järgi kvoodiga teenuste puhul paiguta see basseeli liige, kes jagab hiljuti tagasi lükatud liikmega vaadeldud väljundaadressi, täpselt tervete liikmete alla. Ainult järjestus, mitte kunagi väljajätmine. Vajalik on PROXY_SKIP_RECENTLY_FAILED, mis tekitab loetava keelamärguandi. Vaikimisi välja: valiku järjestus on täpselt tavaline ringluseke."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Väljundaadressi järgi kvoodiga teenuste puhul paiguta see basseeli liige, kes jagab hiljuti tagasi lükatud liikmega vaadeldud väljundaadressi, täpselt tervete liikmete alla. Ainult järjestus, mitte kunagi väljajätmine. Vajalik on PROXY_SKIP_RECENTLY_FAILED, mis tekitab loetava keelamärguandi. Vaikimisi välja: valiku järjestus on täpselt tavaline ringluseke.",
+  "adminAuth": {
+    "title": "Logi lüüsil",
+    "intro": "Töölaud loeb lüüsi admini API-d. Sisesta lüüsi seadistusest admin.admin_keys üks administraatori võti.",
+    "keyLabel": "Administraatori võti",
+    "keyHint": "Võti saadetakse üks kord ega talletata selles brauseris: lüüs määrab HttpOnly seansi küpsise, mida lehe skriptid ei saa lugeda.",
+    "submit": "Logi sisse",
+    "cancel": "Loobu",
+    "signingIn": "Sisselogimine…",
+    "signingOut": "Väljalogimine…",
+    "emptyKey": "Sisesta administraatori võti.",
+    "wrongKey": "Seda võtit ei aktsepteeritud. Vaata lüüsi seadistuses admin.admin_keys ja proovi uuesti.",
+    "badRequest": "Lüüs keeldus päringust ennast (400) — mitte võtmest. See on töölaua puudus; palun teavita sellest.",
+    "forbidden": "Lüüs keeldus sellest päringust kui teisest päritolust (403). Sama lüüsi poolt serveeritud töölaud ei saa seda tekitada; palun teavita sellest.",
+    "sessionNotKept": "Lüüs võtme vastu võttis, aga brauser ei hoianud seansi küpsist, nii et töölaud on endiselt välja logitud. See juhtub, kui lüüs märgib küpsise turvaliseks (Secure) tavalise HTTP ühenduse kohal: määra admin-luutijal admin.tls või serveeri töölaud HTTPS-i kaudu.",
+    "unreachable": "Lüüs ei vastanud. Kontrolli, kas see töötab, ja proovi uuesti.",
+    "signedIn": "Lüüsi sisse logitud.",
+    "lifetimeNote": "Seanss kestab kuni 8 tundi ja hoitakse lüüsi protsessis, seega lõpeb järgmise taaskäivituse või juurutuse korral. Siis küsitakse võtit uuesti.",
+    "signOut": "Logi välja",
+    "signInAction": "Logi sisse",
+    "endedNote": "Sinu sessioon lõppes. Lüüsi sessioonid kestavad kuni 8 tundi ega ellu taaskäivitusest, seega on võtme uuesti küsimine ootuspärane."
+  }
 }

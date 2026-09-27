@@ -6598,7 +6598,8 @@
     "providerKeysDeleted": "제공업체 키를 삭제했습니다.",
     "providerKeysDeleteTitle": "제공업체 키 삭제",
     "providerKeysDeleteConfirm": "제공업체 키 \"{name}\"을(를) 삭제할까요? 아직 이를 참조하는 모델이나 패스스루 경로가 있으면 게이트웨이가 409로 거부합니다.",
-    "providerKeysNotPersisted": "메모리에는 적용되었지만 디스크에 기록되지 않았습니다: 리소스 파일에 단일 키 쓰기로 다시 생성할 수 없는 행이 있습니다. 재로드하면 사라집니다 — POST /admin/v1/resources를 사용하세요."
+    "providerKeysNotPersisted": "메모리에는 적용되었지만 디스크에 기록되지 않았습니다: 리소스 파일에 단일 키 쓰기로 다시 생성할 수 없는 행이 있습니다. 재로드하면 사라집니다 — POST /admin/v1/resources를 사용하세요.",
+    "adminAuthSignIn": "로그인"
   },
   "settings": {
     "title": "설정",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "닫기"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "/v1/models 카탈로그에서 사고 수준 변형(예: -low, -medium, -high)이 생성되지 않도록 설정합니다.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "쿼터가 출발지 주소별로 계산되는 제공업체의 경우, 최근 거부된 구성원과 관측된 출발지 주소가 같은 풀 구성원을 정상 구성원 바로 아래에 배치합니다. 순서만 바꾸며 제외하지는 않습니다. 자신이 읽는 거부 신호를 생성하는 PROXY_SKIP_RECENTLY_FAILED가 필요합니다. 기본값은 꺼짐이며 선택 순서는 일반 회전과 완전히 동일합니다."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "쿼터가 출발지 주소별로 계산되는 제공업체의 경우, 최근 거부된 구성원과 관측된 출발지 주소가 같은 풀 구성원을 정상 구성원 바로 아래에 배치합니다. 순서만 바꾸며 제외하지는 않습니다. 자신이 읽는 거부 신호를 생성하는 PROXY_SKIP_RECENTLY_FAILED가 필요합니다. 기본값은 꺼짐이며 선택 순서는 일반 회전과 완전히 동일합니다.",
+  "adminAuth": {
+    "title": "게이트웨이 로그인",
+    "intro": "대시보드가 게이트웨이의 관리자 API를 읽습니다. 게이트웨이 설정의 admin.admin_keys에 있는 관리자 키를 입력하세요.",
+    "keyLabel": "관리자 키",
+    "keyHint": "키는 한 번만 전송되며 이 브라우저에 저장되지 않습니다. 게이트웨이가 설정하는 HttpOnly 세션 쿠키는 페이지 스크립트가 읽을 수 없습니다.",
+    "submit": "로그인",
+    "cancel": "취소",
+    "signingIn": "로그인 중…",
+    "signingOut": "로그아웃 중…",
+    "emptyKey": "관리자 키를 입력하세요.",
+    "wrongKey": "그 키는 승인되지 않았습니다. 게이트웨이 설정의 admin.admin_keys를 확인한 뒤 다시 시도하세요.",
+    "badRequest": "게이트웨이가 요청 자체를 거부했습니다(400). 키 때문이 아닙니다. 대시보드의 결함이며, 제보해 주세요.",
+    "forbidden": "게이트웨이가 이 요청을 다른 출처의 요청으로 거부했습니다(403). 같은 게이트웨이가 제공하는 대시보드에서는 발생할 수 없으므로 제보해 주세요.",
+    "sessionNotKept": "게이트웨이는 키를 승인했지만 브라우저가 세션 쿠키를 보관하지 않아 대시보드는 여전히 로그아웃 상태입니다. 게이트웨이가 평문 HTTP 연결에서 쿠키를 Secure로 표시할 때 이렇게 됩니다. 관리 리스너에 admin.tls를 설정하거나 대시보드를 HTTPS로 제공하세요.",
+    "unreachable": "게이트웨이가 응답하지 않았습니다. 실행 중인지 확인한 뒤 다시 시도하세요.",
+    "signedIn": "게이트웨이에 로그인했습니다.",
+    "lifetimeNote": "세션은 최대 8시간 유지되며 게이트웨이 프로세스에 보관되므로 다음 재시작이나 배포 시 종료됩니다. 그때 키를 다시 요청하게 됩니다.",
+    "signOut": "로그아웃",
+    "signInAction": "로그인",
+    "endedNote": "세션이 종료되었습니다. 게이트웨이 세션은 최대 8시간 유지되며 재시작을 넘어 유지되지 않으므로, 키를 다시 요청하는 것은 정상입니다."
+  }
 }

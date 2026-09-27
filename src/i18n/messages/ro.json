@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Cheia furnizorului a fost actualizată. Poarta a returnat acest document.",
     "providerKeysDeleted": "Cheia furnizorului a fost ștearsă.",
     "providerKeysDeleteTitle": "Șterge cheia furnizorului",
-    "providerKeysDeleteConfirm": "Ștergi cheia furnizorului „{name}”? Orice model sau rută de trecere care o referențiază încă va determina poarta să refuze cu 409."
+    "providerKeysDeleteConfirm": "Ștergi cheia furnizorului „{name}”? Orice model sau rută de trecere care o referențiază încă va determina poarta să refuze cu 409.",
+    "adminAuthSignIn": "Autentificare"
   },
   "settings": {
     "title": "Setări",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Închideți"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Dezactivați generarea variantelor de nivel de gândire (de ex. -low, -medium, -high) în catalogul /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Pentru furnizorii a căror cotă se calculează după adresa de ieșire, plasează un membru din grup care împarte adresa de ieșire observată cu un membru refuzat recent chiar sub membrii sănătoși. Doar ordine, niciodată excludere. Necesită PROXY_SKIP_RECENTLY_FAILED, care produce semnalul de refuz pe care îl citește. Oprit implicit: ordinea de selecție este exact rotația obișnuită."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Pentru furnizorii a căror cotă se calculează după adresa de ieșire, plasează un membru din grup care împarte adresa de ieșire observată cu un membru refuzat recent chiar sub membrii sănătoși. Doar ordine, niciodată excludere. Necesită PROXY_SKIP_RECENTLY_FAILED, care produce semnalul de refuz pe care îl citește. Oprit implicit: ordinea de selecție este exact rotația obișnuită.",
+  "adminAuth": {
+    "title": "Autentificare în gateway",
+    "intro": "Panoul citește API-ul de administrare al gateway-ului. Introduceți o cheie de administrare din admin.admin_keys din configurația gateway-ului.",
+    "keyLabel": "Cheie de administrare",
+    "keyHint": "Cheia este trimisă o singură dată și nu este păstrată în acest browser: gateway-ul stabilește un cookie de sesiune HttpOnly pe care scripturile paginii nu îl pot citi.",
+    "submit": "Autentificare",
+    "cancel": "Anulează",
+    "signingIn": "Se autentifică…",
+    "signingOut": "Se deconectează…",
+    "emptyKey": "Introduceți cheia de administrare.",
+    "wrongKey": "Această cheie nu a fost acceptată. Verificați admin.admin_keys din configurația gateway-ului și încercați din nou.",
+    "badRequest": "Gateway-ul a refuzat chiar cererea (400) — nu cheia. Este un defect al panoului; vă rugăm să îl raportați.",
+    "forbidden": "Gateway-ul a refuzat această cerere ca provenind din altă origine (403). Un panou servit de același gateway nu poate produce asta; vă rugăm să raportați.",
+    "sessionNotKept": "Gateway-ul a acceptat cheia, dar browserul nu a păstrat cookie-ul de sesiune, așa că panoul este în continuare deconectat. Se întâmplă când gateway-ul marchează cookie-ul drept Secure pe o conexiune HTTP simplă: configurați admin.tls pe listenerul de administrare sau serviți panoul prin HTTPS.",
+    "unreachable": "Gateway-ul nu a răspuns. Verificați dacă rulează, apoi încercați din nou.",
+    "signedIn": "Autentificat în gateway.",
+    "lifetimeNote": "O sesiune durează până la 8 ore și este păstrată în procesul gateway-ului, deci se încheie la următoarea repornire sau lansare. Atunci vi se va cere din nou cheia.",
+    "signOut": "Deconectare",
+    "signInAction": "Autentificare",
+    "endedNote": "Sesiunea dvs. s-a încheiat. Sesiunile gateway-ului durează până la 8 ore și nu supraviețuiesc unei reporniri, deci cererea din nou a cheii este un comportament așteptat."
+  }
 }

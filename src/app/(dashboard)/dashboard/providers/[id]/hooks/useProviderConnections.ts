@@ -35,6 +35,7 @@ import {
   getAisixAdminBase,
   resolveAisixRequestUrl,
 } from "@/shared/utils/aisixEndpoints";
+import { aisixAdminFetch } from "@/shared/utils/aisixAdminAuth";
 import { normalizeCodexLimitPolicy, providerText } from "../providerPageHelpers";
 import { useProviderQuotaVisibility } from "./useProviderQuotaVisibility";
 import { useReorderByAvailability } from "./useReorderByAvailability";
@@ -108,7 +109,7 @@ async function loadProviderConnectionsData(
       if (!node && isCompatible) {
         for (let attempt = 0; attempt < 3; attempt += 1) {
           await new Promise((resolve) => setTimeout(resolve, 150));
-          const retryRes = await fetch(aisixAdminModelsUrl(), { cache: "no-store" });
+          const retryRes = await aisixAdminFetch(aisixAdminModelsUrl(), { cache: "no-store" });
           if (!retryRes.ok) continue;
           const retryData = await retryRes.json();
           node = readNode(retryData);

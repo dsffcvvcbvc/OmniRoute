@@ -6598,7 +6598,8 @@
     "providerKeysDeleted": "Chiave provider eliminata.",
     "providerKeysDeleteTitle": "Elimina chiave provider",
     "providerKeysDeleteConfirm": "Eliminare la chiave provider «{name}»? Qualsiasi modello o rotta passthrough che vi fa ancora riferimento farà rispondere 409 alla passerella.",
-    "providerKeysNotPersisted": "Applicato in memoria ma NON scritto su disco: il file delle risorse contiene righe che una singola scrittura di chiave non può rigenerare. Andrà perso al ricaricamento — usa POST /admin/v1/resources."
+    "providerKeysNotPersisted": "Applicato in memoria ma NON scritto su disco: il file delle risorse contiene righe che una singola scrittura di chiave non può rigenerare. Andrà perso al ricaricamento — usa POST /admin/v1/resources.",
+    "adminAuthSignIn": "Accedi"
   },
   "settings": {
     "title": "Impostazioni",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Ignora"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Disabilita la generazione delle varianti del livello di ragionamento (ad es. -low, -medium, -high) nel catalogo /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "Per i fornitori con quota calcolata in base all'indirizzo di uscita, posiziona un membro del pool che condivide l'indirizzo di uscita osservato con un membro rifiutato di recente appena sotto i membri sani. Solo ordine, mai esclusione. Richiede PROXY_SKIP_RECENTLY_FAILED, che produce il segnale di rifiuto che legge. Disattivato per impostazione predefinita: l'ordine di selezione è esattamente la normale rotazione."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "Per i fornitori con quota calcolata in base all'indirizzo di uscita, posiziona un membro del pool che condivide l'indirizzo di uscita osservato con un membro rifiutato di recente appena sotto i membri sani. Solo ordine, mai esclusione. Richiede PROXY_SKIP_RECENTLY_FAILED, che produce il segnale di rifiuto che legge. Disattivato per impostazione predefinita: l'ordine di selezione è esattamente la normale rotazione.",
+  "adminAuth": {
+    "title": "Accedi al gateway",
+    "intro": "La dashboard legge l'API di amministrazione del gateway. Inserisci una chiave di amministrazione da admin.admin_keys nella configurazione del gateway.",
+    "keyLabel": "Chiave di amministrazione",
+    "keyHint": "La chiave viene inviata una sola volta e non viene salvata in questo browser: il gateway imposta un cookie di sessione HttpOnly che gli script della pagina non possono leggere.",
+    "submit": "Accedi",
+    "cancel": "Annulla",
+    "signingIn": "Accesso in corso…",
+    "signingOut": "Disconnessione in corso…",
+    "emptyKey": "Inserisci la chiave di amministrazione.",
+    "wrongKey": "Questa chiave non è stata accettata. Controlla admin.admin_keys nella configurazione del gateway e riprova.",
+    "badRequest": "Il gateway ha rifiutato la richiesta stessa (400), non la chiave. È un difetto della dashboard; segnalalo.",
+    "forbidden": "Il gateway ha rifiutato questa richiesta perché proveniente da un'altra origine (403). Una dashboard servita dallo stesso gateway non può produrre ciò; segnalalo.",
+    "sessionNotKept": "Il gateway ha accettato la chiave, ma il browser non ha conservato il cookie di sessione, quindi la dashboard resta scollegata. Accade quando il gateway contrassegna il cookie come Secure su una connessione HTTP in chiaro: imposta admin.tls sul listener di amministrazione oppure servi la dashboard via HTTPS.",
+    "unreachable": "Il gateway non ha risposto. Verifica che sia in esecuzione, poi riprova.",
+    "signedIn": "Accesso al gateway effettuato.",
+    "lifetimeNote": "Una sessione dura fino a 8 ore ed è conservata nel processo del gateway, quindi termina al prossimo riavvio o aggiornamento. A quel punto ti verrà richiesta di nuovo la chiave.",
+    "signOut": "Esci",
+    "signInAction": "Accedi",
+    "endedNote": "La tua sessione è terminata. Le sessioni del gateway durano fino a 8 ore e non sopravvivono a un riavvio, quindi ti verrà richiesta di nuovo la chiave: è il comportamento previsto."
+  }
 }

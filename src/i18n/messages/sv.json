@@ -6598,7 +6598,8 @@
     "providerKeysUpdated": "Leverantörsnyckeln uppdaterades. Gatewayen returnerade det här dokumentet.",
     "providerKeysDeleted": "Leverantörsnyckeln togs bort.",
     "providerKeysDeleteTitle": "Ta bort leverantörsnyckeln",
-    "providerKeysDeleteConfirm": "Ta bort leverantörsnyckeln ”{name}”? Varje modell eller passthrough-rutt som fortfarande hänvisar till den får gatewayen att svara 409."
+    "providerKeysDeleteConfirm": "Ta bort leverantörsnyckeln ”{name}”? Varje modell eller passthrough-rutt som fortfarande hänvisar till den får gatewayen att svara 409.",
+    "adminAuthSignIn": "Logga in"
   },
   "settings": {
     "title": "Inställningar",
@@ -14507,5 +14508,26 @@
     "dismissAriaLabel": "Stäng"
   },
   "featureFlagOmnirouteDisableThinkingLevelVariantsDescription": "Inaktivera genereringen av varianter med olika tankenivåer (t.ex. -low, -medium, -high) i katalogen /v1/models.",
-  "featureFlagProxyPoolSharedEgressOrderDescription": "För leverantörer vars kvot beräknas per utgående adress, placerar du en poolmedlem som delar den observerade utgående adressen med en nyligen avvisad medlem strax under de friska medlemmena. Endast ordning, aldrig uteslutning. Kräver PROXY_SKIP_RECENTLY_FAILED, som producerar avvisningssignalen den läser. Av som standard: urvalsordningen är exakt den vanliga rotationen."
+  "featureFlagProxyPoolSharedEgressOrderDescription": "För leverantörer vars kvot beräknas per utgående adress, placerar du en poolmedlem som delar den observerade utgående adressen med en nyligen avvisad medlem strax under de friska medlemmena. Endast ordning, aldrig uteslutning. Kräver PROXY_SKIP_RECENTLY_FAILED, som producerar avvisningssignalen den läser. Av som standard: urvalsordningen är exakt den vanliga rotationen.",
+  "adminAuth": {
+    "title": "Logga in på gatewayen",
+    "intro": "Instrumentpanelen läser gatewayens administrations-API. Ange en administrationsnyckel från admin.admin_keys i gatewayens konfiguration.",
+    "keyLabel": "Administrationsnyckel",
+    "keyHint": "Nyckeln skickas en gång och lagras inte i den här webbläsaren: gatewayen sätter en HttpOnly-sessionscookie som sidans skript inte kan läsa.",
+    "submit": "Logga in",
+    "cancel": "Avbryt",
+    "signingIn": "Loggar in…",
+    "signingOut": "Loggar ut…",
+    "emptyKey": "Ange administrationsnyckeln.",
+    "wrongKey": "Den nyckeln accepterades inte. Kontrollera admin.admin_keys i gatewayens konfiguration och försök igen.",
+    "badRequest": "Gatewayen avslog begäran själv (400) — inte nyckeln. Det är ett fel i instrumentpanelen; rapportera det.",
+    "forbidden": "Gatewayen avslog den här begäran som kommer från en annan härkomst (403). En instrumentpanel som serveras av samma gateway kan inte orsaka det; rapportera det.",
+    "sessionNotKept": "Gatewayen accepterade nyckeln, men webbläsaren behöll inte sessionstcookien, så instrumentpanelen är fortfarande utloggad. Det händer när gatewayen markerar cookien som Secure över en vanlig HTTP-anslutning: ange admin.tls på administrationslyssnaren, eller leverera instrumentpanelen via HTTPS.",
+    "unreachable": "Gatewayen svarade inte. Kontrollera att den är igång och försök igen.",
+    "signedIn": "Inloggad på gatewayen.",
+    "lifetimeNote": "En session varar upp till 8 timmar och lagras i gatewayens process, så den slutar vid nästa omstart eller driftsättning. Då frågar gatewayen efter nyckeln igen.",
+    "signOut": "Logga ut",
+    "signInAction": "Logga in",
+    "endedNote": "Din session tog slut. Gatewayens sessioner varar upp till 8 timmar och överlever inte en omstart, så att nyckeln frågas efter igen är väntat."
+  }
 }
