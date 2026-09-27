@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Nastavení koncového bodu uloženého modelu",
     "searchByModelAria": "Hledat podle modelu",
     "selectSupportedEndpoint": "Vyberte alespoň jeden podporovaný koncový bod",
-    "antigravityClientProfileHarness": "Testovací rozhraní / CLI"
+    "antigravityClientProfileHarness": "Testovací rozhraní / CLI",
+    "presetCatalogTitle": "Předvolení poskytovatelé",
+    "presetCatalogSubtitle": "Dodavatelé z katalogu gatewaye předvolení, kteří zatím nemají místní připojení. Vyberte jednoho a předvyplníte formulář pro vytvoření klíče.",
+    "presetCatalogSearchPlaceholder": "Hledat podle názvu, id nebo základní URL…",
+    "presetCatalogShowing": "{shown} z {total}",
+    "presetCatalogMissing": "Tato základní sestavení nemá katalog předvolení — není z čeho vycházet.",
+    "presetCatalogAllProvisioned": "Všichni poskytovatelé z katalogu jádra jsou již nastaveni.",
+    "presetCatalogNoBaseUrl": "základní URL není uvedeno",
+    "presetCatalogAuthUnknown": "tvar autentizace neznámý",
+    "presetCatalogAuthHeader": "v {header}",
+    "presetCatalogProvision": "Zajistit",
+    "presetCatalogError": "Katalog předvolení se nepodařilo načíst. Stav seznamu je neznámý — není prázdný.",
+    "aisixAdminKeyRequired": "Brána odpověděla 401: tento povrch potřebuje administrátorský klíč. Přidejte jeden do admin.admin_keys v konfiguraci brány a znovu načtěte. Data níže jsou skryta, nejsou prázdná.",
+    "onboardingPresetAuthHeaderHint": "Tento poskytovatel očekuje klíč v hlavičce {header}.",
+    "onboardingPresetAuthShapeHint": "Tento poskytovatel se ověřuje tokenem {shape}."
   },
   "settings": {
     "title": "Nastavení",

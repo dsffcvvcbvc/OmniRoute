@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Kaydedilmiş model uç noktası ayarları",
     "searchByModelAria": "Model ile ara",
     "selectSupportedEndpoint": "En az bir desteklenen uç noktayı seçin",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "Hazır sağlayıcılar",
+    "presetCatalogSubtitle": "Ağ geçidinin hazır kataloğundan gelen ve henüz yerel bağlantısı olmayan sağlayıcılar. Anahtar oluşturma formunu önceden doldurmak için birini seçin.",
+    "presetCatalogSearchPlaceholder": "Ad, id veya temel URL'ye göre ara…",
+    "presetCatalogShowing": "{total} içinden {shown}",
+    "presetCatalogMissing": "Bu çekirdek derlemede hazır katalog yok — yapılandırılacak bir şey yok.",
+    "presetCatalogAllProvisioned": "Çekirdek kataloğundaki hazır sağlayıcıların tümü zaten yapılandırılmış.",
+    "presetCatalogNoBaseUrl": "Temel URL bildirilmedi",
+    "presetCatalogAuthUnknown": "Kimlik doğrulama biçimi bilinmiyor",
+    "presetCatalogAuthHeader": "{header} başlığında",
+    "presetCatalogProvision": "Sağla",
+    "presetCatalogError": "Hazır katalog yüklenemedi. Listenin durumu bilinmiyor — boş değil.",
+    "aisixAdminKeyRequired": "Ağ geçidi 401 yanıtı verdi: bu yüzey bir yönetici anahtarı istiyor. Ağ geçidi yapılandırmasında admin.admin_keys altına bir tane ekleyin ve yeniden yükleyin. Aşağıdaki veri tutuluyor, boş değil.",
+    "onboardingPresetAuthHeaderHint": "Bu sağlayıcı anahtarın {header} başlığında olmasını bekliyor.",
+    "onboardingPresetAuthShapeHint": "Bu sağlayıcı bir {shape} jetonuyla kimlik doğrular."
   },
   "settings": {
     "title": "Ayarlar",

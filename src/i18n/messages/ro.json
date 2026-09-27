@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Setările punctului final al modelului salvat",
     "searchByModelAria": "Caută după model",
     "selectSupportedEndpoint": "Selectați cel puțin un punct final acceptat",
-    "antigravityClientProfileHarness": "Cadru / CLI"
+    "antigravityClientProfileHarness": "Cadru / CLI",
+    "presetCatalogTitle": "Furnizori prestabiliți",
+    "presetCatalogSubtitle": "Furnizori din catalogul prestabilit al porții care nu au încă o conexiune locală. Alegeți unul pentru a completa automat formularul de creare a cheii.",
+    "presetCatalogSearchPlaceholder": "Caută după nume, id sau URL de bază…",
+    "presetCatalogShowing": "{shown} din {total}",
+    "presetCatalogMissing": "Această versiune de bază nu are catalog prestabilit — nu este nimic de configurat.",
+    "presetCatalogAllProvisioned": "Toți furnizorii prestabiliți din catalogul de bază sunt deja configurați.",
+    "presetCatalogNoBaseUrl": "URL de bază neraportat",
+    "presetCatalogAuthUnknown": "Formă de autentificare necunoscută",
+    "presetCatalogAuthHeader": "în {header}",
+    "presetCatalogProvision": "Configurează",
+    "presetCatalogError": "Catalogul prestabilit nu a putut fi încărcat. Starea listei este necunoscută — nu este goală.",
+    "aisixAdminKeyRequired": "Porta a răspuns cu 401: această suprafață are nevoie de o cheie de administrare. Adaugă una în admin.admin_keys în configurația porții, apoi reîncarcă. Datele de mai jos sunt reținute, nu goale.",
+    "onboardingPresetAuthHeaderHint": "Acest furnizor se așteaptă cheia în antetul {header}.",
+    "onboardingPresetAuthShapeHint": "Acest furnizor se autentifică cu un token {shape}."
   },
   "settings": {
     "title": "Setări",

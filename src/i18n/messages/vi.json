@@ -6539,7 +6539,21 @@
     "savedModelEndpointSettings": "Đã lưu cài đặt endpoint mô hình",
     "searchByModelAria": "Tìm kiếm theo mô hình",
     "selectSupportedEndpoint": "Chọn ít nhất một endpoint được hỗ trợ",
-    "antigravityClientProfileHarness": "Bộ điều khiển / CLI"
+    "antigravityClientProfileHarness": "Bộ điều khiển / CLI",
+    "presetCatalogTitle": "Nhà cung cấp định sẵn",
+    "presetCatalogSubtitle": "Các nhà cung cấp đến từ danh mục định sẵn của gateway mà chưa có kết nối cục bộ. Chọn một để điền sẵn biểu mẫu tạo khóa.",
+    "presetCatalogSearchPlaceholder": "Tìm theo tên, id hoặc URL gốc…",
+    "presetCatalogShowing": "{shown} trên {total}",
+    "presetCatalogMissing": "Bản dựng lõi này không có danh mục định sẵn — không có gì để thiết lập.",
+    "presetCatalogAllProvisioned": "Mọi nhà cung cấp định sẵn trong danh mục lõi đều đã được thiết lập.",
+    "presetCatalogNoBaseUrl": "Chưa báo URL gốc",
+    "presetCatalogAuthUnknown": "Không rõ kiểu xác thực",
+    "presetCatalogAuthHeader": "trong {header}",
+    "presetCatalogProvision": "Thiết lập",
+    "presetCatalogError": "Không tải được danh mục định sẵn. Trạng thái danh sách không rõ — không phải rỗng.",
+    "aisixAdminKeyRequired": "Gateway trả lời 401: bề mặt này cần một khóa quản trị. Hãy thêm một khóa vào admin.admin_keys trong cấu hình gateway rồi tải lại. Dữ liệu bên dưới đang bị giữ lại, không phải rỗng.",
+    "onboardingPresetAuthHeaderHint": "Nhà cung cấp này mong đợi khóa nằm trong tiêu đề {header}.",
+    "onboardingPresetAuthShapeHint": "Nhà cung cấp này xác thực bằng token {shape}."
   },
   "settings": {
     "title": "Cài đặt",

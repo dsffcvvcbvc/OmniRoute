@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "မော်ဒယ် endpoint ဆက်တင်များကို သိမ်းဆည်းပြီးပါပြီ",
     "searchByModelAria": "မော်ဒယ်ဖြင့် ရှာဖွေရန်",
     "selectSupportedEndpoint": "ပံ့ပိုးထားသော endpoint အနည်းဆုံးတစ်ခုကို ရွေးချယ်ပါ",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "ပရီဆက် ပေါင်းစပ်သူများ",
+    "presetCatalogSubtitle": "ဂိတ်ဝေရဲ့ ပရီဆက် ကတ်တလောဂမှ လာသော ပေါင်းစပ်သူများဖြစ်ပြီး ဒေသအတွင်း ချိတ်ဆက်မှု မရှိသေးပါ။ ကီးဖန်တီးဖိုင်ကို ကြိုတင်ဖြည့်ရန် တစ်ခု ရွေးပါ။",
+    "presetCatalogSearchPlaceholder": "အမည်၊ id သို့မဟုတ် base URL ဖြင့် ရှာဖွေရန်…",
+    "presetCatalogShowing": "{total} အနက် {shown}",
+    "presetCatalogMissing": "ဤအခြေခံတည်ဆောက်မှုတွင် ပရီဆက်ကတ်တလောဂ မရှိပါ — စီမံရန် မည်သူမျှ မရှိပါ။",
+    "presetCatalogAllProvisioned": "ကြက်သီးအမှန်ပရီဆက်ပေါင်းစပ်သူအားလုံး ပြီးနေပါပြီ။",
+    "presetCatalogNoBaseUrl": "base URL မတင်မက်းစားရ",
+    "presetCatalogAuthUnknown": "မသိကြမသည် မှတ်သားစနစ်ပုံစံ",
+    "presetCatalogAuthHeader": "{header} တွင်",
+    "presetCatalogProvision": "စီမံသတ်မုတ်",
+    "presetCatalogError": "ပရီဆက်ကတ်တလောဂကို မဖတ်နိုင်ခဲ့ပါ။ စာရင်း၏ အခြေအနေက မသိမှန်း — မရှိခြင်း မဟုတ်ပါ။",
+    "aisixAdminKeyRequired": "ဂိတ်ဝေသည် 401 ကို ပြန်လည်ဖြေပြီးသည်။ ဤမျက်နှာပြင်သည် အက်ဒမင်းကီးလိုအပ်ပါသည်။ ဂိတ်ဝေ ဆက်တင်မှုတွင် admin.admin_keys တွင် တစ်ခု ထည့်ပြီး ပြန်လည်ဖတ်ပါ။ အောက်ပါ ဒေတာသည် ဖုံးပိတ်ထားခြင်း — ဗလာ မဟုတ်ပါ။",
+    "onboardingPresetAuthHeaderHint": "ဤပေါင်းစပ်သူသည် {header} ခေါင်းစဉ်တွင် ကီးကို စောင့်ရှောက်ထားပါသည်။",
+    "onboardingPresetAuthShapeHint": "ဤပေါင်းစပ်သူသည် {shape} တိုက်တန်ဖြင့် အတည်ပြုပါသည်။"
   },
   "settings": {
     "title": "ဆက်တင်များ",

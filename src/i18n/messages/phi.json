@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Naka-save na mga setting ng endpoint ng modelo",
     "searchByModelAria": "Maghanap ayon sa modelo",
     "selectSupportedEndpoint": "Pumili ng hindi bababa sa isang sinusuportahang endpoint",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "Mga preset na provider",
+    "presetCatalogSubtitle": "Mga provider mula sa preset catalog ng gateway na wala pang lokal na koneksyon. Pumili ng isa para mahintong punan ang form ng paggawa ng key.",
+    "presetCatalogSearchPlaceholder": "Maghanap ayon sa pangalan, id, o base URL…",
+    "presetCatalogShowing": "{shown} ng {total}",
+    "presetCatalogMissing": "Walang preset catalog ang build na ito — walang maaaring i-configure.",
+    "presetCatalogAllProvisioned": "Lahat ng preset na provider mula sa core catalog ay naka-configure na.",
+    "presetCatalogNoBaseUrl": "Hindi naiulat ang base URL",
+    "presetCatalogAuthUnknown": "Hindi alam ang hugis ng auth",
+    "presetCatalogAuthHeader": "sa {header}",
+    "presetCatalogProvision": "I-provision",
+    "presetCatalogError": "Nabigo i-load ang preset catalog. Hindi alam ang estado ng listahan — hindi ito walang laman.",
+    "aisixAdminKeyRequired": "Ang gateway ay sumagot ng 401: kailangan ng admin key ang screen na ito. Magdagdag ng isa sa admin.admin_keys sa config ng gateway, pagkatapos ay i-reload. Hindi ito walang lamang datos — pinaghihawakan ito.",
+    "onboardingPresetAuthHeaderHint": "Inaasahan ng provider na ito ang key sa header na {header}.",
+    "onboardingPresetAuthShapeHint": "Ang provider na ito ay nag-a-authenticate gamit ang {shape} token."
   },
   "settings": {
     "title": "Mga setting",

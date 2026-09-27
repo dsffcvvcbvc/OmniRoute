@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Model endpointi sozlamalari saqlandi",
     "searchByModelAria": "Model boʻyicha qidirish",
     "selectSupportedEndpoint": "Kamida bitta qoʻllab-quvvatlanadigan endpointni tanlang",
-    "antigravityClientProfileHarness": "Sinov vositasi / CLI"
+    "antigravityClientProfileHarness": "Sinov vositasi / CLI",
+    "presetCatalogTitle": "Oldindan belgilangan provayderlar",
+    "presetCatalogSubtitle": "Gatewayning oldindan belgilangan katalogidan keladigan, hozircha mahalliy ulanmaga ega bo'lmagan provayderlar. Kalit yaratish shaklini oldindan to'ldirish uchun bittasini tanlang.",
+    "presetCatalogSearchPlaceholder": "Nom, id yoki asosiy URL bo'yicha qidirish…",
+    "presetCatalogShowing": "{total} dan {shown}",
+    "presetCatalogMissing": "Bu yadrosiya qurilmasida oldindan belgilangan katalog yo'q — sozlanadigan narsa yo'q.",
+    "presetCatalogAllProvisioned": "Yadro katalogidagi barcha oldindan belgilangan provayderlar allaqachon sozlangan.",
+    "presetCatalogNoBaseUrl": "Asosiy URL haqida xabar berilmagan",
+    "presetCatalogAuthUnknown": "Autentifikatsiya shakli noma'lum",
+    "presetCatalogAuthHeader": "{header} sarlavhasida",
+    "presetCatalogProvision": "Sozlash",
+    "presetCatalogError": "Oldindan belgilangan katalog yuklanib bo'lmadi. Ro'yxat holati noma'lum — u bo'sh emas.",
+    "aisixAdminKeyRequired": "Gateway 401 javobini berdi: bu yuzeyga administrator kaliti kerak. Gateway sozlamalarida admin.admin_keys ostiga bittasini qo'shing va qayta yuklang. Pastdagi ma'lumot ushlab turilgan — bo'sh emas.",
+    "onboardingPresetAuthHeaderHint": "Bu provayder kalit {header} sarlavhasida bo'lishini kutmoqda.",
+    "onboardingPresetAuthShapeHint": "Bu provayder {shape} token orqali autentifikatsiya qiladi."
   },
   "settings": {
     "title": "Sozlamalar",

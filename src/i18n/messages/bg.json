@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Настройки на крайна точка на запазен модел",
     "searchByModelAria": "Търсене по модел",
     "selectSupportedEndpoint": "Изберете поне една поддържана крайна точка",
-    "antigravityClientProfileHarness": "Тестова среда / CLI"
+    "antigravityClientProfileHarness": "Тестова среда / CLI",
+    "presetCatalogTitle": "Пресетирани доставчици",
+    "presetCatalogSubtitle": "Доставчици, които идват от каталога на шлюза по подразбиране и още нямат локална връзка. Изберете един, за да попълните предварително формуляра за създаване на ключ.",
+    "presetCatalogSearchPlaceholder": "Търсене по име, id или base URL…",
+    "presetCatalogShowing": "{shown} от {total}",
+    "presetCatalogMissing": "Няма каталог с предварителни настройки в тази основна версия — няма какво да се използва.",
+    "presetCatalogAllProvisioned": "Всички доставчици от каталога на ядрото вече са подготвени.",
+    "presetCatalogNoBaseUrl": "base URL не е съобщен",
+    "presetCatalogAuthUnknown": "формат на автентикацията е непознат",
+    "presetCatalogAuthHeader": "в {header}",
+    "presetCatalogProvision": "Осигури",
+    "presetCatalogError": "Каталогът с предварителни настройки не се зареди. Състоянието на списъка е неизвестно — не е празен.",
+    "aisixAdminKeyRequired": "Шлюзът отговори с 401: тази повърхност изисква админ ключ. Добавете такъв в admin.admin_keys в конфигурацията на шлюза и презаредете. Данните по-долу са скрити, не празни.",
+    "onboardingPresetAuthHeaderHint": "Този доставчик очава ключа в заглавката {header}.",
+    "onboardingPresetAuthShapeHint": "Този доставчик се удостоверява с {shape} токен."
   },
   "settings": {
     "title": "Настройки",

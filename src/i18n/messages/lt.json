@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Modelio galinio taško nustatymai išsaugoti",
     "searchByModelAria": "Ieškoti pagal modelį",
     "selectSupportedEndpoint": "Pasirinkite bent vieną palaikomą galinį tašką",
-    "antigravityClientProfileHarness": "Testavimo aplinka / CLI"
+    "antigravityClientProfileHarness": "Testavimo aplinka / CLI",
+    "presetCatalogTitle": "Iš anksto nustatyti tiekėjai",
+    "presetCatalogSubtitle": "Tiekėjai iš iš anksto nustatyti vartų katalogo, kurių dar neturi vietinio ryšio. Pasirinkite vieną, kad iš anksto užpildytumėte raktų kūrimo formą.",
+    "presetCatalogSearchPlaceholder": "Ieškoti pagal vardo, id arba bazinio URL…",
+    "presetCatalogShowing": "{shown} iš {total}",
+    "presetCatalogMissing": "Šiame pagrindiniame leidinyje nėra iš anksto nustatyto katalogo — nėra ko konfigūruoti.",
+    "presetCatalogAllProvisioned": "Visi iš anksto nustatyti tiekėjai iš branduolio katalogo jau sukonfigūruoti.",
+    "presetCatalogNoBaseUrl": "bazinis URL nepateikta",
+    "presetCatalogAuthUnknown": "nespažįjamas autentifikacijos tipas",
+    "presetCatalogAuthHeader": "antraštėje {header}",
+    "presetCatalogProvision": "Suteikti",
+    "presetCatalogError": "Nepavyko įkelti iš anksto nustatyto katalogo. Sąrašo būsena nežinoma — jis nėra tuščias.",
+    "aisixAdminKeyRequired": "Vartai atsakė 401: šiam paviršiui reikia administratoriaus rakto. Pridėkite vieną prie admin.admin_keys vartų konfigūracijoje ir įkelkite iš naujo. Žemiau esantys duomenys sulaikyti, ne tušti.",
+    "onboardingPresetAuthHeaderHint": "Šis tiekėjas tikisi rakto antraštėje {header}.",
+    "onboardingPresetAuthShapeHint": "Šis tiekėjas tapatina {shape} žetonu."
   },
   "settings": {
     "title": "Nustatymai",

@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "محفوظ شدہ ماڈل اینڈپوائنٹ کی ترتیبات",
     "searchByModelAria": "ماڈل کے ذریعے تلاش کریں",
     "selectSupportedEndpoint": "کم از کم ایک سپورٹ کردہ اینڈپوائنٹ منتخب کریں",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "پری سیٹ فراہم کنندگان",
+    "presetCatalogSubtitle": "گیٹ وے کے پری سیٹ کیٹلاگ سے آنے والے فراہم کنندگان جن کا ابھی مقامی لنک نہیں ہے۔ کلید بنانے کا فارم پہلے سے بھرنے کے لیے ایک منتخب کریں۔",
+    "presetCatalogSearchPlaceholder": "نام، آئی ڈی یا بیس یو آر ایل سے تلاش کریں…",
+    "presetCatalogShowing": "{total} میں سے {shown}",
+    "presetCatalogMissing": "اس کور بلڈ میں پری سیٹ کیٹلاگ نہیں ہے — کنفیگر کرنے کے لیے کچھ نہیں۔",
+    "presetCatalogAllProvisioned": "کور کیٹلاگ کے تمام پری سیٹ فراہم کنندگان پہلے ہی کنفیگر ہیں۔",
+    "presetCatalogNoBaseUrl": "بیس یو آر ایل کی اطلاع نہیں دی گئی",
+    "presetCatalogAuthUnknown": "تصدیق کا طریقہ معلوم نہیں",
+    "presetCatalogAuthHeader": "{header} میں",
+    "presetCatalogProvision": "ترتیب دیں",
+    "presetCatalogError": "پری سیٹ کیٹلاگ لوڈ نہیں ہو سکا۔ فہرست کی حالت معلوم نہیں — یہ خالی نہیں ہے۔",
+    "aisixAdminKeyRequired": "گیٹ وے نے 401 کا جواب دیا: اس سطح کو ایڈمن کلید درکار ہے۔ گیٹ وے کنفیگ میں admin.admin_keys کے تحت ایک شامل کریں، پھر دوبارہ لوڈ کریں۔ نیچے کا ڈیٹا روکا گیا ہے — خالی نہیں۔",
+    "onboardingPresetAuthHeaderHint": "یہ فراہم کنندہ {header} ہیڈر میں کلید کا انتظار کر رہا ہے۔",
+    "onboardingPresetAuthShapeHint": "یہ فراہم کنندہ {shape} ٹوکن سے تصدیق کرتا ہے۔"
   },
   "settings": {
     "title": "ترتیبات",

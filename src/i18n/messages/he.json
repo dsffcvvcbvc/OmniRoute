@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "הגדרות נקודת הקצה של המודל השמור",
     "searchByModelAria": "חפש לפי דגם",
     "selectSupportedEndpoint": "בחר לפחות נקודת קצה אחת נתמכת",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "ספקים מוגדרים מראש",
+    "presetCatalogSubtitle": "ספקים מהקטלוג המוגדר מראש של השער שעדיין אין להם חיבור מקומי. בחר אחד כדי למלא מראש את טופס יצירת המפתח.",
+    "presetCatalogSearchPlaceholder": "חיפוש לפי שם, מזהה או כתובת בסיס…",
+    "presetCatalogShowing": "{shown} מתוך {total}",
+    "presetCatalogMissing": "בגרסת הליבה הזו אין קטלוג מוגדר מראש — אין מה להגדיר.",
+    "presetCatalogAllProvisioned": "כל הספקים המוגדרים מראש בקטלוג הליבה כבר מוגדרים.",
+    "presetCatalogNoBaseUrl": "כתובת בסיס לא דווחה",
+    "presetCatalogAuthUnknown": "צורת אימות לא ידועה",
+    "presetCatalogAuthHeader": "בכותרת {header}",
+    "presetCatalogProvision": "הקצה",
+    "presetCatalogError": "טעינת הקטלוג המוגדר מראש נכשלה. מצב הרשימה אינו ידוע — היא אינה ריקה.",
+    "aisixAdminKeyRequired": "השער ענה 401: משטח זה זקוק למפתח ניהול. הוסיפו אחד ל־admin.admin_keys בתצורת השער וטענו מחדש. הנתונים שלהלן מוסתרים, לא ריקים.",
+    "onboardingPresetAuthHeaderHint": "הספק הזה מצפה למפתח בכותרת {header}.",
+    "onboardingPresetAuthShapeHint": "הספק הזה מאמת את עצמו באמצעות אסימון {shape}."
   },
   "settings": {
     "title": "הגדרות",

@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "সংরক্ষিত মডেল এন্ডপয়েন্ট সেটিংস",
     "searchByModelAria": "মডেল দ্বারা অনুসন্ধান করুন",
     "selectSupportedEndpoint": "কমপক্ষে একটি সমর্থিত এন্ডপয়েন্ট নির্বাচন করুন",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "প্রিসেট প্রদানকারী",
+    "presetCatalogSubtitle": "যেসব ভেন্ডর গেটওয়ে প্রিসেট ক্যাটালগ থেকে এসেছে কিন্তু এখনও স্থানীয় সংযোগ নেই। কী তৈরির ফর্ম আগেই পূরণ করতে একটি বেছে নিন।",
+    "presetCatalogSearchPlaceholder": "নাম, আইডি বা বেস URL দিয়ে খুঁজুন…",
+    "presetCatalogShowing": "{total} টির মধ্যে {shown} টি",
+    "presetCatalogMissing": "এই কোর বিল্ডে কোনো প্রিসেট ক্যাটালগ নেই — ব্যবস্থা করার মতো কিছু নেই।",
+    "presetCatalogAllProvisioned": "কোর ক্যাটালগের প্রতিটি প্রিসেট ভেন্ডর ইতিমধ্যে ব্যবস্থা করা হয়েছে।",
+    "presetCatalogNoBaseUrl": "বেস URL জানানো হয়নি",
+    "presetCatalogAuthUnknown": "auth শেপ অজানা",
+    "presetCatalogAuthHeader": "{header} হেডারে",
+    "presetCatalogProvision": "ব্যবস্থা করুন",
+    "presetCatalogError": "প্রিসেট ক্যাটালগ লোড করা যায়নি। তালিকার অবস্থা অজানা — খালি নয়।",
+    "aisixAdminKeyRequired": "গেটওয়ে 401 দিয়ে সাড়া দিয়েছে: এই সারফেসের জন্য একটি অ্যাডমিন কী দরকার। গেটওয়ে কনফিগে admin.admin_keys-এ একটি যোগ করুন, তারপর আবার লোড করুন। নিচের ডেটা আড়ালে রাখা, খালি নয়।",
+    "onboardingPresetAuthHeaderHint": "এই ভেন্ডরটি {header} হেডারে কী চায়।",
+    "onboardingPresetAuthShapeHint": "এই ভেন্ডরটি {shape} টোকেন দিয়ে পরিচয় যাচাই করে।"
   },
   "settings": {
     "title": "সেটিংস",

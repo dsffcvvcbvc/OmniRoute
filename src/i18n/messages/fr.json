@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Saved modèles endpoint paramètres",
     "searchByModelAria": "Rechercher un modèle",
     "selectSupportedEndpoint": "Sélectionnez au moins un endpoint pris en charge",
-    "antigravityClientProfileHarness": "Harnais / CLI"
+    "antigravityClientProfileHarness": "Harnais / CLI",
+    "presetCatalogTitle": "Fournisseurs prédéfinis",
+    "presetCatalogSubtitle": "Fournisseurs issus du catalogue prédéfini de la passerelle qui n'ont pas encore de connexion locale. Choisissez-en un pour préremplir le formulaire de création de clé.",
+    "presetCatalogSearchPlaceholder": "Rechercher par nom, id ou URL de base…",
+    "presetCatalogShowing": "{shown} sur {total}",
+    "presetCatalogMissing": "Cette version de base n'a pas de catalogue prédéfini — rien à configurer.",
+    "presetCatalogAllProvisioned": "Tous les fournisseurs prédéfinis du catalogue du noyau sont déjà configurés.",
+    "presetCatalogNoBaseUrl": "URL de base non signalée",
+    "presetCatalogAuthUnknown": "forme d'authentification inconnue",
+    "presetCatalogAuthHeader": "dans {header}",
+    "presetCatalogProvision": "Provisionner",
+    "presetCatalogError": "Échec du chargement du catalogue prédéfini. L'état de la liste est inconnu — elle n'est pas vide.",
+    "aisixAdminKeyRequired": "La passerelle a répondu 401 : cet écran nécessite une clé d'administrateur. Ajoutez-en une dans admin.admin_keys de la configuration de la passerelle, puis rechargez. Les données ci-dessous sont retenues, pas vides.",
+    "onboardingPresetAuthHeaderHint": "Ce fournisseur attend la clé dans l'en-tête {header}.",
+    "onboardingPresetAuthShapeHint": "Ce fournisseur s'authentifie avec un jeton {shape}."
   },
   "settings": {
     "title": "Paramètres",

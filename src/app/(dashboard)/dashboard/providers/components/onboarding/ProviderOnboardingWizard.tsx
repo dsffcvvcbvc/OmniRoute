@@ -335,6 +335,12 @@ export default function ProviderOnboardingWizard() {
   const [selectedProvider, setSelectedProvider] = useState<WizardProviderOption | null>(null);
   const [apiKeyForm, setApiKeyForm] = useState<ApiKeyFormState>(EMPTY_API_KEY_FORM);
   const [customForm, setCustomForm] = useState<CustomFormState>(DEFAULT_CUSTOM_FORM);
+  // Auth shape carried in from the preset catalog (`?presetAuth=`), or null
+  // when the operator arrived here without one. It is a HINT about the
+  // credential, never a value written into the request.
+  const [presetAuthHint, setPresetAuthHint] = useState<{ shape: string; header: string } | null>(
+    null
+  );
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [createdConnection, setCreatedConnection] = useState<OnboardingConnection | null>(null);
@@ -393,16 +399,18 @@ export default function ProviderOnboardingWizard() {
   const selectProvider = (option: WizardProviderOption) => {
     setSelectedProvider(option);
     setApiKeyForm({ ...EMPTY_API_KEY_FORM, name: defaultConnectionName(option.name) });
+    // A hand-picked provider carries no catalog auth shape.
+    setPresetAuthHint(null);
     setError(null);
     setStep(option.authKind === "oauth" ? "oauth" : "credentials");
   };
 
   // Preset-catalog handoff: the providers-page preset grid links here with
-  // `?preset=<id>&presetName=&presetBaseUrl=&presetAuth=`. Applied once on
-  // mount (guarded ref, StrictMode-safe): a known vendor is selected with its
-  // base URL prefilled, an unknown one lands in the OpenAI-compatible custom
-  // form. `window.location` (not `useSearchParams`) keeps this page free of a
-  // Suspense-boundary requirement for the static export.
+  // `?preset=<id>&presetName=&presetBaseUrl=&presetAuth=&presetAuthHeader=`.
+  // Applied once on mount (guarded ref, StrictMode-safe): a known vendor is
+  // selected with its base URL prefilled, an unknown one lands in the
+  // OpenAI-compatible custom form. `window.location` (not `useSearchParams`)
+  // keeps this page free of a Suspense-boundary requirement for the static export.
   const presetPrefillApplied = useRef(false);
   // One-shot URL prefill, guarded by the ref above: it fills the form before
   // the first paint so the operator never sees the empty state flash, and it
@@ -422,6 +430,11 @@ export default function ProviderOnboardingWizard() {
     if (!presetId) return;
     const presetName = params.get("presetName")?.trim() || presetId;
     const presetBaseUrl = params.get("presetBaseUrl")?.trim() || "";
+    // The auth shape is NOT decoration: `api_key_header` tells the operator the
+    // credential belongs in a named header rather than in a bearer token, so it
+    // is shown on the credential field instead of being dropped on the floor.
+    const presetAuth = params.get("presetAuth")?.trim() || "";
+    const presetAuthHeader = params.get("presetAuthHeader")?.trim() || "";
     const known = [...apiKeyOptions, ...oauthOptions].find(
       (option) => option.id.toLowerCase() === presetId.toLowerCase()
     );
@@ -438,6 +451,7 @@ export default function ProviderOnboardingWizard() {
     setTestResult(null);
     setCreatedConnection(null);
     setSelectedProvider(null);
+    setPresetAuthHint(presetAuth ? { shape: presetAuth, header: presetAuthHeader } : null);
     setApiKeyForm(EMPTY_API_KEY_FORM);
     setCustomForm({
       ...DEFAULT_CUSTOM_FORM,
@@ -900,6 +914,25 @@ export default function ProviderOnboardingWizard() {
                 value={customForm.apiKey}
                 onChange={(event) => setCustomForm({ ...customForm, apiKey: event.target.value })}
                 placeholder="sk-…"
+                hint={
+                  presetAuthHint
+                    ? presetAuthHint.header
+                      ? text(
+                          "onboardingPresetAuthHeaderHint",
+                          "This vendor expects the key in the {header} header.",
+                          {
+                            header: presetAuthHint.header,
+                          }
+                        )
+                      : text(
+                          "onboardingPresetAuthShapeHint",
+                          "This vendor authenticates with a {shape} token.",
+                          {
+                            shape: presetAuthHint.shape,
+                          }
+                        )
+                    : undefined
+                }
               />
               <Input
                 label={text("onboardingChatPath", "Chat path")}

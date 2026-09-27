@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "保存されたモデルエンドポイント設定",
     "searchByModelAria": "モデルで検索",
     "selectSupportedEndpoint": "サポートされているエンドポイントを少なくとも1つ選択してください",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "プリセットプロバイダー",
+    "presetCatalogSubtitle": "ゲートウェイのプリセットカタログから提供され、まだローカル接続がないベンダーです。1 つ選ぶとキー作成フォームが自動入力されます。",
+    "presetCatalogSearchPlaceholder": "名前・ID・ベース URL で検索…",
+    "presetCatalogShowing": "{total} 件中 {shown} 件",
+    "presetCatalogMissing": "このコアビルドにプリセットカタログはありません — 設定できるものはありません。",
+    "presetCatalogAllProvisioned": "コアカタログのプリセットプロバイダーはすべて設定済みです。",
+    "presetCatalogNoBaseUrl": "ベース URL の情報なし",
+    "presetCatalogAuthUnknown": "認証方式不明",
+    "presetCatalogAuthHeader": "{header} へ",
+    "presetCatalogProvision": "設定する",
+    "presetCatalogError": "プリセットカタログの読み込みに失敗しました。一覧の状態は不明です — 空ではありません。",
+    "aisixAdminKeyRequired": "ゲートウェイが 401 を返しました。この画面には管理者キーが必要です。ゲートウェイ設定の admin.admin_keys に 1 つ追加してから再読み込みしてください。以下数据显示は空ではなく、保留されています。",
+    "onboardingPresetAuthHeaderHint": "このベンダーでは {header} ヘッダーにキーを設定します。",
+    "onboardingPresetAuthShapeHint": "このベンダーでは {shape} トークンで認証します。"
   },
   "settings": {
     "title": "設定",

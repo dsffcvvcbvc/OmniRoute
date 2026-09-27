@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "การตั้งค่า endpoint ของโมเดลที่บันทึกไว้",
     "searchByModelAria": "ค้นหาตามรุ่น",
     "selectSupportedEndpoint": "เลือกจุดสิ้นสุดที่รองรับอย่างน้อยหนึ่งจุด",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "ผู้ให้บริการที่ตั้งค่าไว้ล่วงหน้า",
+    "presetCatalogSubtitle": "ผู้ให้บริการจากแคตตาล็อกที่ตั้งค่าไว้ของเกตเวย์ที่ยังไม่มีการเชื่อมต่อในเครื่อง เลือกหนึ่งรายการเพื่อกรอกแบบฟอร์มสร้างคีย์ล่วงหน้า",
+    "presetCatalogSearchPlaceholder": "ค้นหาด้วยชื่อ, id หรือ base URL…",
+    "presetCatalogShowing": "{shown} จาก {total}",
+    "presetCatalogMissing": "บิลด์หลักนี้ไม่มีแคตตาล็อกที่ตั้งค่าไว้ล่วงหน้า — ไม่มีอะไรให้ตั้งค่า",
+    "presetCatalogAllProvisioned": "ผู้ให้บริการที่ตั้งค่าไว้ล่วงหน้าทุกรายจากแคตตาล็อกของเกตเวย์ได้รับการตั้งค่าแล้ว",
+    "presetCatalogNoBaseUrl": "ไม่ได้รายงาน base URL",
+    "presetCatalogAuthUnknown": "ไม่ทราบรูปแบบการยืนยันตัวตน",
+    "presetCatalogAuthHeader": "ใน {header}",
+    "presetCatalogProvision": "ตั้งค่า",
+    "presetCatalogError": "โหลดแคตตาล็อกที่ตั้งค่าไว้ล่วงหน้าไม่สำเร็จ สถานะของรายการไม่ทราบ — ไม่ได้ว่างเปล่า",
+    "aisixAdminKeyRequired": "เกตเวย์ตอบกลับด้วย 401: ผิวหน้านี้ต้องใช้คีย์ผู้ดูแลระบบ เพิ่มคีย์หนึ่งรายการใน admin.admin_keys ของค่าคอนฟิกเกตเวย์ แล้วโหลดใหม่ ข้อมูลด้านล่างถูกปิดบัง ไม่ใช่ว่างเปล่า",
+    "onboardingPresetAuthHeaderHint": "ผู้ให้บริการนี้คาดว่าคีย์จะอยู่ในส่วนหัว {header}",
+    "onboardingPresetAuthShapeHint": "ผู้ให้บริการนี้ยืนยันตัวตนด้วยโทเคน {shape}"
   },
   "settings": {
     "title": "การตั้งค่า",

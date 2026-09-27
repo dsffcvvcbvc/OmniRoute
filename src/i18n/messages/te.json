@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "సేవ్ చేసిన మోడల్ ఎండ్‌పాయింట్ సెట్టింగ్స్",
     "searchByModelAria": "మోడల్ ద్వారా శోధించండి",
     "selectSupportedEndpoint": "కమిషన్ చేయబడిన కనెక్ట్ చేయబడిన ఎండ్‌పాయింట్‌లలో కనీసం ఒకటి ఎంచుకోండి",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "ప్రీసెట్ ప్రైడర్లు",
+    "presetCatalogSubtitle": "గేట్‌వే ప్రీసెట్ క్యాటలాగ్ నుంచి వచ్చే ప్రైడర్లు, వాటికి ఇంకా స్థానిక కనెక్షన్ లేదు. కీ ఏర్పాటు ఫారం ముందే నింపడానికి ఒకటి ఎంచుకోండి.",
+    "presetCatalogSearchPlaceholder": "పేరు, id లేదా base URL ద్వారా వెతకండి…",
+    "presetCatalogShowing": "{total} లో {shown}",
+    "presetCatalogMissing": "ఈ కోర్ బిల్డ్‌లో ప్రీసెట్ క్యాటలాగ్ లేదు — కాన్ఫిగర్ చేయడానికి ఏమీ లేదు.",
+    "presetCatalogAllProvisioned": "కోర్ క్యాటలాగ్‌లోని ప్రీసెట్ ప్రైడర్లంతా ఇప్పటికే కాన్ఫిగర్ చేయబడ్డాయి.",
+    "presetCatalogNoBaseUrl": "base URL నివేదిక కాలేదు",
+    "presetCatalogAuthUnknown": "ప్రామాణీకరణ రూపం తెలియదు",
+    "presetCatalogAuthHeader": "{header} లో",
+    "presetCatalogProvision": "కాన్ఫిగర్ చేయండి",
+    "presetCatalogError": "ప్రీసెట్ క్యాటలాగ్ లోడ్ కాలేదు. జాబితా స్థితి తెలియదు — ఖాళీ కాదు.",
+    "aisixAdminKeyRequired": "గేట్‌వే 401ను స్పందించింది: ఈ సరఫేస్‌కు యాడ్మిన్ కీ అవసరం. గేట్‌వే కాన్ఫిగ్‌లో admin.admin_keys కింద ఒకటి జోడించి, తిరిగి లోడ్ చేయండి. కింది డేటా ఆపి పెట్టబడింది — ఖాళీ కాదు.",
+    "onboardingPresetAuthHeaderHint": "ఈ ప్రైడర్ {header} హెడర్‌లో కీ ఉండాలని ఎదురుచూస్తున్నాడు.",
+    "onboardingPresetAuthShapeHint": "ఈ ప్రైడర్ {shape} టోకన్‌తో ప్రామాణీకరిస్తుంది."
   },
   "settings": {
     "title": "సెట్టింగ్లు",

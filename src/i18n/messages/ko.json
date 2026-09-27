@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "저장된 모델 엔드포인트 설정",
     "searchByModelAria": "모델로 검색",
     "selectSupportedEndpoint": "지원되는 엔드포인트를 최소한 하나 선택하세요.",
-    "antigravityClientProfileHarness": "하네스 / CLI"
+    "antigravityClientProfileHarness": "하네스 / CLI",
+    "presetCatalogTitle": "프리셋 제공업체",
+    "presetCatalogSubtitle": "게이트웨이 프리셋 카탈로그의 제공업체로 아직 로컬 연결이 없는 항목입니다. 키 생성 폼을 미리 채우려면 하나를 고르세요.",
+    "presetCatalogSearchPlaceholder": "이름, ID 또는 기본 URL로 검색…",
+    "presetCatalogShowing": "{total}개 중 {shown}개",
+    "presetCatalogMissing": "이 코어 빌드에는 프리셋 카탈로그가 없습니다 — 설정할 대상이 없습니다.",
+    "presetCatalogAllProvisioned": "코어 카탈로그의 모든 프리셋 제공업체가 이미 설정되었습니다.",
+    "presetCatalogNoBaseUrl": "기본 URL 정보 없음",
+    "presetCatalogAuthUnknown": "인증 방식 알 수 없음",
+    "presetCatalogAuthHeader": "{header} 헤더로",
+    "presetCatalogProvision": "설정",
+    "presetCatalogError": "프리셋 카탈로그를 불러오지 못했습니다. 목록 상태는 알 수 없으며 비어 있지 않습니다.",
+    "aisixAdminKeyRequired": "게이트웨이가 401을 반환했습니다. 이 화면에는 관리자 키가 필요합니다. 게이트웨이 설정의 admin.admin_keys에 하나 추가한 뒤 다시 불러오세요. 아래 데이터는 비어 있는 것이 아니라 보류된 것입니다.",
+    "onboardingPresetAuthHeaderHint": "이 제공업체는 {header} 헤더에서 키를 받습니다.",
+    "onboardingPresetAuthShapeHint": "이 제공업체는 {shape} 토큰으로 인증합니다."
   },
   "settings": {
     "title": "설정",

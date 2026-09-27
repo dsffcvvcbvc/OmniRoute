@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Οι ρυθμίσεις τελικού σημείου μοντέλου αποθηκεύτηκαν",
     "searchByModelAria": "Αναζήτηση με βάση το μοντέλο",
     "selectSupportedEndpoint": "Επιλέξτε τουλάχιστον ένα υποστηριζόμενο endpoint",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "Προκαθορισμένοι πάροχοι",
+    "presetCatalogSubtitle": "Πάροχοι από τον προκαθορισμένο κατάλογο της πύλης που δεν έχουν ακόμη τοπική σύνδεση. Επιλέξτε έναν για να συμπληρωθεί εκ των προτέρων η φόρμα δημιουργίας κλειδιού.",
+    "presetCatalogSearchPlaceholder": "Αναζήτηση με βάση όνομα, id ή βασική URL…",
+    "presetCatalogShowing": "{shown} από {total}",
+    "presetCatalogMissing": "Αυτή η βασική έκδοση δεν έχει προκαθορισμένο κατάλογο — δεν υπάρχει τίποτα για ρύθμιση.",
+    "presetCatalogAllProvisioned": "Κάθε προκαθορισμένος πάροχος από τον κατάλογο του πυρήνα έχει ήδη ρυθμιστεί.",
+    "presetCatalogNoBaseUrl": "δεν αναφέρεται βασική URL",
+    "presetCatalogAuthUnknown": "άγνωστος τύπος ελέγχου ταυτότητας",
+    "presetCatalogAuthHeader": "στην {header}",
+    "presetCatalogProvision": "Παροχή",
+    "presetCatalogError": "Αποτυχία φόρτωσης του προκαθορισμένου καταλόγου. Η κατάσταση της λίστας είναι άγνωστη — δεν είναι κενή.",
+    "aisixAdminKeyRequired": "Η πύλη απάντησε 401: αυτή η επιφάνεια χρειάζεται κλειδί διαχειριστή. Προσθέστε ένα στο admin.admin_keys της διαμόρφωσης της πύλης και φορτώστε ξανά. Τα δεδομένα παρακάτω είναι κρυμμένα, όχι κενά.",
+    "onboardingPresetAuthHeaderHint": "Αυτός ο πάροχος αναμένει το κλειδί στην κεφαλίδα {header}.",
+    "onboardingPresetAuthShapeHint": "Αυτός ο πάροχος ταυτοποιείται με διακριτικό {shape}."
   },
   "settings": {
     "title": "Ρυθμίσεις",

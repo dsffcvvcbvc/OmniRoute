@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "已保存的模型端点设置",
     "searchByModelAria": "按型号搜索",
     "selectSupportedEndpoint": "请选择至少一个支持的端点",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "预置提供商",
+    "presetCatalogSubtitle": "来自网关预置供应商目录、尚无本地连接的厂商。选一个即可预填密钥创建表单。",
+    "presetCatalogSearchPlaceholder": "按名称、ID 或基础 URL 搜索…",
+    "presetCatalogShowing": "{total} 项中的 {shown} 项",
+    "presetCatalogMissing": "此核心构建没有预置目录 — 无可配置项。",
+    "presetCatalogAllProvisioned": "核心目录中的每个预置供应商均已配置完成。",
+    "presetCatalogNoBaseUrl": "未提供基础 URL",
+    "presetCatalogAuthUnknown": "认证方式未知",
+    "presetCatalogAuthHeader": "置于 {header}",
+    "presetCatalogProvision": "配置",
+    "presetCatalogError": "无法加载预置目录。列表状态未知 — 并非为空。",
+    "aisixAdminKeyRequired": "网关返回 401：该界面需要管理员密钥。请在网关配置的 admin.admin_keys 中添加一个，然后重新加载。下方数据被暂时保留，并非为空。",
+    "onboardingPresetAuthHeaderHint": "该厂商要求密钥放在 {header} 请求头中。",
+    "onboardingPresetAuthShapeHint": "该厂商使用 {shape} 令牌认证。"
   },
   "settings": {
     "title": "设置",

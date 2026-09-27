@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "සුරැකි ආකෘති අන්ත ලක්ෂ්ය සැකසුම්",
     "searchByModelAria": "ආකෘතිය අනුව සොයන්න",
     "selectSupportedEndpoint": "අවම වශයෙන් සහාය දක්වන එක් අන්ත ලක්ෂ්යයක්වත් තෝරන්න",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "පෙරසියලි සපයන්නා",
+    "presetCatalogSubtitle": "සපයන්නා ගේත්‍රගම කලින් සැකසුණු දත්ත ලැයිස්තුවෙන් පැමිණියා, ඔවුනු තවමත් දේශීය සම්බන්ධතාවයක් නොමැත. යතුරු සෑදීමේ පෝරමය කලින් පිරවීමට එකක් තෝරන්න.",
+    "presetCatalogSearchPlaceholder": "නම, id හෝ base URL අනුව සොයන්න…",
+    "presetCatalogShowing": "{total} නිරසිට {shown}",
+    "presetCatalogMissing": "මෙම මූලික ගොඩනැටවීමේ කලින් සැකසුණු දත්ත ලැයිස්තුවක් නොමැත — සැකසීමට යමක් නොමැත.",
+    "presetCatalogAllProvisioned": "පෙරසියලුම පෙරසියලි සපයන්නා මධ්‍යගමයේ දත්ත ලැයිස්තුවෙන් දැනටමත් සකස් කර ඇත.",
+    "presetCatalogNoBaseUrl": "මූලික URL දැනුම් දෙනු ලැබුණු නැත",
+    "presetCatalogAuthUnknown": "සත්‍යාපන ආකාරය නොදන්නා",
+    "presetCatalogAuthHeader": "{header} තුළ",
+    "presetCatalogProvision": "සකසන්න",
+    "presetCatalogError": "පෙරසියලි සකස් කළ දත්ත ලැයිස්තුව පැටවීමට නොහැකි විය. ලැයිස්තුවේ තත්ත්වය නොදන්නා — එය හිස් නොවේ.",
+    "aisixAdminKeyRequired": "දොරටුව 401 ලබා දුන්නා: මෙම පිරිසිදුවට පරිපාලක යතුරක් අවශ්‍යයි. දොරටු සැකසුමේ admin.admin_keys හි එකක් එක් කර නැවත පූරෝකතු කරන්න. පහත දත්ත රඳවා ඇත — හිස් නොවේ.",
+    "onboardingPresetAuthHeaderHint": "මෙම සපයනා අපේක්ෂිත කරයි {header} ශීර්ෂයේ යතුර ඇති වීමට.",
+    "onboardingPresetAuthShapeHint": "මෙම සපයනා {shape} ටෝකනයකින් සත්‍යාපනය කරයි."
   },
   "settings": {
     "title": "සැකසුම්",

@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "የተቀመጡ የሞዴል መጨረሻ ነጥብ ቅንብሮች",
     "searchByModelAria": "በሞዴል ይፈልጉ",
     "selectSupportedEndpoint": "ቢያንስ አንድ የሚደገፍ መጨረሻ ነጥብ ይምረጡ",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "ቅንብር አቅራቦዎች",
+    "presetCatalogSubtitle": "በጌትዌቱ የሚያገኙ ቅንብር ካታሎጉ አቅራቦዎች ያለባቸው አሁን ያልተፈጠራቸው መልካሾች። አንድን ይምረጡና የቁልፍ ማስገቢያ ቅጹሉን በቅደም ተከፍል ያስተባብሩ።",
+    "presetCatalogSearchPlaceholder": "በስም፣ id ወይም base URL ይፈልጉ…",
+    "presetCatalogShowing": "{total} ውስጥ {shown}",
+    "presetCatalogMissing": "በዚህ ኮር ላይ ቅንብር ካታሎግ የለም — ለማሟላት ምንም የለም።",
+    "presetCatalogAllProvisioned": "ከኮር ካታሎጉ ያሉ ሁሉም ቅንብር አቅራቦዎች አስቀድሞ ተቅንጥረዋል።",
+    "presetCatalogNoBaseUrl": "base URL አልተመዘገበም",
+    "presetCatalogAuthUnknown": "የማረጋገጫ ቅርፅ የማወቀት አይችልም",
+    "presetCatalogAuthHeader": "በ {header}",
+    "presetCatalogProvision": "አሟላ",
+    "presetCatalogError": "ቅንብር ካታሎጉን መጫን አልተቻለም። ዝርዝሩ የማወቀት ነው — ባዶ አይደለም።",
+    "aisixAdminKeyRequired": "ጌትዌው 401 ሰጠዋል፦ ይህ መስክር የአስተዳዳሪ ቁልፍ ያስፈልጋል። አንድ በጌትዌ ውሂድ ውስጥ admin.admin_keys ይጨምሩ፣ ከዚያ እንደገና ይጫኑ። የሚከተሉት መረጃ ተደብቷል — ባዶ አይደለም።",
+    "onboardingPresetAuthHeaderHint": "ይህ አቅራቦይ ቁልፉን በ {header} ራስ ውስጥ ይጠበቃል።",
+    "onboardingPresetAuthShapeHint": "ይህ አቅራቦይ በ {shape} ቶክን ያረጋገጣል።"
   },
   "settings": {
     "title": "ቅንብሮች",

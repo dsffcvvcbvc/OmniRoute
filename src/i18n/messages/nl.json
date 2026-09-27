@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Instellingen voor opgeslagen model-eindpunt",
     "searchByModelAria": "Zoeken op model",
     "selectSupportedEndpoint": "Selecteer ten minste één ondersteunde eindpunt",
-    "antigravityClientProfileHarness": "Testomgeving / CLI"
+    "antigravityClientProfileHarness": "Testomgeving / CLI",
+    "presetCatalogTitle": "Vooraf ingestelde aanbieders",
+    "presetCatalogSubtitle": "Aanbieders uit de vooraf ingestelde catalogus van de gateway die nog geen lokale verbinding hebben. Kies er een om het formulier voor het aanmaken van een sleutel voor te vullen.",
+    "presetCatalogSearchPlaceholder": "Zoeken op naam, id of basis-URL…",
+    "presetCatalogShowing": "{shown} van {total}",
+    "presetCatalogMissing": "Deze core-build heeft geen vooraf ingestelde catalogus — er valt niets in te richten.",
+    "presetCatalogAllProvisioned": "Alle vooraf ingestelde aanbieders uit de kerncatalogus zijn al ingesteld.",
+    "presetCatalogNoBaseUrl": "basis-URL niet gemeld",
+    "presetCatalogAuthUnknown": "auth-vorm onbekend",
+    "presetCatalogAuthHeader": "in de header {header}",
+    "presetCatalogProvision": "Inrichten",
+    "presetCatalogError": "Kan de vooraf ingestelde catalogus niet laden. De status van de lijst is onbekend — hij is niet leeg.",
+    "aisixAdminKeyRequired": "De gateway antwoordde 401: dit oppervlak heeft een beheerderssleutel nodig. Voeg er een toe aan admin.admin_keys in de gatewayconfiguratie en laad opnieuw. De gegevens hieronder zijn teruggehouden, niet leeg.",
+    "onboardingPresetAuthHeaderHint": "Deze aanbieder verwacht de sleutel in de header {header}.",
+    "onboardingPresetAuthShapeHint": "Deze aanbieder authenticeert met een {shape}-token."
   },
   "settings": {
     "title": "Instellingen",

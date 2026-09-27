@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "已儲存的模型端點設定",
     "searchByModelAria": "按型號搜尋",
     "selectSupportedEndpoint": "請選擇至少一個受支持的端點",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "預設供應商",
+    "presetCatalogSubtitle": "來自閘道預設供應商目錄、尚無本機連線的廠商。選一個即可預先填入金鑰建立表單。",
+    "presetCatalogSearchPlaceholder": "依名稱、ID 或基礎 URL 搜尋…",
+    "presetCatalogShowing": "{total} 項中的 {shown} 項",
+    "presetCatalogMissing": "此核心建置沒有預設目錄 — 無可設定項目。",
+    "presetCatalogAllProvisioned": "核心目錄中的每個預設供應商均已設定完成。",
+    "presetCatalogNoBaseUrl": "未提供基礎 URL",
+    "presetCatalogAuthUnknown": "認證方式未知",
+    "presetCatalogAuthHeader": "置於 {header}",
+    "presetCatalogProvision": "設定",
+    "presetCatalogError": "無法載入預設目錄。清單狀態未知 — 並非為空。",
+    "aisixAdminKeyRequired": "閘道回應 401：此介面需要管理員金鑰。請在閘道設定的 admin.admin_keys 中新增一個，然後重新載入。下方資料暫時保留，並非空白。",
+    "onboardingPresetAuthHeaderHint": "該廠商要求金鑰放在 {header} 標頭中。",
+    "onboardingPresetAuthShapeHint": "該廠商以 {shape} 權杖驗證。"
   },
   "settings": {
     "title": "設定",

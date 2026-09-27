@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Mudeli lõpp-punkti seaded salvestatud",
     "searchByModelAria": "Otsi mudeli järgi",
     "selectSupportedEndpoint": "Valige vähemalt üks toetatud lõpp-punkt",
-    "antigravityClientProfileHarness": "Rakendusraamistik / CLI"
+    "antigravityClientProfileHarness": "Rakendusraamistik / CLI",
+    "presetCatalogTitle": "Eelseadistatud teenused",
+    "presetCatalogSubtitle": "Võrgustiku eelseadistatud kataloogi teenused, millel pole veel kohalikku ühendust. Vali üks, et võtmeloomise vorm oleks eelnevalt täidetud.",
+    "presetCatalogSearchPlaceholder": "Otsi nime, id või baas-URL-i järgi…",
+    "presetCatalogShowing": "{shown} / {total}",
+    "presetCatalogMissing": "Selles põhiversioonis pole eelseadistatud kataloogi — midagi pole ette valmistada.",
+    "presetCatalogAllProvisioned": "Tuumakataloogi kõik eelseadistatud teenused on juba seadistatud.",
+    "presetCatalogNoBaseUrl": "baas-URL-i pole teatatud",
+    "presetCatalogAuthUnknown": "autentimise kuju pole teada",
+    "presetCatalogAuthHeader": "pealkirjas {header}",
+    "presetCatalogProvision": "Seadista",
+    "presetCatalogError": "Eelseadistatud katalogi laadimine ebaõnnestus. Nimekirja olek on teadmata — see ei ole tühi.",
+    "aisixAdminKeyRequired": "Võrgustik vastas 401-le: see pind vajab administraatori võtit. Lisa üks konfiguratsiooni admin.admin_keys ja laadi uuesti. Allolevad andmed on varjatud, mitte tühjad.",
+    "onboardingPresetAuthHeaderHint": "See teenus ootab võtit päises {header}.",
+    "onboardingPresetAuthShapeHint": "See teenus autentib {shape} tuneniga."
   },
   "settings": {
     "title": "Seaded",

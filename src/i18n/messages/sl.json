@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Nastavitve končne točke modela so shranjene",
     "searchByModelAria": "Iskanje po modelu",
     "selectSupportedEndpoint": "Izberite vsaj eno podprto končno točko",
-    "antigravityClientProfileHarness": "Ogrodje / CLI"
+    "antigravityClientProfileHarness": "Ogrodje / CLI",
+    "presetCatalogTitle": "Vnaprej nastavljeni ponudniki",
+    "presetCatalogSubtitle": "Ponudniki iz vnaprej nastavljenega kataloga prehoda, ki še nimajo lokalne povezave. Izberite enega, da bo obrazec za ustvarjanje ključa vnaprej izpolnjen.",
+    "presetCatalogSearchPlaceholder": "Iskanje po imenu, id ali osnovnem URL-ju…",
+    "presetCatalogShowing": "{shown} od {total}",
+    "presetCatalogMissing": "Ta osnovna gradnja nima vnaprej nastavljenega kataloga — ni česa za konfiguriranje.",
+    "presetCatalogAllProvisioned": "Vsi vnaprej nastavljeni ponudniki iz kataloga jedra so že nastavljeni.",
+    "presetCatalogNoBaseUrl": "Osnovni URL ni naveden",
+    "presetCatalogAuthUnknown": "Oblika preverjanja pristnosti ni znana",
+    "presetCatalogAuthHeader": "v glavi {header}",
+    "presetCatalogProvision": "Vzpostavi",
+    "presetCatalogError": "Kataloga vnaprej nastavljenih vrednosti ni bilo mogoče naložiti. Stanja seznama ni znana — ni prazen.",
+    "aisixAdminKeyRequired": "Prehod je odgovoril 401: ta površina potrebuje skrbniški ključ. Dodajte enega v admin.admin_keys v konfiguraciji prehoda in znova naložite. Spodnji podatki so zadržani, ne prazni.",
+    "onboardingPresetAuthHeaderHint": "Ta ponudnik pričakuje ključ v glavi {header}.",
+    "onboardingPresetAuthShapeHint": "Ta ponudnik se overi s žetonom {shape}."
   },
   "settings": {
     "title": "Nastavitve",

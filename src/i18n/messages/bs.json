@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Spremljene postavke krajnje tačke modela",
     "searchByModelAria": "Pretraži po modelu",
     "selectSupportedEndpoint": "Odaberite barem jednu podržanu krajnju tačku",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "Preset dobavljači",
+    "presetCatalogSubtitle": "Dobavljači koje isporučuje katalog gatewaya po zadanom, a koji još nemaju lokalnu vezu. Odaberite jednog da unaprijed popunite obrazac za kreiranje ključa.",
+    "presetCatalogSearchPlaceholder": "Pretraži po nazivu, id-u ili baznom URL-u…",
+    "presetCatalogShowing": "{shown} od {total}",
+    "presetCatalogMissing": "Nema kataloga s preset postavkama na ovom osnovnom izdanju — nema ničega za opskrbiti.",
+    "presetCatalogAllProvisioned": "Svi dobavljači iz kataloga jezgre već su opskrbljeni.",
+    "presetCatalogNoBaseUrl": "bazni URL nije prijavljen",
+    "presetCatalogAuthUnknown": "oblik autentifikacije nepoznat",
+    "presetCatalogAuthHeader": "u zaglavlju {header}",
+    "presetCatalogProvision": "Opskrbi",
+    "presetCatalogError": "Katalog s preset postavkama se nije učitao. Stanje liste je nepoznato — nije prazna.",
+    "aisixAdminKeyRequired": "Gateway je odgovorio 401: ova površina treba administratorski ključ. Dodajte jedan u admin.admin_keys u konfiguraciji gatewaya pa ponovo učitajte. Podaci ispod su skriveni, nisu prazni.",
+    "onboardingPresetAuthHeaderHint": "Ovaj dobavljač očekuje ključ u zaglavlju {header}.",
+    "onboardingPresetAuthShapeHint": "Ovaj dobavljač se autentificira {shape} tokenom."
   },
   "settings": {
     "title": "Postavke",

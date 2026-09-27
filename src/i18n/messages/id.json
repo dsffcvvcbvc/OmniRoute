@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Pengaturan endpoint model yang disimpan",
     "searchByModelAria": "Cari berdasarkan model",
     "selectSupportedEndpoint": "Pilih setidaknya satu endpoint yang didukung",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "Penyedia prasetel",
+    "presetCatalogSubtitle": "Penyedia dari katalog prasetel gateway yang belum punya koneksi lokal. Pilih satu untuk mengisi formulir pembuatan kunci secara otomatis.",
+    "presetCatalogSearchPlaceholder": "Cari berdasarkan nama, id, atau URL dasar…",
+    "presetCatalogShowing": "{shown} dari {total}",
+    "presetCatalogMissing": "Build inti tidak punya katalog prasetel — tidak ada yang bisa dikonfigurasi.",
+    "presetCatalogAllProvisioned": "Semua penyedia prasetel dari katalog inti sudah dikonfigurasi.",
+    "presetCatalogNoBaseUrl": "URL dasar tidak dilaporkan",
+    "presetCatalogAuthUnknown": "bentuk auth tidak diketahui",
+    "presetCatalogAuthHeader": "di header {header}",
+    "presetCatalogProvision": "Siapkan",
+    "presetCatalogError": "Gagal memuat katalog prasetel. Status daftar tidak diketahui — bukan kosong.",
+    "aisixAdminKeyRequired": "Gateway menjawab 401: permukaan ini memerlukan kunci admin. Tambahkan satu ke admin.admin_keys di konfigurasi gateway lalu muat ulang. Data di bawah ditahan, bukan kosong.",
+    "onboardingPresetAuthHeaderHint": "Penyedia ini mengharapkan kunci di header {header}.",
+    "onboardingPresetAuthShapeHint": "Penyedia ini mengautentikasi dengan token {shape}."
   },
   "settings": {
     "title": "Pengaturan",

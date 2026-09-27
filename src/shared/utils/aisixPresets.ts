@@ -24,8 +24,20 @@ export interface AisixPresetProvider {
   name: string;
   /** Upstream base URL, or `null` when the core does not report one. */
   baseUrl: string | null;
-  /** Auth shape label (`api_key`, `oauth`, `none`, …) or `null` when unknown. */
+  /**
+   * Where the credential goes on the wire — the SHAPE, never the credential.
+   * `null` only when the core reported nothing usable, which the UI must render
+   * as "unknown" rather than guessing.
+   */
   authShape: string | null;
+  /**
+   * For `api_key_header`, the header (or non-Bearer `Authorization` scheme) the
+   * key replaces. `null` for every other shape. This is what tells the operator
+   * which field to paste the credential into, so it is shown verbatim.
+   */
+  authHeader: string | null;
+  /** Public header values the core sends alongside every request. */
+  headers: Array<{ name: string; value: string }>;
 }
 
 /** Result of `fetchPresetProviders` — always resolved, never rejected. */
@@ -85,6 +97,43 @@ const AUTH_SHAPE_KEYS = [
   "credential_type",
 ] as const;
 
+/** Header carrying the credential, read from the `api_key_header` auth object. */
+const AUTH_HEADER_KEYS = ["header", "headerName", "header_name"] as const;
+
+/**
+ * The core ships `auth` as an OBJECT — `{"type":"bearer"}`,
+ * `{"type":"api_key_header","header":"X-Api-Key"}`, `{"type":"none"}` — and only
+ * `type` is a label; `header` is the part that decides which field the operator
+ * pastes the credential into. Read both, and keep the old string form working
+ * for a core that sends `"auth": "bearer"`.
+ */
+function readAuthShape(value: unknown): { authShape: string | null; authHeader: string | null } {
+  if (typeof value === "string" || typeof value === "number") {
+    const shape = toTrimmedString(value);
+    return { authShape: shape, authHeader: null };
+  }
+  if (!isRecord(value)) return { authShape: null, authHeader: null };
+  const shape =
+    pickFirst(value, ["type", "kind", "shape", "authType", "auth_type"]) ??
+    pickFirst(value, AUTH_SHAPE_KEYS);
+  const header = pickFirst(value, AUTH_HEADER_KEYS);
+  return { authShape: shape, authHeader: shape === "api_key_header" ? header : null };
+}
+
+/** `[{name, value}]` public headers, skipping anything that is not that pair. */
+function normalizePresetHeaders(value: unknown): Array<{ name: string; value: string }> {
+  if (!Array.isArray(value)) return [];
+  const out: Array<{ name: string; value: string }> = [];
+  for (const entry of value) {
+    if (!isRecord(entry)) continue;
+    const name = toTrimmedString(entry.name);
+    const headerValue = toTrimmedString(entry.value);
+    if (name === null || headerValue === null) continue;
+    out.push({ name, value: headerValue });
+  }
+  return out;
+}
+
 /** Envelope list fields, in the order the native payload is known to use. */
 const PRESET_LIST_FIELDS = ["presets", "providers", "data"] as const;
 
@@ -93,16 +142,21 @@ export function normalizePresetProvider(entry: unknown): AisixPresetProvider | n
   if (typeof entry === "string") {
     const name = entry.trim();
     if (name.length === 0) return null;
-    return { id: name, name, baseUrl: null, authShape: null };
+    return { id: name, name, baseUrl: null, authShape: null, authHeader: null, headers: [] };
   }
   if (!isRecord(entry)) return null;
   const id = pickFirst(entry, ID_KEYS) ?? pickFirst(entry, NAME_KEYS);
   if (id === null) return null;
+  const { authShape, authHeader } = readAuthShape(
+    AUTH_SHAPE_KEYS.map((key) => entry[key]).find((candidate) => candidate !== undefined)
+  );
   return {
     id,
     name: pickFirst(entry, NAME_KEYS) ?? id,
     baseUrl: pickFirst(entry, BASE_URL_KEYS),
-    authShape: pickFirst(entry, AUTH_SHAPE_KEYS),
+    authShape,
+    authHeader,
+    headers: normalizePresetHeaders(entry.headers),
   };
 }
 
@@ -132,8 +186,11 @@ const PRESET_FETCH_TIMEOUT_MS = 15_000;
 /**
  * Read the preset catalog. Never throws and never hangs past the timeout:
  * 404/405 → `{ presets: [], missing: true }` (honest empty-state/refusal),
- * other non-2xx or unreadable body → `{ presets: [], missing: false }`
- * (caller shows empty + retry), network/timeout → `status: null`.
+ * 401/403 → `{ presets: [], missing: false, status }` with the status PRESERVED
+ * so the UI can say "the gateway needs an admin key" instead of rendering an
+ * empty picker that reads as "this gateway ships no vendors" — the two are
+ * completely different facts and only the status tells them apart.
+ * Network/timeout → `status: null`.
  */
 export async function fetchPresetProviders(
   fetchImpl: typeof globalThis.fetch = globalThis.fetch as typeof globalThis.fetch,

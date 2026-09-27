@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Ustawienia punktu końcowego zapisanego modelu",
     "searchByModelAria": "Szukaj według modelu",
     "selectSupportedEndpoint": "Wybierz przynajmniej jeden obsługiwany punkt końcowy",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "Wstępnie ustawieni dostawcy",
+    "presetCatalogSubtitle": "Dostawcy z wstępnie ustawionego katalogu bramy, którzy nie mają jeszcze połączenia lokalnego. Wybierz jednego, aby wstępnie wypełnić formularz tworzenia klucza.",
+    "presetCatalogSearchPlaceholder": "Szukaj według nazwy, id lub bazowego URL…",
+    "presetCatalogShowing": "{shown} z {total}",
+    "presetCatalogMissing": "Ten build bazowy nie ma katalogu wstępnie ustawionych — nie ma czego konfigurować.",
+    "presetCatalogAllProvisioned": "Wszyscy wstępnie ustawieni dostawcy z katalogu rdzenia są już skonfigurowani.",
+    "presetCatalogNoBaseUrl": "Nie podano bazowego URL",
+    "presetCatalogAuthUnknown": "Nieznany kształt uwierzytelniania",
+    "presetCatalogAuthHeader": "w nagłówku {header}",
+    "presetCatalogProvision": "Skonfiguruj",
+    "presetCatalogError": "Nie udało się wczytać katalogu wstępnie ustawionych. Stan listy jest nieznany — nie jest pusty.",
+    "aisixAdminKeyRequired": "Brama odpowiedziała 401: ta powierzchnia wymaga klucza administratora. Dodaj jeden w admin.admin_keys w konfiguracji bramy, a następnie przeładuj. Dane poniżej są wstrzymane, nie puste.",
+    "onboardingPresetAuthHeaderHint": "Ten dostawca oczekuje klucza w nagłówku {header}.",
+    "onboardingPresetAuthShapeHint": "Ten dostawca uwierzytelnia się tokenem {shape}."
   },
   "settings": {
     "title": "Ustawienia",

@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Налаштування кінцевої точки збереженої моделі",
     "searchByModelAria": "Пошук за моделлю",
     "selectSupportedEndpoint": "Виберіть принаймні одну підтримувану точку доступу",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "Пресет-провайдери",
+    "presetCatalogSubtitle": "Провайдери з попередньо налаштованого каталогу шлюзу, які ще не мають локального підключення. Виберіть одного, щоб заздалегідь заповнити форму створення ключа.",
+    "presetCatalogSearchPlaceholder": "Пошук за назвою, id або базовим URL…",
+    "presetCatalogShowing": "{shown} з {total}",
+    "presetCatalogMissing": "У цій базовій збірці немає попередньо налаштованого каталогу — налаштовувати нічого.",
+    "presetCatalogAllProvisioned": "Усі пресет-провайдери з каталогу ядра вже налаштовані.",
+    "presetCatalogNoBaseUrl": "Базовий URL не наведено",
+    "presetCatalogAuthUnknown": "Невідома форма автентифікації",
+    "presetCatalogAuthHeader": "у {header}",
+    "presetCatalogProvision": "Налаштувати",
+    "presetCatalogError": "Не вдалося завантажити попередньо налаштований каталог. Стан списку невідомий — він не порожній.",
+    "aisixAdminKeyRequired": "Шлюз відповів 401: цій поверхні потрібен адміністративний ключ. Додайте його до admin.admin_keys у конфігурації шлюзу та перезавантажте. Дані нижче утримані, а не порожні.",
+    "onboardingPresetAuthHeaderHint": "Цей провайдер очікує ключ у заголовку {header}.",
+    "onboardingPresetAuthShapeHint": "Цей провайдер автентифікується токеном {shape}."
   },
   "settings": {
     "title": "Налаштування",

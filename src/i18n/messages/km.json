@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "បានរក្សាទុកការកំណត់ចំណុចចុងរបស់ម៉ូដែល",
     "searchByModelAria": "ស្វែងរកតាមម៉ូដែល",
     "selectSupportedEndpoint": "ជ្រើសរើសចំណុចចុងដែលគាំទ្រយ៉ាងហោចណាស់មួយ",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "អ្នកផ្តល់សេវាកំណត់ជាមុន",
+    "presetCatalogSubtitle": "អ្នកផ្តល់សេវាពីកាតាលូគមដែលកំណត់ជាមុនរបស់ផ្ទ្រាត់ ដែលមិនទាន់មានការតភ្ជាក់ក្នុងតំបន់ទេ។ ជ្រើសរើសម្នាក់ ដើម្បីបំពេញទម្រង់បង្កើតកូនគន្លអ្នកមុន។",
+    "presetCatalogSearchPlaceholder": "ស្វែងរកតាមឈ្មោះ អត្តសញ្ញានៅ ឬ URL មូលដ្ឋាន…",
+    "presetCatalogShowing": "{shown} ក្នុងចំណោម {total}",
+    "presetCatalogMissing": "កង់ស្នោតមួយនេះគ្មានកាតាលូគមដែលកំណត់ជាមុនទេ — គ្មានអ្វីសម្របង់ទេ។",
+    "presetCatalogAllProvisioned": "អ្នកផ្តល់សេវាកំណត់ជាមុនគ្រប់គ្នាក់ក្នុងកាតាលូគមនៃកូនត្រូវបានរៀបចំរើសរួចហើយ។",
+    "presetCatalogNoBaseUrl": "URL មូលដ្ឋានមិនត្រូវបានរាយការណ៍",
+    "presetCatalogAuthUnknown": "មិនច្បាស់នូវរបាទសម្គាល់",
+    "presetCatalogAuthHeader": "ក្នុង {header}",
+    "presetCatalogProvision": "រៀបចំ",
+    "presetCatalogError": "បរាជ័យមិនបានផ្ទុកកាតាលូគមដែលកំណត់ជាមុន។ ស្ថានភាពនៃបញ្ជីមិនទឹកស្មាន — វាមិនទាប់ទេ។",
+    "aisixAdminKeyRequired": "ផ្ទ្រាត់បានឆ្លើយតប 401៖ ផ្ទ្រាំងនេះត្រូវការកូនគន្លអ្នកគ្រប់គ្រង។ បន្ថែមមួយក្នុង admin.admin_keys នៃកាតទ្រង់ផ្ទ្រាត់ រួចមកផ្ទុកឡើងវិញ។ ទិន្នន័យខាងក្រោមត្រូវបានលាក់ — វាមិនទាប់ទេ។",
+    "onboardingPresetAuthHeaderHint": "អ្នកផ្តល់សេវានេះរង់ចាំកូនគន្លក្នុងក្បាល {header}។",
+    "onboardingPresetAuthShapeHint": "អ្នកផ្តល់សេវានេះផ្ទៀងផ្ទាត់ដោយប្រើនិមិត្ត {shape}។"
   },
   "settings": {
     "title": "ការកំណត់",

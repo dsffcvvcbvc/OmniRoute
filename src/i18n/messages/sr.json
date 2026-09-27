@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Подешавања ендпоинта модела су сачувана",
     "searchByModelAria": "Претрага по моделу",
     "selectSupportedEndpoint": "Изаберите бар једну подржану крајњу тачку",
-    "antigravityClientProfileHarness": "Окружење / CLI"
+    "antigravityClientProfileHarness": "Окружење / CLI",
+    "presetCatalogTitle": "Унапред подешени добављачи",
+    "presetCatalogSubtitle": "Добављачи из унапред подешеног каталога мрежног пролаза који још немају локалну везу. Изаберите једног да унапред попуните образац за стварање кључа.",
+    "presetCatalogSearchPlaceholder": "Претражи по називу, id-у или основном URL-у…",
+    "presetCatalogShowing": "{shown} од {total}",
+    "presetCatalogMissing": "Ова основна изградња нема унапред подешени каталог — нема шта да се конфигурише.",
+    "presetCatalogAllProvisioned": "Сви унапред подешени добављачи из каталога језгра су већ подешени.",
+    "presetCatalogNoBaseUrl": "Основни URL није наведен",
+    "presetCatalogAuthUnknown": "Облик потврде идентитета непознат",
+    "presetCatalogAuthHeader": "u zaglavlju {header}",
+    "presetCatalogProvision": "Подеси",
+    "presetCatalogError": "Није могуће учитати унапред подешени каталог. Стање листе је непознато — није празна.",
+    "aisixAdminKeyRequired": "Мрежни пролаз је одговорио 401: ова површина захтева администраторски кључ. Додајте један у admin.admin_keys у конфигурацији мрежног пролаза и поново учитајте. Подаци испод су задржани, нису празни.",
+    "onboardingPresetAuthHeaderHint": "Овај добављач очекује кључ у заглављу {header}.",
+    "onboardingPresetAuthShapeHint": "Овај добављач се потврђује токеном {shape}."
   },
   "settings": {
     "title": "Подешавања",

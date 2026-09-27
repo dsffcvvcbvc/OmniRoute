@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Inställningar för sparad modellslutpunkt",
     "searchByModelAria": "Sök efter modell",
     "selectSupportedEndpoint": "Välj minst en stödd slutpunkt",
-    "antigravityClientProfileHarness": "Testverktyg / CLI"
+    "antigravityClientProfileHarness": "Testverktyg / CLI",
+    "presetCatalogTitle": "Förinställda leverantörer",
+    "presetCatalogSubtitle": "Leverantörer från gatewayns förinställda katalog som ännu inte har någon lokal anslutning. Välj en för att förfylla formuläret för att skapa en nyckel.",
+    "presetCatalogSearchPlaceholder": "Sök efter namn, id eller bas-URL…",
+    "presetCatalogShowing": "{shown} av {total}",
+    "presetCatalogMissing": "Den här grundversionen har ingen förinställd katalog — inget att konfigurera.",
+    "presetCatalogAllProvisioned": "Alla förinställda leverantörer från kärnkatalogen är redan inställda.",
+    "presetCatalogNoBaseUrl": "Bas-URL inte rapporterad",
+    "presetCatalogAuthUnknown": "autentiseringsform okänd",
+    "presetCatalogAuthHeader": "i {header}",
+    "presetCatalogProvision": "Konfigurera",
+    "presetCatalogError": "Det gick inte att läsa in den förinställda katalogen. Listans tillstånd är okänt — den är inte tom.",
+    "aisixAdminKeyRequired": "Gateway svarade 401: denna yta behöver en administratörsnyckel. Lägg till en under admin.admin_keys i gateway-konfigurationen och ladda om. Data nedan är undanhållna, inte tomma.",
+    "onboardingPresetAuthHeaderHint": "Den här leverantören förväntar sig nyckeln i header {header}.",
+    "onboardingPresetAuthShapeHint": "Den här leverantören autentiserar med en {shape}-token."
   },
   "settings": {
     "title": "Inställningar",

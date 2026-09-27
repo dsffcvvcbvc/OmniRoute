@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Definições do ponto de extremidade do modelo guardado",
     "searchByModelAria": "Pesquisar por modelo",
     "selectSupportedEndpoint": "Selecione pelo menos um endpoint suportado",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "Fornecedores predefinidos",
+    "presetCatalogSubtitle": "Fornecedores do catálogo predefinido do gateway que ainda não têm ligação local. Escolha um para pré-preencher o formulário de criação de chave.",
+    "presetCatalogSearchPlaceholder": "Pesquisar por nome, id ou URL base…",
+    "presetCatalogShowing": "{shown} de {total}",
+    "presetCatalogMissing": "Esta compilação base não tem catálogo predefinido — não há nada a provisionar.",
+    "presetCatalogAllProvisioned": "Todos os fornecedores predefinidos do catálogo base já estão configurados.",
+    "presetCatalogNoBaseUrl": "URL base não comunicada",
+    "presetCatalogAuthUnknown": "forma de autenticação desconhecida",
+    "presetCatalogAuthHeader": "em {header}",
+    "presetCatalogProvision": "Aprovisionar",
+    "presetCatalogError": "Falha ao carregar o catálogo predefinido. O estado da lista é desconhecido — não está vazia.",
+    "aisixAdminKeyRequired": "O gateway respondeu 401: esta superfície precisa de uma chave de administração. Adicione uma em admin.admin_keys na configuração do gateway e volte a carregar. Os dados abaixo estão retidos, não vazios.",
+    "onboardingPresetAuthHeaderHint": "Este fornecedor espera a chave no cabeçalho {header}.",
+    "onboardingPresetAuthShapeHint": "Este fornecedor autentica-se com um token {shape}."
   },
   "settings": {
     "title": "Configurações",

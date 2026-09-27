@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "સાચવેલ મોડેલ અંતિમ બિંદુની સેટિંગ્સ",
     "searchByModelAria": "મોડલ દ્વારા શોધો",
     "selectSupportedEndpoint": "કમથી કમ એક સમર્થિત અંતિમ બિંદુ પસંદ કરો",
-    "antigravityClientProfileHarness": "હાર્નેસ / CLI"
+    "antigravityClientProfileHarness": "હાર્નેસ / CLI",
+    "presetCatalogTitle": "પ્રીસેટ પ્રોવાઇડર્સ",
+    "presetCatalogSubtitle": "ગેટવે પ્રીસેટ કેટાલોગમાંથી આવતા પ્રોવાઇડર્સ જેમને હજી સ્થાનિક કનેક્શન નથી. કી બનાવવાનું ફોર્મ પહેલાંથી ભરાય એ માટે એક પસંદ કરો.",
+    "presetCatalogSearchPlaceholder": "નામ, આઈડી કે બેસ URL દ્વારા શોધો…",
+    "presetCatalogShowing": "{total} માંથી {shown}",
+    "presetCatalogMissing": "આ કોર બિલ્ડમાં કોઈ પ્રીસેટ કેટાલોગ નથી — વ્યવસ્થા કરવા માટે કંઈ નથી.",
+    "presetCatalogAllProvisioned": "કોર કેટાલોગના દરેક પ્રીસેટ વેન્ડર પહેલેથી ગોઠવાયેલા છે.",
+    "presetCatalogNoBaseUrl": "બેસ URL જણાવાયું નથી",
+    "presetCatalogAuthUnknown": "ઓથ શેપ અજાણ",
+    "presetCatalogAuthHeader": "{header} માં",
+    "presetCatalogProvision": "ગોઠવો",
+    "presetCatalogError": "પ્રીસેટ કેટાલોગ લોડ થયો નથી. સૂચિની સ્થિતિ અજાણ છે — ખાલી નથી.",
+    "aisixAdminKeyRequired": "ગેટવેએ 401 જવાબ આપ્યું: આ સપાટાને એડમિન કી જોઈએ છે. ગેટવે કનફિગમાં admin.admin_keys હેઠળ એક ઉમેરો, પછી ફરી લોડ કરો. નીચેનો ડેટા રહેયો છે, ખાલી નથી.",
+    "onboardingPresetAuthHeaderHint": "આ પ્રોવાઇડર {header} હેડરમાં કી અપેક્ષા કરે છે.",
+    "onboardingPresetAuthShapeHint": "આ પ્રોવાઇડર {shape} ટોકન વાપરીને પ્રામાણિકતા ચકાસે છે."
   },
   "settings": {
     "title": "સેટિંગ્સ",

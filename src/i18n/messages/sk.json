@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Nastavenia koncového bodu uloženého modelu",
     "searchByModelAria": "Hľadať podľa modelu",
     "selectSupportedEndpoint": "Vyberte aspoň jeden podporovaný koncový bod",
-    "antigravityClientProfileHarness": "Testovacie prostredie / CLI"
+    "antigravityClientProfileHarness": "Testovacie prostredie / CLI",
+    "presetCatalogTitle": "Predvolení poskytovatelia",
+    "presetCatalogSubtitle": "Poskytovatelia z vopred nastaveného katalógu brány, ktorí ešte nemajú miestne pripojenie. Vyberte jedného, aby sa vopred vyplnil formulár na vytvorenie kľúča.",
+    "presetCatalogSearchPlaceholder": "Hľadať podľa názvu, id alebo základnej URL…",
+    "presetCatalogShowing": "{shown} z {total}",
+    "presetCatalogMissing": "Toto základné zostavenie nemá katalog predvolených hodnôt — nie je čo nastavovať.",
+    "presetCatalogAllProvisioned": "Všetci predvolení poskytovatelia z katalógu jadra sú už nastavení.",
+    "presetCatalogNoBaseUrl": "Základná URL nie je uvedená",
+    "presetCatalogAuthUnknown": "Neznámy tvar overovania",
+    "presetCatalogAuthHeader": "v hlavičke {header}",
+    "presetCatalogProvision": "Nastaviť",
+    "presetCatalogError": "Nepodarilo sa načítať katalog predvolených hodnôt. Stav zoznamu je neznámy — nie je prázdny.",
+    "aisixAdminKeyRequired": "Brána odpovedala 401: táto plocha potrebuje administrátorský kľúč. Pridajte jeden do admin.admin_keys v konfigurácii brány a znovu načítajte. Údaje nižšie sú zadržané, nie prázdne.",
+    "onboardingPresetAuthHeaderHint": "Tento poskytovateľ očakáva kľúč v hlavičke {header}.",
+    "onboardingPresetAuthShapeHint": "Tento poskytovateľ sa autentizuje tokenom {shape}."
   },
   "settings": {
     "title": "Nastavenia",

@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "സംരക്ഷിച്ച മോഡൽ എൻഡ്പോയിന്റ് ക്രമീകരണങ്ങൾ",
     "searchByModelAria": "മോഡൽ അനുസരിച്ച് തിരയുക",
     "selectSupportedEndpoint": "പിന്തുണയ്ക്കുന്ന ഒരു എൻഡ്പോയിന്റെങ്കിലും തിരഞ്ഞെടുക്കുക",
-    "antigravityClientProfileHarness": "ഹാർനെസ് / CLI"
+    "antigravityClientProfileHarness": "ഹാർനെസ് / CLI",
+    "presetCatalogTitle": "പ്രിസെറ്റ് പ്രൈഡറുകൾ",
+    "presetCatalogSubtitle": "ഗേറ്റ്‌വേയിന്റെ പ്രിസെറ്റ് കാറ്റലോഗിൽ നിന്നുള്ള പ്രൈഡറുകൾക്ക് ഇതുവരെ ലോക്കൽ കണക്ഷൻ ഇല്ല. കീ ഉണ്ടാക്കാനുള്ള ഫോം മുൻകൂട്ടി പൂരിപ്പിക്കാൻ ഒന്ന് തിരഞ്ഞെടുക്കുക.",
+    "presetCatalogSearchPlaceholder": "പേര്, ഐഡി അല്ലെങ്കിൽ ബേസ് URL എന്നിവയാൽ തിരയുക…",
+    "presetCatalogShowing": "{total} ൽ {shown}",
+    "presetCatalogMissing": "ഈ കോർ ബിൽഡിലെ പ്രിസെറ്റ് കാറ്റലോഗില്ല — ക്രമീകരിക്കാൻ ഒന്നുമില്ല.",
+    "presetCatalogAllProvisioned": "കോർ കാറ്റലോഗിലെ എല്ലാ പ്രിസെറ്റ് പ്രൈഡറുകളും ഇതിനക്കുള്ളള്ളി ക്രമീകരിച്ചിരിക്കുന്നു.",
+    "presetCatalogNoBaseUrl": "ബേസ് URL റിപ്പോർട്ട് ചെയ്തിട്ടില്ല",
+    "presetCatalogAuthUnknown": "ഓത്തൻറ്റിക്കേഷൻ രൂപം അറിയില്ല",
+    "presetCatalogAuthHeader": "{header} ഹെഡറിലെ",
+    "presetCatalogProvision": "ക്രമീകരിക്കുക",
+    "presetCatalogError": "പ്രിസെറ്റ് കാറ്റലോഗ് ലോഡ് ചെയ്യാനായില്ല. പട്ടികയുടെ നില അറിയില്ല — അത് ശൂന്യമല്ല.",
+    "aisixAdminKeyRequired": "ഗേറ്റ്‌വേ 401 തിരിച്ചു: ഈ ഉപരിപ്ലതിക്ക് ഒരു അഡ്മിൻ കീ വേണം. ഗേറ്റ്‌വേ കോൺഫിഗിലെ admin.admin_keys-ലേക്ക് ഒന്ന് ചേർത്ത് വീണ്ടും ലോഡ് ചെയ്യുക. താഴെയുള്ള ഡാറ്റ സംവരണം ചെയ്തതാണ് — ശൂന്യമല്ല.",
+    "onboardingPresetAuthHeaderHint": "ഈ പ്രൈഡറ് പ്രതീക്ഷിക്കുന്നു {header} ഹെഡറിലാണ് കീ.",
+    "onboardingPresetAuthShapeHint": "ഈ പ്രൈഡർ {shape} ടോക്കണിലൂടെ പ്രാമാണീകരിക്കുന്നു."
   },
   "settings": {
     "title": "ക്രമീകരണങ്ങൾ",

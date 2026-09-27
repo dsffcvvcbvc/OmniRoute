@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Saxlanmış model son nöqtəsi parametrləri",
     "searchByModelAria": "Model üzrə axtarış edin",
     "selectSupportedEndpoint": "Ən azı bir dəstəklənən son nöqtəni seçin",
-    "antigravityClientProfileHarness": "Test sistemi / CLI"
+    "antigravityClientProfileHarness": "Test sistemi / CLI",
+    "presetCatalogTitle": "Preset təchizatçılar",
+    "presetCatalogSubtitle": "Şəbəkə dəqiq təyinatlı kataloqu tərəfindən təqdim edilən, hələ lokal əlaqəsi olmayan təchizatçılar. Açar yaratma formasını əvvəlcədən doldurmaq üçün birini seçin.",
+    "presetCatalogSearchPlaceholder": "Ad, id və ya base URL ilə axtarış…",
+    "presetCatalogShowing": "{total} dan {shown}",
+    "presetCatalogMissing": "Bu çekirdek quruluşunda preset kataloqu yoxdur — təmin etmək üçün heç nə yoxdur.",
+    "presetCatalogAllProvisioned": "Nüvə kataloquundakı bütün preset təchizatçılar artıq təmin edilib.",
+    "presetCatalogNoBaseUrl": "base URL bildirilməyib",
+    "presetCatalogAuthUnknown": "auth forması naməlum",
+    "presetCatalogAuthHeader": "{header} başlığında",
+    "presetCatalogProvision": "Təmin et",
+    "presetCatalogError": "Preset kataloqu yüklənə bilmədi. Siyahının vəziyyəti naməlumdur — boş deyil.",
+    "aisixAdminKeyRequired": "Şəbəkə 401 cavabı verdi: bu səthə admin açarı lazımdır. Şəbəkə konfiqurasiyasında admin.admin_keys altına bir açar əlavə edin, sonra yenidən yükləyin. Aşağıdakı məlumat gizlədilib — boş deyil.",
+    "onboardingPresetAuthHeaderHint": "Bu təchizatçı açarı {header} başlığında gözləyir.",
+    "onboardingPresetAuthShapeHint": "Bu təchizatçı {shape} token ilə kimlik təsdiqi edir."
   },
   "settings": {
     "title": "Parametrlər",

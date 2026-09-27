@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "सुरक्षित केलेल्या मॉडेल एंडपॉइंट सेटिंग्ज",
     "searchByModelAria": "मॉडेलद्वारे शोधा",
     "selectSupportedEndpoint": "किमान एक समर्थित एंडपॉइंट निवडा",
-    "antigravityClientProfileHarness": "हार्नेस / CLI"
+    "antigravityClientProfileHarness": "हार्नेस / CLI",
+    "presetCatalogTitle": "प्रीसेट पुरवठादार",
+    "presetCatalogSubtitle": "गेटवेच्या प्रीसेट कॅटलॉगमधील प्रदाते ज्यांना अद्याप स्थानिक कनेक्शन नाही. की निर्मिती फॉर्म आधी भरण्यासाठी एक निवडा.",
+    "presetCatalogSearchPlaceholder": "नाव, आयडी किंवा बेस URL नुसार शोधा…",
+    "presetCatalogShowing": "{total} पैकी {shown}",
+    "presetCatalogMissing": "या कोर बिल्डमध्ये प्रीसेट कॅटलॉग नाही — काहीही कॉन्फिगर करण्यासारखे नाही.",
+    "presetCatalogAllProvisioned": "कोर कॅटलॉगमधील सर्व प्रीसेट प्रदाते आधीच कॉन्फिगर केलेले आहेत.",
+    "presetCatalogNoBaseUrl": "बेस URL नोंदवलेला नाही",
+    "presetCatalogAuthUnknown": "प्रमाणीकरणाचा प्रकार अज्ञात आहे",
+    "presetCatalogAuthHeader": "{header} हेडरमध्ये",
+    "presetCatalogProvision": "कॉन्फिगर करा",
+    "presetCatalogError": "प्रीसेट कॅटलॉग लोड करता आला नाही. यादीची स्थिती अज्ञात आहे — ती रिकामी नाही.",
+    "aisixAdminKeyRequired": "गेटवेने 401 चे उत्तर दिले: या पृष्ठाला व्यवस्थापक किल्लीची गरज आहे. गेटवे कॉन्फिगरेशनमधील admin.admin_keys मध्ये एक जोडा आणि पुन्हा लोड करा. खालील डेटा टाळलेला आहे — रिकामा नाही.",
+    "onboardingPresetAuthHeaderHint": "हा प्रदाता {header} हेडरमध्ये कुंजी अपेक्षित करतो.",
+    "onboardingPresetAuthShapeHint": "हा प्रदाता {shape} टोकनने प्रमाणीकरण करतो."
   },
   "settings": {
     "title": "सेटिंग्ज",

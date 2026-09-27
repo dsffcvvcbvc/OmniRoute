@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Մոդելի վերջնակետի կարգավորումները պահպանվել են",
     "searchByModelAria": "Որոնել ըստ մոդելի",
     "selectSupportedEndpoint": "Ընտրեք առնվազն մեկ աջակցվող վերջնակետ",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "Նախապայմանված մատակարարներ",
+    "presetCatalogSubtitle": "Մուտքի նախապայմանված կատալոգի մատակարարները, որոնք դեռ տեղական կապ չունեն։ Ընտրեք մեկը՝ բանալիի ստեղծման ձևը նախապես լցնելու համար։",
+    "presetCatalogSearchPlaceholder": "Որոնել անունով, id-ով կամ հիմնական URL-ով…",
+    "presetCatalogShowing": "{total}-ից {shown}",
+    "presetCatalogMissing": "Այս հիմնական հավաքումն նախապայմանված կատալոգ չկա — կարգավորելու ոչինչ չկա։",
+    "presetCatalogAllProvisioned": "Միջուկի կատալոգի բոլոր նախապայմանված մատակարարներն արդեն կարգավորված են։",
+    "presetCatalogNoBaseUrl": "հիմնական URL-ը չի հաղորդվել",
+    "presetCatalogAuthUnknown": "վերիֆիկացիայի ձևն անհայտ է",
+    "presetCatalogAuthHeader": "{header} վերնագրում",
+    "presetCatalogProvision": "Տրամադրել",
+    "presetCatalogError": "Նախապայմանված կատալոգը չբեռնվեց։ Ցանկի վիճակն անհայտ է — այն դատարկ չէ։",
+    "aisixAdminKeyRequired": "Մուտքը պատասխանեց 401. այս մակերդ։ը պահանջում է ադմինիստրատորի բանալի։ Ավելացրեք մեկը մուտքի կարգավորության admin.admin_keys վայրում, ապա նորից բեռնեք։ Ներքևի տվյալները պահված են՝ ոչ թե դատարկ։",
+    "onboardingPresetAuthHeaderHint": "Այս մատակարարը սպասում է բանալին տեղադրված լինել {header} վերնագրում։",
+    "onboardingPresetAuthShapeHint": "Այս մատակարարը վերիֆիկացվում է {shape} թույթով։"
   },
   "settings": {
     "title": "Կարգավորումներ",

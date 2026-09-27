@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "تنظیمات نقطه پایانی مدل ذخیره شده",
     "searchByModelAria": "جستجو بر اساس مدل",
     "selectSupportedEndpoint": "حداقل یک نقطه پایانی پشتیبانی شده را انتخاب کنید",
-    "antigravityClientProfileHarness": "هارنس / CLI"
+    "antigravityClientProfileHarness": "هارنس / CLI",
+    "presetCatalogTitle": "ارائه‌دهندگان از پیش‌تنظیم‌شده",
+    "presetCatalogSubtitle": "ارائه‌دهندگانی که از کاتالوگ پیش‌تنظیم‌شده دروازه می‌آیند و هنوز اتصال محلی ندارند. یکی را انتخاب کنید تا فرم ساخت کلید از پیش پر شود.",
+    "presetCatalogSearchPlaceholder": "جست‌وجو بر اساس نام، شناسه یا نشانی پایه…",
+    "presetCatalogShowing": "{shown} از {total}",
+    "presetCatalogMissing": "این نسخه هسته کاتالوگ پیش‌تنظیم‌شده ندارد — چیزی برای پیکربندی نیست.",
+    "presetCatalogAllProvisioned": "همه ارائه‌دهندگان پیش‌تنظیم‌شده کاتالوگ هسته پیشاپیش پیکربندی شده‌اند.",
+    "presetCatalogNoBaseUrl": "نشانی پایه گزارش نشده است",
+    "presetCatalogAuthUnknown": "شکل احراز هویت نامشخص است",
+    "presetCatalogAuthHeader": "در هدر {header}",
+    "presetCatalogProvision": "پیکربندی",
+    "presetCatalogError": "بارگذاری کاتالوگ پیش‌تنظیم‌شده ناموفق بود. وضعیت فهرست نامشخص است — خالی نیست.",
+    "aisixAdminKeyRequired": "دروازه پاسخ ۴۰۱ داد: این سطح به کلید مدیر نیاز دارد. یک کلید به admin.admin_keys در پیکربندی دروازه بیفزایید و دوباره بارگذاری کنید. داده‌های زیر پنهان است، نه خالی.",
+    "onboardingPresetAuthHeaderHint": "این ارائه‌دهنده کلید را در هدر {header} انتظار دارد.",
+    "onboardingPresetAuthShapeHint": "این ارائه‌دهنده با یک توکن {shape} احراز هویت می‌کند."
   },
   "settings": {
     "title": "تنظیمات",

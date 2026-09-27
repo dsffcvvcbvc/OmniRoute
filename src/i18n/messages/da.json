@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Indstillinger for gemt model endpoint",
     "searchByModelAria": "Søg efter model",
     "selectSupportedEndpoint": "Vælg mindst én understøttet endpoint",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "Forudindstillede udbydere",
+    "presetCatalogSubtitle": "Leverandører fra gatewayens forudindstillede katalog, som endnu ikke har en lokal forbindelse. Vælg en, og formularen til oprettelse af nøgle udfyldes på forhånd.",
+    "presetCatalogSearchPlaceholder": "Søg efter navn, id eller basis-URL…",
+    "presetCatalogShowing": "{shown} af {total}",
+    "presetCatalogMissing": "Denne kernebuild har ingen forudindstillet katalog — intet at hente fra.",
+    "presetCatalogAllProvisioned": "Alle forudindstillede udbydere fra kernekataloget er allerede klargjort.",
+    "presetCatalogNoBaseUrl": "basis-URL er ikke oplyst",
+    "presetCatalogAuthUnknown": "godkendelsesform ukendt",
+    "presetCatalogAuthHeader": "i {header}",
+    "presetCatalogProvision": "Klargør",
+    "presetCatalogError": "Den forudindstillede katalog kunne ikke indlæses. Listens tilstand er ukendt — den er ikke tom.",
+    "aisixAdminKeyRequired": "Gatewayen svarede 401: denne overflade kræver en administratornøgle. Føj en til admin.admin_keys i gateway-konfigurationen, og genindlæs derefter. Data nedenfor er tilbageholdt, ikke tomme.",
+    "onboardingPresetAuthHeaderHint": "Denne udbyder forventer nøglen i overskriften {header}.",
+    "onboardingPresetAuthShapeHint": "Denne udbyder godkendes med et {shape}-token."
   },
   "settings": {
     "title": "Indstillinger",

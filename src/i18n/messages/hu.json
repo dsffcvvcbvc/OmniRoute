@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Mentett modell végpont beállításai",
     "searchByModelAria": "Keresés modell szerint",
     "selectSupportedEndpoint": "Válasszon ki legalább egy támogatott végpontot",
-    "antigravityClientProfileHarness": "Tesztkeretrendszer / CLI"
+    "antigravityClientProfileHarness": "Tesztkeretrendszer / CLI",
+    "presetCatalogTitle": "Előbeállított szolgáltatók",
+    "presetCatalogSubtitle": "Az átjáró előbeállított katalógusának szolgáltatói, amelyeknek még nincs helyi kapcsolatuk. Válasszon egyet, és az API-kulcs létrehozási űrlap előtöltve lesz.",
+    "presetCatalogSearchPlaceholder": "Keresés név, azonosító vagy alap URL alapján…",
+    "presetCatalogShowing": "{shown} / {total}",
+    "presetCatalogMissing": "Ennek a maghordozásnak nincs előbeállított katalógusa — nincs mit beállítani.",
+    "presetCatalogAllProvisioned": "A maghordzó katalóg minden előbeállított szolgáltatója már be van állítva.",
+    "presetCatalogNoBaseUrl": "alap URL nincs megadva",
+    "presetCatalogAuthUnknown": "ismeretlen hitelesítési forma",
+    "presetCatalogAuthHeader": "a(z) {header} fejlécben",
+    "presetCatalogProvision": "Beállítás",
+    "presetCatalogError": "Az előbeállított katalógus betöltése nem sikerült. A lista állapota ismeretlen — nem üres.",
+    "aisixAdminKeyRequired": "Az átjáró 401-et adott vissza: ehhez a felülethez adminisztrátorkulcs kell. Adj hozzá egyet az átjáró konfigurációjában az admin.admin_keys mezőbe, majd töltsd újra. Az alábbi adatok visszatartva vannak, nem üresek.",
+    "onboardingPresetAuthHeaderHint": "Ez a szolgáltató a(z) {header} fejlécben várja a kulcsot.",
+    "onboardingPresetAuthShapeHint": "Ez a szolgáltató {shape} tokennel hitelesít."
   },
   "settings": {
     "title": "Beállítások elemre",

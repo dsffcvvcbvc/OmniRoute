@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Configuración del punto final del modelo guardado",
     "searchByModelAria": "Buscar por modelo",
     "selectSupportedEndpoint": "Seleccione al menos un endpoint compatible",
-    "antigravityClientProfileHarness": "Entorno / CLI"
+    "antigravityClientProfileHarness": "Entorno / CLI",
+    "presetCatalogTitle": "Proveedores predefinidos",
+    "presetCatalogSubtitle": "Proveedores del catálogo predefinido de la pasarela que aún no tienen conexión local. Elige uno para rellenar el formulario de creación de clave.",
+    "presetCatalogSearchPlaceholder": "Buscar por nombre, id o URL base…",
+    "presetCatalogShowing": "{shown} de {total}",
+    "presetCatalogMissing": "Esta compilación base no tiene catálogo predefinido — no hay nada que aprovisionar.",
+    "presetCatalogAllProvisioned": "Todos los proveedores predefinidos del catálogo base ya están configurados.",
+    "presetCatalogNoBaseUrl": "URL base no comunicada",
+    "presetCatalogAuthUnknown": "forma de autenticación desconocida",
+    "presetCatalogAuthHeader": "en {header}",
+    "presetCatalogProvision": "Aprovisionar",
+    "presetCatalogError": "No se pudo cargar el catálogo predefinido. El estado de la lista se desconoce: no está vacía.",
+    "aisixAdminKeyRequired": "La pasarela respondió 401: esta superficie necesita una clave de administrador. Añade una en admin.admin_keys de la configuración de la pasarela y vuelve a cargar. Los datos de abajo están retenidos, no vacíos.",
+    "onboardingPresetAuthHeaderHint": "Este proveedor espera la clave en la cabecera {header}.",
+    "onboardingPresetAuthShapeHint": "Este proveedor se autentica con un token {shape}."
   },
   "settings": {
     "title": "Configuración",

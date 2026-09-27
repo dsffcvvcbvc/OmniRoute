@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "ਮਾਡਲ ਐਂਡਪੌਇੰਟ ਸੈਟਿੰਗਾਂ ਸੰਭਾਲੀਆਂ ਗਈਆਂ",
     "searchByModelAria": "ਮਾਡਲ ਦੁਆਰਾ ਖੋਜੋ",
     "selectSupportedEndpoint": "ਘੱਟੋ-ਘੱਟ ਇੱਕ ਸਮਰਥਿਤ ਐਂਡਪੌਇੰਟ ਚੁਣੋ",
-    "antigravityClientProfileHarness": "ਹਾਰਨੈੱਸ / CLI"
+    "antigravityClientProfileHarness": "ਹਾਰਨੈੱਸ / CLI",
+    "presetCatalogTitle": "ਪ੍ਰੀਸੈੱਟ ਪ੍ਰਦਾਤਾ",
+    "presetCatalogSubtitle": "ਪ੍ਰਦਾਤਾ ਜੋ ਗੇਟਵੇ ਦੀ ਪ੍ਰੀਸੈੱਟ ਕੈਟਲਾਗ ਤੋਂ ਆਉਂਦੇ ਹਨ ਪਰ ਹਾਲੇ ਸਥਾਨਕ ਕਨੈਕਸ਼ਨ ਨਹੀਂ ਹੈ। ਕੀ ਬਣਾਉਣ ਦੀ ਫਾਰਮ ਪਹਿਲਾਂ ਭਰਨ ਲਈ ਇੱਕ ਚੁਣੋ।",
+    "presetCatalogSearchPlaceholder": "ਨਾਮ, ਆਈਡੀ ਜਾਂ ਬੇਸ URL ਨਾਲ ਖੋਜੋ…",
+    "presetCatalogShowing": "{total} ਵਿੱਚੋਂ {shown}",
+    "presetCatalogMissing": "ਇਸ ਕੋਰ ਬਿਲਡ ਵਿੱਚ ਕੋਈ ਪ੍ਰੀਸੈੱਟ ਕੈਟਲਾਗ ਨਹੀਂ — ਕੋਈ ਚੀਜ਼ ਕੌਂਫਿਗਰ ਕਰਨ ਲਈ ਨਹੀਂ।",
+    "presetCatalogAllProvisioned": "ਕੋਰ ਕੈਟਲਾਗ ਦੇ ਸਾਰੇ ਪ੍ਰੀਸੈੱਟ ਪ੍ਰਦਾਤਾ ਪਹਿਲਾਂ ਹੀ ਕੌਂਫਿਗਰ ਹਨ।",
+    "presetCatalogNoBaseUrl": "ਬੇਸ URL ਦੀ ਰਿਪੋਰਟ ਨਹੀਂ ਹੈ",
+    "presetCatalogAuthUnknown": "ਪ੍ਰਮਾਣੀਕਰਨ ਦਾ ਢਾਂਚਾ ਅਣਜਾਣ ਹੈ",
+    "presetCatalogAuthHeader": "{header} ਵਿੱਚ",
+    "presetCatalogProvision": "ਸੰਰਚਿਤ ਕਰੋ",
+    "presetCatalogError": "ਪ੍ਰੀਸੈੱਟ ਕੈਟਲਾਗ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ। ਸੂਚੀ ਦੀ ਸਥਿਤੀ ਅਣਜਾਣ ਹੈ — ਇਹ ਖਾਲੀ ਨਹੀਂ ਹੈ।",
+    "aisixAdminKeyRequired": "ਗੇਟਵੇ ਨੇ 401 ਦਿੱਤਾ: ਇਸ ਸਤ੍ਹਾ ਨੂੰ ਐਡਮਿਨ ਕੀ ਚਾਹੀਦੀ ਹੈ। ਗੇਟਵੇ ਕੌਂਫਿਗਰੇਸ਼ਨ ਦੇ admin.admin_keys ਵਿੱਚ ਇੱਕ ਜੋੜੋ, ਫਿਰ ਮੁੜ ਲੋਡ ਕਰੋ। ਹੇਠਲਾ ਡਾਟਾ ਰੋਕਿਆ ਗਿਆ ਹੈ — ਖਾਲੀ ਨਹੀਂ।",
+    "onboardingPresetAuthHeaderHint": "ਇਹ ਪ੍ਰਦਾਤਾ {header} ਹੈਡਰ ਵਿੱਚ ਕੀ ਦੀ ਉਮੀਦ ਕਰਦਾ ਹੈ।",
+    "onboardingPresetAuthShapeHint": "ਇਹ ਪ੍ਰਦਾਤਾ {shape} ਟੋਕਨ ਨਾਲ ਪ੍ਰਮਾਣੀਕਤਾ ਕਰਦਾ ਹੈ।"
   },
   "settings": {
     "title": "ਸੈਟਿੰਗਾਂ",

@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Modeļa galapunkta iestatījumi saglabāti",
     "searchByModelAria": "Meklēt pēc modeļa",
     "selectSupportedEndpoint": "Izvēlieties vismaz vienu atbalstītu galapunktu",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "Iepriekš noteiktie pakalpojumu sniedzēji",
+    "presetCatalogSubtitle": "Pakalpojumu sniedzēji no iepriekš noteiktā vārtu kataloga, kuriem vēl nav vietējā savienojuma. Izvēlieties vienu, lai iepriekš aizpildītu atslēgas izveides formu.",
+    "presetCatalogSearchPlaceholder": "Meklēt pēc nosaukuma, id vai pamata URL…",
+    "presetCatalogShowing": "{shown} no {total}",
+    "presetCatalogMissing": "Šajā kodolbūvē nav iepriekš noteiktā kataloga — nav ko konfigurēt.",
+    "presetCatalogAllProvisioned": "Visi iepriekš noteiktie pakalpojumu sniedzēji no kodola kataloga jau konfigurēti.",
+    "presetCatalogNoBaseUrl": "pamata URL nav norādīts",
+    "presetCatalogAuthUnknown": "autentifikācijas veids nav zināms",
+    "presetCatalogAuthHeader": "galvenes {header}",
+    "presetCatalogProvision": "Iestatīt",
+    "presetCatalogError": "Neizdevās ielādēt iepriekš noteikto katalogu. Saraksta stāvoklis nav zināms — tas nav tukšs.",
+    "aisixAdminKeyRequired": "Vārti atbildēja ar 401: šai virsmai nepieciešama administratora atslēga. Pievienojiet vienu pie admin.admin_keys vārtu konfigurācijā un pārlādējiet. Zemāk esošie dati ir nodrošināti, nevis tukši.",
+    "onboardingPresetAuthHeaderHint": "Šis pakalpojumu sniedzējs gaida atslēgu galvenē {header}.",
+    "onboardingPresetAuthShapeHint": "Šis pakalpojumu sniedzējs autentificē ar {shape} pilnību."
   },
   "settings": {
     "title": "Iestatījumi",

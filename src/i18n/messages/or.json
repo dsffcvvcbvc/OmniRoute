@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "ମଡେଲ୍ ଏଣ୍ଡପଏଣ୍ଟ ସେଟିଂସ୍ ସଞ୍ଚୟ ହୋଇଛି",
     "searchByModelAria": "ମଡେଲ୍ ଅନୁସାରେ ସନ୍ଧାନ କରନ୍ତୁ",
     "selectSupportedEndpoint": "ଅତି କମରେ ଗୋଟିଏ ସମର୍ଥିତ ଏଣ୍ଡପଏଣ୍ଟ ବାଛନ୍ତୁ",
-    "antigravityClientProfileHarness": "ହାର୍ନେସ୍ / CLI"
+    "antigravityClientProfileHarness": "ହାର୍ନେସ୍ / CLI",
+    "presetCatalogTitle": "ପୂର୍ବ-ସେଟ୍ ପ୍ରଦାୟକାର",
+    "presetCatalogSubtitle": "ଗେଟୱେର ପୂର୍ବ-ସେଟ୍ କାଟାଲଗରୁ ଆସିବା ପ୍ରଦାୟକାର ଯଦିଓ ସ୍ଥାନୀୟ ସଂଯୋଗ ନାହିଁ। କି ତିଆରି ଫର୍ମ ପୂର୍ବରୁ ପୂରଣ କରିବା ପାଇଁ ଗୋଟେ ବାଛନ୍ତୁ।",
+    "presetCatalogSearchPlaceholder": "ନାମ, id କିମ୍ବା base URL ଦ୍ୱାରା ଖୋଜନ୍ତୁ…",
+    "presetCatalogShowing": "{total} ମଧ୍ୟରେ {shown}",
+    "presetCatalogMissing": "ଏই କୋର ବିଲ୍ଡରେ ପୂର୍ବ-ସେଟ୍ କାଟାଲଗ ନାହିଁ — କଣସି ସେଟ୍ କରିବା ପାଇଁ କିଛି ନାହିଁ।",
+    "presetCatalogAllProvisioned": "ସବୁ ପୂର୍ବ-ସେଟ୍ ପ୍ରଦାୟକାର କୋର କାଟାଲଗରୁ ପୂର୍ବରୁ ସେଟ୍ ଅଛନ୍ତି।",
+    "presetCatalogNoBaseUrl": "base URL ରିପୋର୍ଟ ହୋଇନାହିଁ",
+    "presetCatalogAuthUnknown": "ପ୍ରମାଣୀକରଣ ଆକୃତି ଅଜଣା",
+    "presetCatalogAuthHeader": "{header} ରେ",
+    "presetCatalogProvision": "ପ୍ରସ୍ଥାପନ",
+    "presetCatalogError": "ପୂର୍ବ-ସେଟ୍ କାଟାଲଗ ଲୋଡ ହେଲା ନାହିଁ। ତାଲିକାର ସ୍ଥିତି ଅଜଣା — ଖାଲି ନୁହେଁ।",
+    "aisixAdminKeyRequired": "ଗେଟୱେର 401 ଦେଇଛି: ଏହି ପୃଷ୍ଠଟି ପାଇଁ ଏକ ଆଡ୍ମିନ କି ଦରକାର। ଗେଟୱେ କନ୍ଫିଗ୍‌ରେ admin.admin_keys ରେ ଗୋଟେ ଯୋଡ଼ନ୍ତୁ, ତାରପରେ ପୁନର୍ବାର ଲୋଡ୍ କରନ୍ତୁ। ତଳେଥିବା ଡାଟା ଲୁକାଯାଇଛି — ଖାଲି ନୁହେଁ।",
+    "onboardingPresetAuthHeaderHint": "ଏହି ପ୍ରଦାୟକାର {header} ହେଡରରେ କି ଅପେକ୍ଷା କରୁଛନ୍ତି।",
+    "onboardingPresetAuthShapeHint": "ଏହି ପ୍ରଦାୟକାର {shape} ଟୋକନ ବ୍ୟାରଥରେ ପରିଚୟ ପରିଶୀଳନ କରେ।"
   },
   "settings": {
     "title": "ସେଟିଂସ୍",

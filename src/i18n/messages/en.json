@@ -6539,7 +6539,21 @@
     "savedModelEndpointSettings": "Saved model endpoint settings",
     "searchByModelAria": "Search by model",
     "selectSupportedEndpoint": "Select at least one supported endpoint",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "Preset providers",
+    "presetCatalogSubtitle": "Vendors shipped by the gateway preset catalog that have no local connection yet. Pick one to prefill the key creation form.",
+    "presetCatalogSearchPlaceholder": "Search by name, id or base URL…",
+    "presetCatalogShowing": "{shown} of {total}",
+    "presetCatalogMissing": "No preset catalog on this core build — nothing to provision from.",
+    "presetCatalogAllProvisioned": "Every preset vendor from the core catalog is already provisioned.",
+    "presetCatalogNoBaseUrl": "base URL not reported",
+    "presetCatalogAuthUnknown": "auth shape unknown",
+    "presetCatalogAuthHeader": "in {header}",
+    "presetCatalogProvision": "Provision",
+    "presetCatalogError": "Failed to load the preset catalog. The list is unknown — not empty.",
+    "aisixAdminKeyRequired": "The gateway answered 401: this surface needs an admin key. Add one to admin.admin_keys in the gateway config, then reload. The data below is withheld, not empty.",
+    "onboardingPresetAuthHeaderHint": "This vendor expects the key in the {header} header.",
+    "onboardingPresetAuthShapeHint": "This vendor authenticates with a {shape} token."
   },
   "settings": {
     "title": "Settings",

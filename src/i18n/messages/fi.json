@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Tallennetun mallin päätepisteen asetukset",
     "searchByModelAria": "Hae mallin mukaan",
     "selectSupportedEndpoint": "Valitse vähintään yksi tuettu päätepiste",
-    "antigravityClientProfileHarness": "Testauskehys / CLI"
+    "antigravityClientProfileHarness": "Testauskehys / CLI",
+    "presetCatalogTitle": "Esiasetusten palveluntarjoajat",
+    "presetCatalogSubtitle": "Yhdyskytkimen esiasetuskatalogin palveluntarjoajat, joilla ei ole vielä paikallista yhteyttä. Valitse yksi, niin avaimen luontilomake täyttyy valmiiksi.",
+    "presetCatalogSearchPlaceholder": "Hae nimellä, tunnuksella tai perus-URL-llä…",
+    "presetCatalogShowing": "{shown} / {total}",
+    "presetCatalogMissing": "Tässä ydinkooniversiossa ei ole esiasetuskatalogia — mitään ei ole varustettavana.",
+    "presetCatalogAllProvisioned": "Kaikki ytimen katalogin esiasetettu palveluntarjoajat on jo määritetty.",
+    "presetCatalogNoBaseUrl": "perus-URL:ää ei ilmoitettu",
+    "presetCatalogAuthUnknown": "tunnistautumisen muoto tuntematon",
+    "presetCatalogAuthHeader": "otsikossa {header}",
+    "presetCatalogProvision": "Ota käyttöön",
+    "presetCatalogError": "Esiasetuskatalogin lataus epäonnistui. Luettelon tila on tuntematon — se ei ole tyhjä.",
+    "aisixAdminKeyRequired": "Yhdyskytkin vastasi 401: tämä pinta tarvitsee ylläpitäjäavaimen. Lisää yksi yhdysytkimen määrityksen admin.admin_keys-kohtaan ja lataa uudelleen. Alla olevat tiedot on pidätetty, eivät tyhjät.",
+    "onboardingPresetAuthHeaderHint": "Tämä palveluntarjoaja odottaa avaimen otsakkeessa {header}.",
+    "onboardingPresetAuthShapeHint": "Tämä palveluntarjoaja todentaa itsensä {shape}-tunnuksella."
   },
   "settings": {
     "title": "Asetukset",

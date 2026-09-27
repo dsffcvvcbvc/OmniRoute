@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Einstellungen für den gespeicherten Modell-Endpunkt",
     "searchByModelAria": "Nach Modell suchen",
     "selectSupportedEndpoint": "Wählen Sie mindestens einen unterstützten Endpunkt aus",
-    "antigravityClientProfileHarness": "Testsystem / CLI"
+    "antigravityClientProfileHarness": "Testsystem / CLI",
+    "presetCatalogTitle": "Voreingestellte Anbieter",
+    "presetCatalogSubtitle": "Anbieter aus dem voreingestellten Katalog des Gateways, die noch keine lokale Verbindung haben. Wähle einen aus, um das Formular zum Anlegen eines Schlüssels vorzufüllen.",
+    "presetCatalogSearchPlaceholder": "Nach Name, ID oder Basis-URL suchen…",
+    "presetCatalogShowing": "{shown} von {total}",
+    "presetCatalogMissing": "Dieser Core-Build hat keinen voreingestellten Katalog — es gibt nichts zu provisionieren.",
+    "presetCatalogAllProvisioned": "Alle voreingestellten Anbieter aus dem Kernkatalog sind bereits eingerichtet.",
+    "presetCatalogNoBaseUrl": "Basis-URL nicht gemeldet",
+    "presetCatalogAuthUnknown": "Auth-Form unbekannt",
+    "presetCatalogAuthHeader": "im Header {header}",
+    "presetCatalogProvision": "Einrichten",
+    "presetCatalogError": "Der voreingestellte Katalog konnte nicht geladen werden. Der Zustand der Liste ist unbekannt — sie ist nicht leer.",
+    "aisixAdminKeyRequired": "Das Gateway antwortete mit 401: diese Oberfläche braucht einen Admin-Schlüssel. Trage einen unter admin.admin_keys in der Gateway-Konfiguration ein und lade neu. Die Daten unten sind zurückgehalten, nicht leer.",
+    "onboardingPresetAuthHeaderHint": "Dieser Anbieter erwartet den Schlüssel im Header {header}.",
+    "onboardingPresetAuthShapeHint": "Dieser Anbieter authentifiziert sich mit einem {shape}-Token."
   },
   "settings": {
     "title": "Einstellungen",

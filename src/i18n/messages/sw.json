@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Mipangilio ya mwisho wa mfano uliohifadhiwa",
     "searchByModelAria": "Tafuta kwa mfano",
     "selectSupportedEndpoint": "Chagua angalau kiunganishi kimoja kinachoungwa mkono",
-    "antigravityClientProfileHarness": "Kiunzi / CLI"
+    "antigravityClientProfileHarness": "Kiunzi / CLI",
+    "presetCatalogTitle": "Wanaotoa waliowekwa awali",
+    "presetCatalogSubtitle": "Wanaotoa kutoka katalogi iliyowekwa awali ya kituo ambayo bado hawana muunganisho wa ndani. Chagua mmoja ili kujaza fomu ya kutengeneza ufunguo.",
+    "presetCatalogSearchPlaceholder": "Tafuta kwa jina, id au URL ya msingi…",
+    "presetCatalogShowing": "{shown} kati ya {total}",
+    "presetCatalogMissing": "Jengo la msingi hili halina katalogi iliyowekwa awali — hakuna cha kusanidi.",
+    "presetCatalogAllProvisioned": "Wanaotoa wote waliowekwa awali kutoka katalogi ya msingi wamealreadyishwa.",
+    "presetCatalogNoBaseUrl": "URL ya msingi haijasirikiwa",
+    "presetCatalogAuthUnknown": "Haijulalamu ya uthibitishaji haijulikani",
+    "presetCatalogAuthHeader": "katika {header}",
+    "presetCatalogProvision": "Weka",
+    "presetCatalogError": "Imeshindwa kupakia katalogi iliyowekwa awali. Hali ya orodha haijulikani — siyo tupu.",
+    "aisixAdminKeyRequired": "Kituo jibu 401: usoifu huu unahitaji ufunguo wa msimamizi. Ongeza mmoja kwenye admin.admin_keys katika usanidi wa kituo kisha upya pakia. Data iliyo hapa chini imeshikiliwa — si tupu.",
+    "onboardingPresetAuthHeaderHint": "Mtoa hili anakutaribu kuwa ufunguo utapatikane kwenye kichwa {header}.",
+    "onboardingPresetAuthShapeHint": "Mtoa hili huthibitisha kwa tokeni ya {shape}."
   },
   "settings": {
     "title": "Mipangilio",

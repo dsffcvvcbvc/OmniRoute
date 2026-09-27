@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Sábháladh socruithe críochphointe an mhúnla",
     "searchByModelAria": "Cuardaigh de réir mhúnla",
     "selectSupportedEndpoint": "Roghnaigh críochphointe amháin ar a laghad a dtacaítear leis",
-    "antigravityClientProfileHarness": "Úim / CLI"
+    "antigravityClientProfileHarness": "Úim / CLI",
+    "presetCatalogTitle": "Soláthraithe réamhshocraithe",
+    "presetCatalogSubtitle": "Soláthraithe ón gcatalóg réamhshocraithe den gheatail a bhfuil nasc áitiúil acu fós. Roghnaigh ceann chun an fhoirm chruthaithe eochairí a réamhlíonadh.",
+    "presetCatalogSearchPlaceholder": "Cuardaigh de réir ainm, id nó URL bunaithe…",
+    "presetCatalogShowing": "{shown} as {total}",
+    "presetCatalogMissing": "Níl catalóg réamhshocraithe ar an leagan bunaoiseach seo — níl aon rud le cumraíocht.",
+    "presetCatalogAllProvisioned": "Tá gach soláthraithe réamhshocraithe sa chatalóg an líonra socraithe cheana.",
+    "presetCatalogNoBaseUrl": "níl URL bunaithe tuairiscithe",
+    "presetCatalogAuthUnknown": "cruthúnas aitheantais gan bhfuil ar eolas",
+    "presetCatalogAuthHeader": "i {header}",
+    "presetCatalogProvision": "Cuir ar fáil",
+    "presetCatalogError": "Níorbh fhéidir an catalóg réamhshocraithe a luchtaitheadh. Tá stair na liosta ar eolais — níl sé folamh.",
+    "aisixAdminKeyRequired": "Thug an geatail freagra 401: tá teasta seo ardh chun eochair riarthóra. Cuir ceann leis in admin.admin_keys i cumraíocht an gheatail agus ath luchtigh. Tá na sonraí thíos coinnithe, ní folamh.",
+    "onboardingPresetAuthHeaderHint": "Feithneann an soláthraithe seo an eochair sa cheann {header}.",
+    "onboardingPresetAuthShapeHint": "Dearbhaíonn an soláthraithe seo é seo le pasbhearr {shape}."
   },
   "settings": {
     "title": "Socruithe",

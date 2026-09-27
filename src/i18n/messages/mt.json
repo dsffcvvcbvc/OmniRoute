@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Settings issejvjati tal-endpoint tal-mudell",
     "searchByModelAria": "Fittex skont il-mudell",
     "selectSupportedEndpoint": "Agħżel mill-inqas endpoint wieħed appoġġjat",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "Fornituri presettjati",
+    "presetCatalogSubtitle": "Fornituri mill-katalogu presettjat tal-gateway li għandhom biss konnessjoni lokali. Agħżel wieħed biex tf-filled il-formola tal-ħol tal-chiżan.",
+    "presetCatalogSearchPlaceholder": "Fittex skont isem, id jew URL bażi…",
+    "presetCatalogShowing": "{shown} minn {total}",
+    "presetCatalogMissing": "Dan il-bniżett bażi dan ma hemm katalogu presettjat — xejn xi tista' tkun.",
+    "presetCatalogAllProvisioned": "Il-fornituri presettjati kollha mill-katalogu tal-qabedza huma diġà konfigurati.",
+    "presetCatalogNoBaseUrl": "L-URL bażi ma rrappurtat",
+    "presetCatalogAuthUnknown": "Forma ta' awtentikazzjoni mhix żmiena",
+    "presetCatalogAuthHeader": "f'{header}",
+    "presetCatalogProvision": "Ipprovdi",
+    "presetCatalogError": "Failed to load the katalogu presettjat. L-istat tal-lista mhux magħruf — mhux għajnejn.",
+    "aisixAdminKeyRequired": "Il-gateway wieġeb 401: din il-wiċċ teħtieġ ċiaft ta' amministrazzjoni. Żid ħadd fi admin.admin_keys fil-konfigurazzjoni tal-gateway, imbagħad tagħni. Id-data hawn taħt huwa miżżumn, mhux vidju.",
+    "onboardingPresetAuthHeaderHint": "Dan il-fornitur dan jistenna l-iċ-ċewwa fl-intestazzjoni {header}.",
+    "onboardingPresetAuthShapeHint": "Dan il-fornitur jivverifika b'token {shape}."
   },
   "settings": {
     "title": "Issettjar",

@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "إعدادات نقطة نهاية النموذج المحفوظ",
     "searchByModelAria": "البحث حسب الطراز",
     "selectSupportedEndpoint": "اختر نقطة نهاية مدعومة واحدة على الأقل",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "مزوّدو القائمة الجاهزة",
+    "presetCatalogSubtitle": "مزوّدون يوفّرهم كتالوج البوابات المسبق ولم يتوفّر لهم اتصال محلي بعد. اختر واحدًا لتعبئة نموذج إنشاء المفتاح مسبقًا.",
+    "presetCatalogSearchPlaceholder": "ابحث بالاسم أو المعرّف أو عنوان الأساس…",
+    "presetCatalogShowing": "{shown} من {total}",
+    "presetCatalogMissing": "لا يوجد كتالوج جاهز في هذه النسخة الأساسية — لا شيء يمكن تجهيزه منه.",
+    "presetCatalogAllProvisioned": "كل مزوّد موجود في كتالوج النواة المسبقية قد تم تجهيزه بالفعل.",
+    "presetCatalogNoBaseUrl": "لم يُبلَّغ عن عنوان الأساس",
+    "presetCatalogAuthUnknown": "شكل المصادقة غير معروف",
+    "presetCatalogAuthHeader": "في {header}",
+    "presetCatalogProvision": "تهيئة",
+    "presetCatalogError": "تعذّر تحميل كتالوج الجاهزين. حالة القائمة غير معروفة — وليست فارغة.",
+    "aisixAdminKeyRequired": "أجابت البوابة بحالة 401: يحتاج هذا السطح إلى مفتاح مسؤول. أضف مفتاحًا إلى admin.admin_keys في إعدادات البوابة ثم أعد التحميل. البيانات أدناه محجوبة، وليست فارغة.",
+    "onboardingPresetAuthHeaderHint": "يتوقع هذا المزوّد المفتاح في ترويسة {header}.",
+    "onboardingPresetAuthShapeHint": "يصادق هذا المزوّد عبر رمز {shape}."
   },
   "settings": {
     "title": "الإعدادات",

@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Impostazioni dell'endpoint del modello salvato",
     "searchByModelAria": "Cerca per modello",
     "selectSupportedEndpoint": "Seleziona almeno un endpoint supportato",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "Provider preimpostati",
+    "presetCatalogSubtitle": "Provider dal catalogo predefinito del gateway che non hanno ancora una connessione locale. Scegline uno per precompilare il modulo di creazione della chiave.",
+    "presetCatalogSearchPlaceholder": "Cerca per nome, id o URL di base…",
+    "presetCatalogShowing": "{shown} di {total}",
+    "presetCatalogMissing": "Questa build core non ha un catalogo preimpostato — non c'è nulla da configurare.",
+    "presetCatalogAllProvisioned": "Tutti i provider preimpostati dal catalogo del core sono già configurati.",
+    "presetCatalogNoBaseUrl": "URL di base non segnalata",
+    "presetCatalogAuthUnknown": "forma di autenticazione sconosciuta",
+    "presetCatalogAuthHeader": "nell'intestazione {header}",
+    "presetCatalogProvision": "Eroga",
+    "presetCatalogError": "Caricamento del catalogo preimpostato non riuscito. Lo stato dell'elenco è sconosciuto — non è vuoto.",
+    "aisixAdminKeyRequired": "Il gateway ha risposto 401: questa superficie richiede una chiave di amministrazione. Aggiungine una ad admin.admin_keys nella configurazione del gateway e ricarica. I dati qui sotto sono trattenuti, non vuoti.",
+    "onboardingPresetAuthHeaderHint": "Questo provider si aspetta la chiave nell'intestazione {header}.",
+    "onboardingPresetAuthShapeHint": "Questo provider si autentica con un token {shape}."
   },
   "settings": {
     "title": "Impostazioni",

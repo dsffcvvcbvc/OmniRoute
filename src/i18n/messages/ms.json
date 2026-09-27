@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Tetapan titik akhir model yang disimpan",
     "searchByModelAria": "Cari mengikut model",
     "selectSupportedEndpoint": "Pilih sekurang-kurangnya satu titik akhir yang disokong",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "Pembekal pratetap",
+    "presetCatalogSubtitle": "Pembekal daripada katalog pratetap gateway yang belum mempunyai sambungan tempatan. Pilih satu untuk mengisi borang penciptaan kunci terlebih dahulu.",
+    "presetCatalogSearchPlaceholder": "Cari mengikut nama, id atau URL asas…",
+    "presetCatalogShowing": "{shown} daripada {total}",
+    "presetCatalogMissing": "Tiadai teras ini tiada katalog pratetap — tiada apa untuk dikonfigurasikan.",
+    "presetCatalogAllProvisioned": "Semua penyedia pratetap daripada katalog inti telah dikonfigurasikan.",
+    "presetCatalogNoBaseUrl": "URL asas tidak dilaporkan",
+    "presetCatalogAuthUnknown": "Bentuk pengesahan tidak diketahui",
+    "presetCatalogAuthHeader": "dalam pengepala {header}",
+    "presetCatalogProvision": "Sediakan",
+    "presetCatalogError": "Gagal memuatkan katalog pratetap. Keadaan senarai tidak diketahui — ia bukan kosong.",
+    "aisixAdminKeyRequired": "Gateway menjawab 401: permukaan ini memerlukan kunci admin. Tambah satu ke admin.admin_keys dalam konfigurasi gateway kemudian muat semula. Data di bawah ditahan, bukan kosong.",
+    "onboardingPresetAuthHeaderHint": "Pembekal ini menjangkukkan kunci dalam pengepala {header}.",
+    "onboardingPresetAuthShapeHint": "Pembekal ini mengesahkan dengan token {shape}."
   },
   "settings": {
     "title": "tetapan",

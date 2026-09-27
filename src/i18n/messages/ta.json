@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "சேமிக்கப்பட்ட மாதிரி முடிவுறுப்பு அமைப்புகள்",
     "searchByModelAria": "மாதிரியில் தேடு",
     "selectSupportedEndpoint": "குறைந்தது ஒரு ஆதரிக்கப்படும் முடிவுகளைத் தேர்ந்தெடுக்கவும்",
-    "antigravityClientProfileHarness": "ஹார்னஸ் / CLI"
+    "antigravityClientProfileHarness": "ஹார்னஸ் / CLI",
+    "presetCatalogTitle": "முன்கூட்டிய வழங்கிகள்",
+    "presetCatalogSubtitle": "கேட்வி முன்கூட்டிய தcatalogue-இலிருந்து வரும் வழங்கிகள், இன்னும் அவற்றுக்கு உள்ளூர் இணைப்பு இல்லை. விசை உருவாக்கும் படிவத்தை முன்பே நிரப்ப ஒன்றைத் தேர்ந்தெடுங்கள்.",
+    "presetCatalogSearchPlaceholder": "பெயர், id அல்லது அடிப்படை URL மூலம் தேடுங்கள்…",
+    "presetCatalogShowing": "{total} இல் {shown}",
+    "presetCatalogMissing": "இந்த அடிப்படை உருவாக்கத்தில் முன்கூட்டிய தcatalogue இல்லை — அமைக்க வேண்டியதில்லை.",
+    "presetCatalogAllProvisioned": "கேட்வி தcatalogue-இல் உள்ள முன்கூட்டிய வழங்கிகள் அனைத்தும் ஏற்கனவே அமைக்கப்பட்டுள்ளன.",
+    "presetCatalogNoBaseUrl": "அடிப்படை URL தெரிவிக்கப்படவில்லை",
+    "presetCatalogAuthUnknown": "அங்கீகார வடிவம் தெரியவில்லை",
+    "presetCatalogAuthHeader": "{header} இல்",
+    "presetCatalogProvision": "வழங்கு",
+    "presetCatalogError": "முன்கூட்டிய தcatalogue ஐ ஏற்ற முடியவில்லை. பட்டியலின் நிலை தெரியவில்லை — அது காலியாக இல்லை.",
+    "aisixAdminKeyRequired": "கேட்வி 401 எனப் பதிலளித்தது: இந்தப் பரப்பு நிர்வாகக் கீசுக்குத் தேவை. கேட்வி கட்டமைப்பில் admin.admin_keys கீழ் ஒன்றைச் சேர்த்து மீண்டும் ஏற்றவும். கீழே உள்ள தரவு தடுக்கப்பட்டது — காலியல்ல.",
+    "onboardingPresetAuthHeaderHint": "இந்த வழங்கி {header} தலைப்பில் விசை இருக்கும் என்று எதிர்பார்க்கிறது.",
+    "onboardingPresetAuthShapeHint": "இந்த வழங்கி {shape} டோக்கனால் அங்கீகரിക்கிறது."
   },
   "settings": {
     "title": "அமைப்புகள்",

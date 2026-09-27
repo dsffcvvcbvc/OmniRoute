@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "მოდელის საბოლოო წერტილის პარამეტრები შენახულია",
     "searchByModelAria": "მოდელის მიხედვით ძიება",
     "selectSupportedEndpoint": "აირჩიეთ სულ მცირე ერთი მხარდაჭერილი საბოლოო წერტილი",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "წინადადებული პროვაიდერები",
+    "presetCatalogSubtitle": "მალის წინადადებული კატალოგის პროვაიდერები, რომლებსაც ჯერ არ აქვთ ადგილობრივი კავშირი. აირჩიეთ ერთი, რომ გასაღების ფორმა წინასწირ შეივსოს.",
+    "presetCatalogSearchPlaceholder": "ძებნა სახელით, id-ით ან საბაზის URL-ით…",
+    "presetCatalogShowing": "{total}-დან {shown}",
+    "presetCatalogMissing": "ამ ბაზის შედგენას არ აქვს წინადადებული კატალოგი — გასაკეთრებელი არაფერია.",
+    "presetCatalogAllProvisioned": "ბრძნის კატალოგის ყველა წინადადებული პროვაიდერი უკვე დაგეგმებულია.",
+    "presetCatalogNoBaseUrl": "საბაზის URL არ იგებს შეტყობინებას",
+    "presetCatalogAuthUnknown": "ავთენტიფიკაციის ფორმა უცნობია",
+    "presetCatalogAuthHeader": "სათაურში {header}",
+    "presetCatalogProvision": "მოწყობა",
+    "presetCatalogError": "წინადადებული კატალოგის ჩატვირთვა ვერ მოხერხდა. სიის მდგომარეობა უცნობია — ის ცარიელი არ არის.",
+    "aisixAdminKeyRequired": "მალისმა 401 უპასუხა: ამ ზედაფარს სჭირდება ადმინის გასაღები. დაამატეთ ერთი admin.admin_keys-ში მალის კონფიგურაციაში, შემდეგ გადატვირთეთ. ქვემოთ მონაცემები დაგელობელია, არა ცარიელი.",
+    "onboardingPresetAuthHeaderHint": "ეს პროვაიდერი ელოდება გასაღებს {header} სათაურში.",
+    "onboardingPresetAuthShapeHint": "ეს პროვაიდერი გადამოწმებს {shape} ტოკენით."
   },
   "settings": {
     "title": "პარამეტრები",

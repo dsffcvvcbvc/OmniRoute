@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Innstillinger for lagrede modellendepunkter",
     "searchByModelAria": "Søk etter modell",
     "selectSupportedEndpoint": "Velg minst ett støttet endepunkt",
-    "antigravityClientProfileHarness": "Rammeverk / CLI"
+    "antigravityClientProfileHarness": "Rammeverk / CLI",
+    "presetCatalogTitle": "Forhåndsinnstilte leverandører",
+    "presetCatalogSubtitle": "Leverandører fra gatewayens forhåndsinnstilte katalog som ennå ikke har en lokal tilkobling. Velg én for å forhåndsutfylle skjemaet for opprettelse av nøkkel.",
+    "presetCatalogSearchPlaceholder": "Søk etter navn, id eller basis-URL…",
+    "presetCatalogShowing": "{shown} av {total}",
+    "presetCatalogMissing": "Denne kjernebyggingen har ingen forhåndsinnstilt katalog — ingenting å sette opp.",
+    "presetCatalogAllProvisioned": "Alle forhåndsinnstilte leverandører fra kjernekatalogen er allerede satt opp.",
+    "presetCatalogNoBaseUrl": "basis-URL er ikke oppgitt",
+    "presetCatalogAuthUnknown": "autentiseringsform ukjent",
+    "presetCatalogAuthHeader": "i {header}",
+    "presetCatalogProvision": "Konfigurer",
+    "presetCatalogError": "Kunne ikke laste den forhåndsinnstilte katalogen. Listens tilstand er ukjent — den er ikke tom.",
+    "aisixAdminKeyRequired": "Gatewayen svarte 401: denne flaten trenger en administrasjonsnøkkel. Legg en til i admin.admin_keys i gateway-konfigurasjonen, og last inn på nytt. Dataene nedenfor er tilbakeholdt, ikke tomme.",
+    "onboardingPresetAuthHeaderHint": "Denne leverandøren forventer nøkkelen i {header}-hodet.",
+    "onboardingPresetAuthShapeHint": "Denne leverandøren autentiserer med et {shape}-token."
   },
   "settings": {
     "title": "Innstillinger",

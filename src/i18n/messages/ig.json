@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Echekwara ntọala ebe njedebe model",
     "searchByModelAria": "Jiri model chọọ",
     "selectSupportedEndpoint": "Họrọ opekata mpe otu ebe njedebe akwadoro",
-    "antigravityClientProfileHarness": "Ngwa Nnwale / CLI"
+    "antigravityClientProfileHarness": "Ngwa Nnwale / CLI",
+    "presetCatalogTitle": "Ndị nyọchi ebulitara",
+    "presetCatalogSubtitle": "Ndị nyọchi na katalọgụ nke ahara akụrụ akụọ ahị. Nwee njikọ mpụta anyị. Ịọrọ otu iji mepụta nke ukwuu ahịaka site na n'ihu n'akụụọ.",
+    "presetCatalogSearchPlaceholder": "Chọọta site na aha ma ọ bụ URL ndabanye…",
+    "presetCatalogShowing": "{shown} n'ime {total}",
+    "presetCatalogMissing": "Ụdị a ọ nweghị katalọgụ preset — ọnweghị ihe ịhazị.",
+    "presetCatalogAllProvisioned": "Ule ndị nyọchi preset niile dị na katalọgụ ahụ akwadụla.",
+    "presetCatalogNoBaseUrl": "URL ndabanye akaraọrụka",
+    "presetCatalogAuthUnknown": "A maọọ bụ ọdịnaya dịka enweghị ọma",
+    "presetCatalogAuthHeader": "na nke {header}",
+    "presetCatalogProvision": "Nwebe",
+    "presetCatalogError": "Ụgha akpọghị ụlọ akụkọ preset. Ọnọdụ nke nchekwa dara ada — ọ bụghị efu.",
+    "aisixAdminKeyRequired": "Ụgbọ nke 401: elu okwu a chọrọ nkeji nchọkwa. Tinye otu na admin.admin_keys na nhọọọ nke ọrụ igwe ma ọ bụlaghị mgbe we nwọghị ụbọchị.",
+    "onboardingPresetAuthHeaderHint": "Onye na-agbanye a na-atụ anyị ụzọ maka igwe dị na nke {header}.",
+    "onboardingPresetAuthShapeHint": "Onye na-agbanye a na-esi anyị site na token {shape}."
   },
   "settings": {
     "title": "Ntọala",

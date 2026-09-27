@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "Àwọn ààtò endpoint awoṣe tí a fipamọ́",
     "searchByModelAria": "Ṣàwárí nípa awoṣe",
     "selectSupportedEndpoint": "Yan ó kéré tán endpoint kan tí ó ní àtìlẹ́yìn",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harness / CLI",
+    "presetCatalogTitle": "Àwọn olùpèsè tí a ṣe tàn tẹ́lẹ̀",
+    "presetCatalogSubtitle": "Àwọn olùpèsè láti inú ìcatalógì tí a ṣe tàn tẹ́lẹ̀ ti ọ̀nà àti gbogbo ibo láìsí. Ọ̀rọ̀ kan nínú láti bá ìṣe ìforúkọsílẹ̀ èke náà kúnáa tẹ́lẹ̀.",
+    "presetCatalogSearchPlaceholder": "Wá ìwé, ìd, tàbí URL ìlà…",
+    "presetCatalogShowing": "{shown} ninu {total}",
+    "presetCatalogMissing": "Ụ̀gbọ́n ìlà-ìdí yìí kò ní ìcatalógì tí a ṣe tàn tẹ́lẹ̀ — kò sí ohun tí a lè tún àtúnṣe.",
+    "presetCatalogAllProvisioned": "Gbogbo àwọn olùpèsè tí a ṣe tàn tẹ́lẹ̀ láti inú ìcatalógì ìlà-ìdí ti tún àtúnṣe tẹ́lẹ̀.",
+    "presetCatalogNoBaseUrl": "Kò sí ìsọ àtúnṣe URL ìlà-ìdí.",
+    "presetCatalogAuthUnknown": "A mọ̀ àwọn fọ̀wọ́sí ti ìfẹ̀wọ́ nípa tìíwọlé mìíràn kì í ṣe.",
+    "presetCatalogAuthHeader": "nínú {header}",
+    "presetCatalogProvision": "Ṣàtúnṣe",
+    "presetCatalogError": "Kò ṣe gbé ìcatalógì tí a ṣe tàn tẹ́lẹ̀ wá. Ọnọdụ àtúnṣe nchekwa náà kò mọ̀ — kì í ṣe òfìfo.",
+    "aisixAdminKeyRequired": "Ànáwọn gateway bá 401: àwọn ojú-ìwé yìí nílò kíì admin. Fi ọ̀kan síwájú admin.admin_keys nínú ètò-ìtọ́sọ́nà gateway kí o sì ṣe àtúnṣe. Dátà tàlà wà ní títí — kì í ṣe òfìfo.",
+    "onboardingPresetAuthHeaderHint": "Onye na-agbanye yìí retí ọ̀rọ̀ kí wà nínú àwọn àkọ́kọ́ {header}.",
+    "onboardingPresetAuthShapeHint": "Onye na-agbanye yìí ṣe àtúnṣe pẹ̀lú àmì {shape}."
   },
   "settings": {
     "title": "Àwọn Ààtò",

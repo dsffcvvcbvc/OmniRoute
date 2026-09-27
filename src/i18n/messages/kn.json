@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "ಮಾದರಿ ಎಂಡ್ಪಾಯಿಂಟ್ ಸೆಟ್ಟಿಂಗ್ಗಳನ್ನು ಉಳಿಸಲಾಗಿದೆ",
     "searchByModelAria": "ಮಾದರಿಯ ಮೂಲಕ ಹುಡುಕಿ",
     "selectSupportedEndpoint": "ಬೆಂಬಲಿತ ಎಂಡ್ಪಾಯಿಂಟ್ಗಳಲ್ಲಿ ಕನಿಷ್ಠ ಒಂದನ್ನು ಆಯ್ಕೆಮಾಡಿ",
-    "antigravityClientProfileHarness": "ಹಾರ್ನೆಸ್ / CLI"
+    "antigravityClientProfileHarness": "ಹಾರ್ನೆಸ್ / CLI",
+    "presetCatalogTitle": "ಪ್ರಿಸೆಟ್ ಪ್ರೈಡರ್‌ಗಳು",
+    "presetCatalogSubtitle": "ಗೇಟ್‌ವೇ ಪ್ರಿಸೆಟ್ ಕ್ಯಾಟಲಾಗ್‌ನಿಂದ ಬರುವ ಪ್ರೈಡರ್‌ಗಳು, ಅವರಿಗೆ ಇನ್ನೂ ಸ್ಥಳೀಯ ಸಂಪರ್ಕವಿಲ್ಲ. ಕೀ ರಚಿಸುವ ಫಾರ್ಮ್ ಮೊದಲೇ ತುಂಬಲು ಒಂದನ್ನು ಆರಿಸಿ.",
+    "presetCatalogSearchPlaceholder": "ಹೆಸರು, id ಅಥವಾ ಬೇಸ್ URL ಮೂಲಕ ಹುಡುಕಿ…",
+    "presetCatalogShowing": "{total} ರಲ್ಲಿ {shown}",
+    "presetCatalogMissing": "ಈ ಕೋರ್ ಬಿಲ್ಡ್‌ಗೆ ಪ್ರಿಸೆಟ್ ಕ್ಯಾಟಲಾಗ್ ಇಲ್ಲ — ಏನೂ ಹೊಂದಿಸಲು ಇಲ್ಲ.",
+    "presetCatalogAllProvisioned": "ಕೋರ್ ಕ್ಯಾಟಲಾಗ್‌ನ ಎಲ್ಲಾ ಪ್ರಿಸೆಟ್ ಪ್ರೈಡರ್‌ಗಳು ಈಗಾಗಲೇ ಕ್ರಮಸಿ ಇವೆ.",
+    "presetCatalogNoBaseUrl": "ಬೇಸ್ URL ವರದಿ ಮಾಡಿಲ್ಲ",
+    "presetCatalogAuthUnknown": "ದೃಢೀಕರಣದ ಆಕಾರ ಗೊತ್ತಿಲ್ಲ",
+    "presetCatalogAuthHeader": "{header} ಹೆಡರ್‌ನಲ್ಲಿ",
+    "presetCatalogProvision": "ಹೊಂದಾಯಿಸಿ",
+    "presetCatalogError": "ಪ್ರಿಸೆಟ್ ಕ್ಯಾಟಲಾಗ್ ಲೋಡ್ ಆಗಲಿಲ್ಲ. ಪಟ್ಟಿಯ ಸ್ಥಿತಿ ತಿಳಿಯಿಲ್ಲ — ಅದು ಖಾಲಿಯಾಗಿಲ್ಲ.",
+    "aisixAdminKeyRequired": "ಗೇಟ್‌ವೇ 401 ಕೊಡಲು ಮಾಡಿದೆ: ಈ ಮೇಲ್ಕೆ ನಿರ್ವಹಣೆಗೆ ಆಡ್ಮಿನ್ ಕೀ ಬೇಕು. ಗೇಟ್‌ವೇ ಕಾನ್ಫಿಗ್‌ನಲ್ಲಿ admin.admin_keys ಗೆ ಒಂದು ಸೇರಿಸಿ, ನಂತರ ಮತ್ತೆ ಲೋಡ್ ಮಾಡಿ. ಕೆಳಗಿನ ಡೇಟಾ ಮರೆಮಾಡಲಾಗಿದೆ — ಖಾಲಿ ಅಲ್ಲ.",
+    "onboardingPresetAuthHeaderHint": "ಈ ಪ್ರೈಡರ್ {header} ಹೆಡರ್‌ನಲ್ಲಿ ಕೀ ನಿರೀಕ್ಷಿಸುತ್ತಾರೆ.",
+    "onboardingPresetAuthShapeHint": "ಈ ಪ್ರೈಡರ್ {shape} ಟೋಕನ್ ಮೂಲಕ ಪ್ರಾಮಾಣೀകરಿಸುತ್ತದೆ."
   },
   "settings": {
     "title": "ಸೆಟ್ಟಿಂಗ್ಗಳು",

@@ -6538,7 +6538,21 @@
     "savedModelEndpointSettings": "सहेजे गए मॉडल एंडपॉइंट सेटिंग्स",
     "searchByModelAria": "मॉडल द्वारा खोजें",
     "selectSupportedEndpoint": "कम से कम एक समर्थित एंडपॉइंट चुनें",
-    "antigravityClientProfileHarness": "हार्नेस / CLI"
+    "antigravityClientProfileHarness": "हार्नेस / CLI",
+    "presetCatalogTitle": "प्रीसेट प्रदाता",
+    "presetCatalogSubtitle": "गेटवे के प्रीसेट कैटलॉग से आने वाले प्रदाता जिनका अभी स्थानीय कनेक्शन नहीं है। कुंजी निर्माण फ़ॉर्म पहले से भरने के लिए एक चुनें।",
+    "presetCatalogSearchPlaceholder": "नाम, आईडी या बेस URL से खोजें…",
+    "presetCatalogShowing": "{total} में से {shown}",
+    "presetCatalogMissing": "इस कोर बिल्ड में कोई प्रीसेट कैटलॉग नहीं है — कुछ भी सेटअप करने योग्य नहीं।",
+    "presetCatalogAllProvisioned": "कोर कैटलॉग के सभी प्रीसेट वेंडर पहले से कॉन्फ़िगर हैं।",
+    "presetCatalogNoBaseUrl": "बेस URL की जानकारी नहीं है",
+    "presetCatalogAuthUnknown": "प्रमाणीकरण का तरीका अज्ञात है",
+    "presetCatalogAuthHeader": "{header} हेडर में",
+    "presetCatalogProvision": "कॉन्फ़िगर करें",
+    "presetCatalogError": "प्रीसेट कैटलॉग लोड नहीं हो सका। सूची की स्थिति अज्ञात है — यह खाली नहीं है।",
+    "aisixAdminKeyRequired": "गेटवे ने 401 का जवाब दिया: इस सतह को एक एडमिन कुंजी चाहिए। गेटवे कॉन्फ़िगरेशन के admin.admin_keys में एक जोड़ें, फिर दोबारा लोड करें। नीचे का डेटा रोका गया है, खाली नहीं है।",
+    "onboardingPresetAuthHeaderHint": "यह प्रदाता कुंजी को {header} हेडर में अपेक्षा करता है।",
+    "onboardingPresetAuthShapeHint": "यह प्रदाता {shape} टोकन से प्रमाणीकरण करता है।"
   },
   "settings": {
     "title": "सेटिंग्स",
