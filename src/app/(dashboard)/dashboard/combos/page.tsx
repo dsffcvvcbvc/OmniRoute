@@ -88,9 +88,25 @@ import { getComboStepTarget } from "@/lib/combos/steps";
 import { DEAD_COMBO_CONFIG_KEYS } from "@/lib/combos/deadConfigKeys";
 import { modelFamily } from "@/lib/combos/invariants";
 import { resolveProviderAlias } from "@omniroute/open-sse/services/providerAlias.ts";
-import { resolveServerErrorMessage } from "@/lib/api/serverErrorMessage";
 import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
-import { aisixCombosUrl, isAisixMissingEndpointStatus } from "@/shared/utils/aisixEndpoints";
+import {
+  AISIX_COMBO_DEFAULT_STRATEGY,
+  AISIX_COMBO_REFUSED_DOCUMENT_FIELDS,
+  AISIX_COMBO_REFUSED_TARGET_FIELDS,
+  COMBO_DRAFT_ISSUE_MESSAGE_KEYS,
+  comboDraftIssueValues,
+  createCombo,
+  deleteCombo,
+  fetchCombos,
+  fetchDirectModelNames,
+  isAisixHonouredStrategy,
+  toAisixComboStrategy,
+  updateCombo,
+  validateComboDraft,
+  type ComboDraftIssue,
+  type ComboDraftIssueCode,
+  type ComboWriteFailureKind,
+} from "@/shared/utils/aisixCombos";
 import { useTranslations } from "next-intl";
 
 const ModelSelectModal = dynamic(() => import("@/shared/components/ModelSelectModal"), {
@@ -108,6 +124,49 @@ const STRATEGY_OPTIONS = ROUTING_STRATEGIES.map((strategy) => ({
   descKey: strategy.combosDescKey,
   icon: strategy.icon,
 }));
+
+/**
+ * English fallbacks for the strings the AISIX combo contract adds, following
+ * this page's existing literal-fallback idiom (see `STRATEGY_LABEL_FALLBACK`).
+ * Every one of these also has a real translation in all 66 locale catalogues;
+ * the literal only covers a locale that has not caught up, so it must read as a
+ * finished sentence and never as a key name.
+ */
+const AISIX_COMBO_TEXT = {
+  gatewayAdminKeyRequired:
+    "The gateway answered 401: the combos surface needs an admin key. Add one to admin.admin_keys in the gateway config, then reload. The combos below are withheld, not empty.",
+  gatewayWriteUnavailable:
+    "This gateway refused to persist the change; the data below is what the reload will find:",
+  gatewayVerbRefused:
+    "The gateway does not route that HTTP verb for combos. It serves POST to create, PATCH to update and DELETE to remove.",
+  draftRefused:
+    "The combo was not sent: it breaks a rule the gateway enforces. See the field highlighted below.",
+  contractBanner:
+    "A combo here is a virtual routing model, and the gateway implements a subset of this form. It stores name, strategy and models — inside a model: model, weight, priority, tags. Every other field, and 13 of the 19 template strategies, is refused by name on save.",
+  contractStrategyHint:
+    "Pick one of the six strategies this gateway routes with. The other 13 template strategies are shown disabled: choosing one would be refused on save.",
+  contractStrategyUnavailable: "not implemented by this gateway",
+  contractRefusedFieldsTitle: "Fields this gateway refuses on save",
+  contractRefusedFieldsHint:
+    "Each of these is turned off in the form rather than accepted and ignored — a field that saves and does nothing reads as configured and is not.",
+  contractActiveToggleReason:
+    "Enable/disable is refused: the routing model has no per-combo enabled flag.",
+  catalogUnavailable:
+    "The direct-model list has not loaded, so a target is checked when you save rather than as you type.",
+  draftIssuesTitle: "This combo cannot be saved yet:",
+};
+
+/** One English sentence per rule code, parallel to `COMBO_DRAFT_ISSUE_MESSAGE_KEYS`. */
+const AISIX_COMBO_DRAFT_ISSUE_FALLBACKS: Record<ComboDraftIssueCode, string> = {
+  name_required: "Give the combo a name (whitespace is not a name).",
+  strategy_unsupported:
+    "This routing strategy is not implemented by the gateway. Choose one of the six above.",
+  models_required: "Add at least one model to route across.",
+  model_required: "Each step must name a model.",
+  model_not_direct:
+    "{model} is not a direct model. A combo target must be a model that dispatches to an upstream of its own — not another combo, ensemble or semantic model.",
+  model_duplicate: "{model} is already in this combo. A combo lists each target once.",
+};
 
 const STRATEGY_LABEL_FALLBACK = {
   "context-relay": "Context Relay",
@@ -605,6 +664,25 @@ function getI18nOrFallback(t, key, fallback, values = undefined) {
   return fallback;
 }
 
+/**
+ * One pre-flight refusal, as the operator reads it.
+ *
+ * The rule→key mapping lives in the shared module as data (`COMBO_DRAFT_ISSUE_
+ * MESSAGE_KEYS`) so a test can pin it; this is only the lookup, because the
+ * translator itself is a React hook that node:test cannot mount.
+ */
+function describeComboDraftIssue(t, issue: ComboDraftIssue): string {
+  const key = COMBO_DRAFT_ISSUE_MESSAGE_KEYS[issue.code];
+  if (!key) {
+    // An unmapped code is a bug in this file, not a user-facing case; showing
+    // the code is louder than silently showing nothing.
+    return String(issue.code);
+  }
+  const values = comboDraftIssueValues(issue);
+  const fallback = AISIX_COMBO_DRAFT_ISSUE_FALLBACKS[issue.code];
+  return getI18nOrFallback(t, key, fallback, Object.keys(values).length > 0 ? values : undefined);
+}
+
 function moveArrayItem(items, fromIndex, toIndex) {
   const nextItems = [...items];
   const [movedItem] = nextItems.splice(fromIndex, 1);
@@ -835,6 +913,15 @@ function formatComboEntryDisplay(
 function CombosPageContent() {
   const t = useTranslations("combos");
   const tc = useTranslations("common");
+  // The page's own key+fallback translator idiom (see `getI18nOrFallback`), bound
+  // to this page's namespace. Every string the AISIX combo contract adds goes
+  // through it, so a locale that has not caught up renders the English sentence
+  // rather than a raw key.
+  const text = useCallback(
+    (key: string, fallback: string, values?: Record<string, unknown>) =>
+      getI18nOrFallback(t, key, fallback, values),
+    [t]
+  );
   const emailsVisible = useEmailPrivacyStore((s) => s.emailsVisible);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -889,6 +976,20 @@ function CombosPageContent() {
   // While true, every write refuses BEFORE sending (pre-send gate) and the
   // page shows an explicit banner instead of firing requests into a 404.
   const [combosWriteMissing, setCombosWriteMissing] = useState(false);
+  // The direct-model catalog, read from `GET /admin/v1/models`. A combo target
+  // may only name a DIRECT model, and the form refuses anything else at the
+  // point of entry rather than after a submit. `null` means "not loaded yet" —
+  // deliberately NOT `[]`, because "no direct model exists" and "we have not
+  // asked" are opposite facts, and only the second may let a draft through
+  // unchecked (the server stays the authority either way).
+  const [directModelNames, setDirectModelNames] = useState<string[] | null>(null);
+  // 401 from the admin plane: the surface EXISTS and wants an admin key. Kept
+  // apart from `combosWriteMissing` (a missing route) because the operator's fix
+  // is completely different — one config key vs. a core build.
+  const [adminKeyRequired, setAdminKeyRequired] = useState(false);
+  // The pre-flight refusals from the last submit attempt, rendered next to the
+  // form so a rejected draft says WHICH rule it broke.
+  const [draftIssues, setDraftIssues] = useState<ComboDraftIssue[]>([]);
   const [selectedIntelligentComboId, setSelectedIntelligentComboId] = useState<string | null>(null);
   const comboDragIndexRef = useRef<number | null>(null);
   const activeFilter = normalizeIntelligentRoutingFilter(searchParams.get("filter"));
@@ -952,41 +1053,43 @@ function CombosPageContent() {
       return [];
     };
     // Native combos read: `GET :3001/admin/v1/combos` wins when it answers
-    // 2xx with JSON; 404/405 marks combos-write missing (banner + pre-send
-    // refusals below) and falls through to the legacy read. Time-bounded so a
-    // stalled core can never wedge `loading` on `true` forever.
-    const readNativeCombos = async (): Promise<any | null> => {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15_000);
-      try {
-        const res = await fetch(aisixCombosUrl(), { signal: controller.signal });
-        if (isAisixMissingEndpointStatus(res.status)) {
-          setCombosWriteMissing(true);
-          return null;
-        }
-        if (!res.ok) return null;
-        const contentType = res.headers.get("content-type") || "";
-        if (!contentType.includes("application/json") && !contentType.includes("+json")) {
-          return null;
-        }
-        return await res.json().catch(() => null);
-      } catch {
+    // 2xx with JSON. Three distinct refusals, none of them an empty list:
+    //   404/405 — the surface is not on this core build (banner + pre-send
+    //             refusals below);
+    //   401/403 — the surface EXISTS and wants an admin key, so the page says
+    //             exactly that rather than drawing an empty table;
+    //   other   — `fetchCombos` reports status + error and yields no rows.
+    // The client owns the time bound, so a stalled core can never wedge
+    // `loading` on `true` forever.
+    const readNativeCombos = async (): Promise<any[] | null> => {
+      const result = await fetchCombos();
+      if (result.missing) {
+        setCombosWriteMissing(true);
         return null;
-      } finally {
-        clearTimeout(timeout);
       }
+      if (result.status === 401 || result.status === 403) {
+        setAdminKeyRequired(true);
+        return null;
+      }
+      if (result.status !== 200) return null;
+      return result.combos as any[];
     };
     try {
-      const [nativeCombosData, legacyCombosData, providersData, metricsData, nodesData] =
+      const [nativeCombosData, legacyCombosData, providersData, metricsData, nodesData, catalog] =
         await Promise.all([
           readNativeCombos(),
           safeJson(resolveAisixRequestUrl("/api/combos")),
           safeJson(resolveAisixRequestUrl("/api/providers")),
           safeJson(resolveAisixRequestUrl("/api/combos/metrics")),
           safeJson(resolveAisixRequestUrl("/api/provider-nodes")),
+          // The names a target may carry. A failed read stays `null` so the
+          // form falls back to checking on save rather than refusing every
+          // draft against a catalog it never received.
+          fetchDirectModelNames(),
         ]);
       const combosData = nativeCombosData ?? legacyCombosData;
 
+      if (catalog !== null) setDirectModelNames(catalog);
       if (combosData)
         setCombos(readList(combosData, ["combos", "data", "items"]).filter((c) => !c.isHidden));
       if (providersData) {
@@ -1073,55 +1176,93 @@ function CombosPageContent() {
     notify.error(`Ядро без combos-write: ${action} недоступно на этой сборке ядра.`);
   };
 
-  const handleCreate = async (data) => {
-    if (refuseCombosWrite("Создание combos")) return;
-    try {
-      const res = await fetch(aisixCombosUrl(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (isAisixMissingEndpointStatus(res.status)) {
-        markCombosWriteMissing("Создание combos");
+  // A refusal the page must RENDER, not one it may swallow. The gateway's own
+  // `error_msg` names the exact field or rule, so it is surfaced verbatim
+  // alongside the operator-facing sentence for the case it falls into.
+  const reportComboWriteFailure = useCallback(
+    (failure: ComboWriteFailureKind, status: number, reason: string | null, fallback: string) => {
+      if (failure === "unauthorized") {
+        setAdminKeyRequired(true);
+        notify.error(text("gatewayAdminKeyRequired", AISIX_COMBO_TEXT.gatewayAdminKeyRequired));
         return;
       }
-      if (res.ok) {
-        await fetchData();
-        setShowCreateModal(false);
-        setRecentlyCreatedCombo(data.name?.trim() || "");
-        notify.success(t("comboCreated"));
-      } else {
-        const err = await res.json().catch(() => null);
-        notify.error(err?.error?.message || err?.error || t("failedCreate"));
+      if (failure === "not_persisted" || failure === "unsupported") {
+        setCombosWriteMissing(true);
+        notify.error(
+          `${text("gatewayWriteUnavailable", AISIX_COMBO_TEXT.gatewayWriteUnavailable)} ${reason ?? ""}`.trim()
+        );
+        return;
       }
-    } catch (error) {
-      notify.error(t("errorCreating"));
+      if (failure === "method_not_allowed") {
+        notify.error(text("gatewayVerbRefused", AISIX_COMBO_TEXT.gatewayVerbRefused));
+        return;
+      }
+      notify.error([fallback, reason].filter(Boolean).join(" — ") || `${fallback} (${status})`);
+    },
+    [notify, setAdminKeyRequired, setCombosWriteMissing, text]
+  );
+
+  const handleCreate = async (data) => {
+    if (refuseCombosWrite("Создание combos")) return;
+    // Pre-flight against the SAME rules the handler applies, so a direct-model
+    // violation or a duplicate target is refused at the point of entry instead
+    // of as a 400 after a submit. The server stays the authority: a draft that
+    // passes here can still be refused if the snapshot moved underneath it, and
+    // that refusal is what the page then reports.
+    const issues = validateComboDraft(data, { directModelNames });
+    if (issues.length > 0) {
+      setDraftIssues(issues);
+      notify.error(text("draftRefused", AISIX_COMBO_TEXT.draftRefused));
+      return;
     }
+    setDraftIssues([]);
+    const outcome = await createCombo(data);
+    if (outcome.ok) {
+      await fetchData();
+      setShowCreateModal(false);
+      setRecentlyCreatedCombo(outcome.result?.combo.name || "");
+      notify.success(t("comboCreated"));
+      return;
+    }
+    if (outcome.failure === "not_found" && outcome.status === 404) {
+      // A 404 with no admin envelope is a missing ROUTE, not a missing row.
+      markCombosWriteMissing("Создание combos");
+      return;
+    }
+    reportComboWriteFailure(outcome.failure, outcome.status, outcome.reason, t("failedCreate"));
   };
 
   const handleUpdate = async (id, data) => {
     if (refuseCombosWrite("Изменение combos")) return;
-    try {
-      const res = await fetch(aisixCombosUrl(`/${encodeURIComponent(id)}`), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (isAisixMissingEndpointStatus(res.status)) {
-        markCombosWriteMissing("Изменение combos");
-        return;
-      }
-      if (res.ok) {
-        await fetchData();
-        setEditingCombo(null);
-        notify.success(t("comboUpdated"));
-      } else {
-        const err = await res.json().catch(() => null);
-        notify.error(err?.error?.message || err?.error || t("failedUpdate"));
-      }
-    } catch (error) {
-      notify.error(t("errorUpdating"));
+    const issues = validateComboDraft(data, { directModelNames });
+    if (issues.length > 0) {
+      setDraftIssues(issues);
+      notify.error(text("draftRefused", AISIX_COMBO_TEXT.draftRefused));
+      return;
     }
+    setDraftIssues([]);
+    // PATCH, never PUT: the route serves `PATCH /:id` and a `PUT` is not routed
+    // at all, so the old verb 405'd every save.
+    const outcome = await updateCombo(id, data);
+    if (outcome.ok) {
+      await fetchData();
+      setEditingCombo(null);
+      notify.success(t("comboUpdated"));
+      return;
+    }
+    if (outcome.failure === "not_found") {
+      // 404 with the admin envelope is a missing ROW, which is a different
+      // answer from a missing route: the combo was deleted underneath the form.
+      setEditingCombo(null);
+      await fetchData();
+      reportComboWriteFailure(outcome.failure, outcome.status, outcome.reason, t("failedUpdate"));
+      return;
+    }
+    if (outcome.failure === "unsupported") {
+      markCombosWriteMissing("Изменение combos");
+      return;
+    }
+    reportComboWriteFailure(outcome.failure, outcome.status, outcome.reason, t("failedUpdate"));
   };
 
   const handleComboCreated = async (comboId: string) => {
@@ -1136,22 +1277,23 @@ function CombosPageContent() {
   const handleDelete = async (id) => {
     if (!confirm(t("deleteConfirm"))) return;
     if (refuseCombosWrite("Удаление combos")) return;
-    try {
-      const res = await fetch(aisixCombosUrl(`/${encodeURIComponent(id)}`), { method: "DELETE" });
-      if (isAisixMissingEndpointStatus(res.status)) {
-        markCombosWriteMissing("Удаление combos");
-        return;
-      }
-      if (res.ok) {
-        setCombos(combos.filter((c) => c.id !== id));
-        notify.success(t("comboDeleted"));
-      } else {
-        const err = await res.json().catch(() => null);
-        notify.error(err?.error?.message || err?.error || t("errorDeleting"));
-      }
-    } catch (error) {
-      notify.error(t("errorDeleting"));
+    const outcome = await deleteCombo(id);
+    if (outcome.ok) {
+      await fetchData();
+      notify.success(t("comboDeleted"));
+      return;
     }
+    if (outcome.failure === "unsupported") {
+      markCombosWriteMissing("Удаление combos");
+      return;
+    }
+    // A 409 here is a FEATURE: the gateway refuses while another combo, an
+    // ensemble panel or a semantic route still names this one. `reason` carries
+    // the dependent names, so the operator is told what to remove first.
+    if (outcome.failure === "conflict") {
+      await fetchData();
+    }
+    reportComboWriteFailure(outcome.failure, outcome.status, outcome.reason, t("errorDeleting"));
   };
 
   const handleDuplicate = async (combo) => {
@@ -1164,11 +1306,16 @@ function CombosPageContent() {
       newName = `${baseName}-copy-${counter}`;
     }
 
+    // `config` is not part of the combo contract and every field in it is
+    // refused by name, so the copy carries only what the routing model has.
+    // `strategy` falls back to the routing model's own default rather than the
+    // template's `priority`, which the gateway does not implement.
     const data = {
       name: newName,
       models: combo.models,
-      strategy: combo.strategy || "priority",
-      config: sanitizeComboRuntimeConfig(combo.config),
+      // Translated by the transport layer; an unmapped template strategy falls
+      // back to the routing model's own default rather than a near-equivalent.
+      strategy: toAisixComboStrategy(combo.strategy) ?? AISIX_COMBO_DEFAULT_STRATEGY,
     };
 
     await handleCreate(data);
@@ -1203,42 +1350,19 @@ function CombosPageContent() {
     }
   };
 
-  const handleToggleCombo = async (combo) => {
-    if (refuseCombosWrite("Изменение combos")) return;
-    const newActive = combo.isActive === false ? true : false;
-    const previousActive = combo.isActive !== false;
-    // Optimistic update
-    setCombos((prev) => prev.map((c) => (c.id === combo.id ? { ...c, isActive: newActive } : c)));
-    try {
-      const res = await fetch(aisixCombosUrl(`/${encodeURIComponent(combo.id)}`), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: newActive }),
-      });
-      if (isAisixMissingEndpointStatus(res.status)) {
-        setCombos((prev) =>
-          prev.map((c) => (c.id === combo.id ? { ...c, isActive: previousActive } : c))
-        );
-        markCombosWriteMissing("Изменение combos");
-        return;
-      }
-      if (!res.ok) {
-        // The server rejected the toggle (4xx/5xx). Surface its message instead
-        // of silently reverting with a generic toast — never swallow the error.
-        const errorBody = await res.json().catch(() => null);
-        setCombos((prev) =>
-          prev.map((c) => (c.id === combo.id ? { ...c, isActive: previousActive } : c))
-        );
-        notify.error(resolveServerErrorMessage(errorBody, t("failedToggle")));
-      }
-    } catch (error) {
-      // Revert on network error
-      setCombos((prev) =>
-        prev.map((c) => (c.id === combo.id ? { ...c, isActive: previousActive } : c))
-      );
-      notify.error(t("failedToggle"));
-    }
-  };
+  // The enable/disable toggle is a REMOVED capability, not a broken one.
+  //
+  // `isActive` is refused by name with a 400: the routing model has no `enabled`
+  // of its own, so a toggle that flipped it would be a control the gateway
+  // cannot honour. The whole write is therefore removed rather than left as a
+  // live switch — the previous version also flipped local state BEFORE the
+  // server answered, so a refusal rendered as a switch that moved and then
+  // silently snapped back.
+  //
+  // There is nothing to send and nothing to update, so the switch itself is
+  // rendered `disabled` on the card with its reason in the tooltip: see the
+  // `combo-active-toggle-disabled` control in `ComboCardInner`, which is the
+  // only place the reason is shown.
 
   const handleHideUsageGuideForever = () => {
     try {
@@ -1390,6 +1514,70 @@ function CombosPageContent() {
           )}
         </div>
       )}
+
+      {/* 401 from the admin plane: the combos surface EXISTS and is refusing us
+          for want of an admin key. Distinct from `combosWriteMissing` because
+          the operator's fix is completely different — one config key, not a
+          different core build — and distinct from an empty list because
+          "withheld" and "you have none" are opposite facts. */}
+      {adminKeyRequired && (
+        <div
+          role="status"
+          data-testid="combos-admin-key-required"
+          className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-700 dark:text-amber-200"
+        >
+          <span className="material-symbols-outlined text-[16px] text-amber-500 shrink-0">
+            lock
+          </span>
+          <span className="flex-1">
+            {text("gatewayAdminKeyRequired", AISIX_COMBO_TEXT.gatewayAdminKeyRequired)}
+          </span>
+        </div>
+      )}
+
+      {/* The contract, stated once, before any control. A form that offers a
+          field the gateway refuses by name is the trap this repo's rules name:
+          accepted-but-unread config reads as configured and does nothing. */}
+      <div
+        role="note"
+        data-testid="combos-gateway-contract-banner"
+        className="flex items-start gap-2 rounded-lg border border-black/8 dark:border-white/8 bg-black/[0.02] dark:bg-white/[0.02] px-3 py-2 text-[12px] text-text-muted"
+      >
+        <span className="material-symbols-outlined text-[16px] text-primary shrink-0">info</span>
+        <div className="flex-1 flex flex-col gap-1.5">
+          <span>{text("contractBanner", AISIX_COMBO_TEXT.contractBanner)}</span>
+          <details className="group">
+            <summary className="cursor-pointer select-none text-[11px] font-medium text-primary hover:underline">
+              {text("contractRefusedFieldsTitle", AISIX_COMBO_TEXT.contractRefusedFieldsTitle)}
+            </summary>
+            <div className="mt-1.5 flex flex-col gap-1">
+              <p className="text-[10px]">
+                {text("contractRefusedFieldsHint", AISIX_COMBO_TEXT.contractRefusedFieldsHint)}
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {AISIX_COMBO_REFUSED_DOCUMENT_FIELDS.map((field) => (
+                  <code
+                    key={field}
+                    data-testid={`combos-refused-field-${field}`}
+                    className="rounded border border-black/8 dark:border-white/8 bg-black/[0.03] dark:bg-white/[0.03] px-1.5 py-0.5 font-mono text-[10px] text-text-muted line-through"
+                  >
+                    {field}
+                  </code>
+                ))}
+                {AISIX_COMBO_REFUSED_TARGET_FIELDS.map((field) => (
+                  <code
+                    key={field}
+                    data-testid={`combos-refused-field-${field}`}
+                    className="rounded border border-black/8 dark:border-white/8 bg-black/[0.03] dark:bg-white/[0.03] px-1.5 py-0.5 font-mono text-[10px] text-text-muted line-through"
+                  >
+                    {field}
+                  </code>
+                ))}
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
 
       {/* Native combos-write surface absent on this core build (404/405):
           creating, editing, toggling and deleting combos is refused up front
@@ -1583,7 +1771,6 @@ function CombosPageContent() {
                 testing={testingCombo === combo.name}
                 onProxy={() => setProxyTargetCombo(combo)}
                 hasProxy={comboProxyAssignedIds.has(combo.id) || !!proxyConfig?.combos?.[combo.id]}
-                onToggle={() => handleToggleCombo(combo)}
                 dragDisabled={savingComboOrder || activeFilter !== "all" || combos.length < 2}
                 isDragged={comboDragIndex === index}
                 isDropTarget={comboDragOverIndex === index && comboDragIndex !== index}
@@ -1618,6 +1805,8 @@ function CombosPageContent() {
         combo={null}
         comboConfigMode={comboConfigMode}
         routingSettings={routingSettings}
+        draftIssues={draftIssues}
+        directModelNames={directModelNames}
       />
 
       <ComboFormModal
@@ -1629,6 +1818,8 @@ function CombosPageContent() {
         activeProviders={activeProviders}
         comboConfigMode={comboConfigMode}
         routingSettings={routingSettings}
+        draftIssues={draftIssues}
+        directModelNames={directModelNames}
       />
 
       {proxyTargetCombo && (
@@ -1970,7 +2161,6 @@ function ComboCardInner({
   testing,
   onProxy,
   hasProxy,
-  onToggle,
   providerNodes,
   dragDisabled,
   isDragged,
@@ -2103,11 +2293,23 @@ function ComboCardInner({
 
         <div className="flex items-center justify-between md:justify-end gap-1.5 shrink-0 ml-0 md:ml-2 w-full md:w-auto mt-2 md:mt-0 pt-2 md:pt-0 border-t border-black/5 dark:border-white/5 md:border-t-0">
           <div className="flex items-center gap-2">
+            {/* Enable/disable is DISABLED, not hidden and not live: the routing
+                model has no per-combo `enabled` flag, so the gateway refuses
+                `isActive` by name with a 400. The control stays in the tree the
+                template owns and renders the switch greyed with its reason
+                attached — a live switch that 400s is the trap, and a removed
+                one would leave the operator hunting for a feature that quietly
+                stopped existing. */}
             <Toggle
               size="sm"
               checked={!isDisabled}
-              onChange={onToggle}
-              title={isDisabled ? t("enableCombo") : t("disableCombo")}
+              disabled
+              data-testid="combo-active-toggle-disabled"
+              title={getI18nOrFallback(
+                t,
+                "contractActiveToggleReason",
+                AISIX_COMBO_TEXT.contractActiveToggleReason
+              )}
             />
             <span className="text-[10px] text-text-muted md:hidden">
               {isDisabled ? "Disabled" : "Active"}
@@ -2270,6 +2472,11 @@ function ComboFormModal({
   activeProviders,
   comboConfigMode,
   routingSettings,
+  // The pre-flight refusals from the last submit, and the direct-model catalog
+  // the target picker is checked against. Both are owned by the page because
+  // both are answers from the GATEWAY, not local form state.
+  draftIssues,
+  directModelNames,
 }) {
   type CreateDraftSnapshot = {
     name: string;
@@ -3563,30 +3770,67 @@ function ComboFormModal({
                   </Tooltip>
                 )}
               </div>
+              {/* The gateway implements 6 of this form's 19 strategies, and none
+                  of the 19 shares a spelling with the 6 (the template says
+                  `round-robin`, the routing model says `round_robin`). So the
+                  picker cannot be trimmed silently: an operator who used to see
+                  `lkgp` here needs to be told it is gone and why. The six are
+                  the LIVE choices; the other thirteen are rendered as disabled
+                  with their reason attached, which keeps the grid, the icons and
+                  the labels the template owns while making the unreachable ones
+                  impossible to pick. */}
+              <p data-testid="combos-strategy-hint" className="text-[10px] text-text-muted mb-1.5">
+                {text("contractStrategyHint", AISIX_COMBO_TEXT.contractStrategyHint)}
+              </p>
               <div className="grid grid-cols-3 gap-1 p-0.5 bg-black/5 dark:bg-white/5 rounded-lg">
-                {STRATEGY_OPTIONS.map((s) => (
-                  <button
-                    key={s.value}
-                    onClick={() => setStrategy(s.value)}
-                    data-testid={`strategy-option-${s.value}`}
-                    title={!isExpertMode ? getStrategyDescription(t, s.value) : undefined}
-                    aria-label={
-                      isExpertMode
-                        ? getStrategyLabel(t, s.value)
-                        : `${getStrategyLabel(t, s.value)}. ${getStrategyDescription(t, s.value)}`
-                    }
-                    className={`py-1.5 px-2 rounded-md text-xs font-medium transition-all ${
-                      strategy === s.value
-                        ? "bg-white dark:bg-white/5 shadow-sm text-primary"
-                        : "text-text-muted hover:text-text-main"
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-[14px] align-middle mr-0.5">
-                      {s.icon}
-                    </span>
-                    {getStrategyLabel(t, s.value)}
-                  </button>
-                ))}
+                {STRATEGY_OPTIONS.map((s) => {
+                  const honoured = isAisixHonouredStrategy(s.value);
+                  const unavailableReason = text(
+                    "contractStrategyUnavailable",
+                    AISIX_COMBO_TEXT.contractStrategyUnavailable
+                  );
+                  return (
+                    <button
+                      key={s.value}
+                      onClick={() => {
+                        // Belt and braces: a disabled button cannot be clicked,
+                        // but a keyboard/script path must not set a strategy the
+                        // gateway will refuse either.
+                        if (!honoured) return;
+                        setStrategy(s.value);
+                      }}
+                      disabled={!honoured}
+                      data-testid={`strategy-option-${s.value}`}
+                      data-gateway-supported={honoured ? "true" : "false"}
+                      title={
+                        honoured
+                          ? !isExpertMode
+                            ? getStrategyDescription(t, s.value)
+                            : undefined
+                          : unavailableReason
+                      }
+                      aria-label={
+                        honoured
+                          ? isExpertMode
+                            ? getStrategyLabel(t, s.value)
+                            : `${getStrategyLabel(t, s.value)}. ${getStrategyDescription(t, s.value)}`
+                          : `${getStrategyLabel(t, s.value)}. ${unavailableReason}`
+                      }
+                      className={`py-1.5 px-2 rounded-md text-xs font-medium transition-all ${
+                        !honoured
+                          ? "text-text-muted/50 cursor-not-allowed line-through"
+                          : strategy === s.value
+                            ? "bg-white dark:bg-white/5 shadow-sm text-primary"
+                            : "text-text-muted hover:text-text-main"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[14px] align-middle mr-0.5">
+                        {s.icon}
+                      </span>
+                      {getStrategyLabel(t, s.value)}
+                    </button>
+                  );
+                })}
               </div>
               {!isExpertMode && (
                 <>
@@ -5172,6 +5416,42 @@ function ComboFormModal({
               </div>
 
               <ComboReadinessPanel checks={readinessChecks} blockers={saveBlockers} />
+            </div>
+          )}
+
+          {/* The refusals, next to the save button that triggered them. The
+              server is still the authority — these are the same rules it
+              applies, run early so an operator is told which field to fix
+              instead of reading a 400 that names a path they never saw. */}
+          {draftIssues?.length > 0 && (
+            <div
+              role="alert"
+              data-testid="combo-draft-issues"
+              className="flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-[12px] text-red-700 dark:text-red-200"
+            >
+              <span className="material-symbols-outlined text-[16px] text-red-500 shrink-0">
+                error
+              </span>
+              <div className="flex-1 flex flex-col gap-0.5">
+                <span className="font-semibold">
+                  {getI18nOrFallback(t, "draftIssuesTitle", AISIX_COMBO_TEXT.draftIssuesTitle)}
+                </span>
+                {draftIssues.map((issue, index) => (
+                  <span key={`${issue.code}-${issue.field}-${index}`} className="flex gap-1">
+                    <code className="font-mono text-[10px] opacity-80 shrink-0">{issue.field}</code>
+                    <span>{describeComboDraftIssue(t, issue)}</span>
+                  </span>
+                ))}
+                {directModelNames === null && (
+                  <span className="text-[10px] opacity-80">
+                    {getI18nOrFallback(
+                      t,
+                      "catalogUnavailable",
+                      AISIX_COMBO_TEXT.catalogUnavailable
+                    )}
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
