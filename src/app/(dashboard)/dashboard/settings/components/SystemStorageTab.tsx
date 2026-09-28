@@ -9,6 +9,8 @@ import {
   isAuthRequiredResponse,
   AuthRequiredBanner,
 } from "./systemStorageAuth";
+import { BackupListPanel } from "./BackupListPanel";
+import { formatBytes, formatRelativeTime } from "./systemStorageFormat";
 import { resolveAisixSurfaceSupport } from "@/shared/utils/aisixEndpoints";
 
 // Whitelist mirrored from src/lib/db/cleanup.ts::RESET_USAGE_HISTORY_PERIODS.
@@ -718,33 +720,6 @@ export default function SystemStorageTab() {
     setPendingImportFile(null);
   };
 
-  const formatBytes = (bytes) => {
-    if (!bytes || bytes === 0) return "0 B";
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const formatRelativeTime = (isoString) => {
-    if (!isoString) return null;
-    const now = new Date();
-    const then = new Date(isoString);
-    const diffMs = (now as any) - (then as any);
-    const diffMin = Math.floor(diffMs / 60000);
-    if (diffMin < 1) return t("justNow");
-    if (diffMin < 60) return t("minutesAgo", { count: diffMin });
-    const diffHr = Math.floor(diffMin / 60);
-    if (diffHr < 24) return t("hoursAgo", { count: diffHr });
-    const diffDays = Math.floor(diffHr / 24);
-    return t("daysAgo", { count: diffDays });
-  };
-
-  const formatBackupReason = (reason) => {
-    if (reason === "manual") return t("backupReasonManual");
-    if (reason === "pre-restore") return t("backupReasonPreRestore");
-    return reason;
-  };
-
   const renderStatusAlert = (status, index) => {
     if (!status.message) return null;
     const isInfo = status.type === "info";
@@ -847,116 +822,17 @@ export default function SystemStorageTab() {
     if (!backupsExpanded) return null;
 
     return (
-      <div className="flex flex-col gap-2 mt-3">
-        {backupsLoading ? (
-          <div className="flex items-center justify-center py-6 text-text-muted">
-            <span
-              className="material-symbols-outlined animate-spin text-[20px] mr-2"
-              aria-hidden="true"
-            >
-              progress_activity
-            </span>
-            {t("loadingBackups")}
-          </div>
-        ) : backups.length === 0 ? (
-          <div className="text-center py-6 text-text-muted text-sm">
-            <span
-              className="material-symbols-outlined text-[32px] mb-2 block opacity-40"
-              aria-hidden="true"
-            >
-              folder_off
-            </span>
-            {t("noBackupsYet")}
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-text-muted">
-                {t("backupsAvailable", { count: backups.length })}
-              </span>
-              <button
-                onClick={loadBackups}
-                className="text-xs text-primary hover:underline flex items-center gap-1"
-              >
-                <span className="material-symbols-outlined text-[14px]" aria-hidden="true">
-                  refresh
-                </span>
-                {t("refresh")}
-              </button>
-            </div>
-            {backups.map((backup) => (
-              <div
-                key={backup.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-black/[0.02] dark:bg-white/[0.02] border border-border/50 hover:border-border transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span
-                      className="material-symbols-outlined text-[16px] text-amber-500"
-                      aria-hidden="true"
-                    >
-                      description
-                    </span>
-                    <span className="text-sm font-medium truncate">
-                      {new Date(backup.createdAt).toLocaleString(locale)}
-                    </span>
-                    <Badge
-                      variant={
-                        backup.reason === "pre-restore"
-                          ? "warning"
-                          : backup.reason === "manual"
-                            ? "success"
-                            : "default"
-                      }
-                      size="sm"
-                    >
-                      {formatBackupReason(backup.reason)}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-text-muted ml-6">
-                    <span>{t("connectionsCount", { count: backup.connectionCount })}</span>
-                    <span>•</span>
-                    <span>{formatBytes(backup.size)}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 ml-3">
-                  {confirmRestoreId === backup.id ? (
-                    <>
-                      <span className="text-xs text-amber-500 font-medium">{t("confirm")}</span>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => handleRestore(backup.id)}
-                        loading={restoringId === backup.id}
-                        className="!bg-amber-500 hover:!bg-amber-600"
-                      >
-                        {t("yes")}
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => setConfirmRestoreId(null)}>
-                        {t("no")}
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setConfirmRestoreId(backup.id)}
-                    >
-                      <span
-                        className="material-symbols-outlined text-[14px] mr-1"
-                        aria-hidden="true"
-                      >
-                        restore
-                      </span>
-                      {t("restore")}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </>
-        )}
-      </div>
+      <BackupListPanel
+        backups={backups}
+        loading={backupsLoading}
+        locale={locale}
+        restoringId={restoringId}
+        confirmRestoreId={confirmRestoreId}
+        onRefresh={loadBackups}
+        onRequestRestore={setConfirmRestoreId}
+        onCancelRestore={() => setConfirmRestoreId(null)}
+        onRestore={handleRestore}
+      />
     );
   };
 
@@ -1558,7 +1434,7 @@ export default function SystemStorageTab() {
               {storageHealth.lastBackupAt
                 ? new Date(storageHealth.lastBackupAt).toLocaleString(locale) +
                   " (" +
-                  formatRelativeTime(storageHealth.lastBackupAt) +
+                  formatRelativeTime(storageHealth.lastBackupAt, t) +
                   ")"
                 : t("noBackupYet")}
             </p>
