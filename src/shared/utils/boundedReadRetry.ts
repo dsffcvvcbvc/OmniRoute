@@ -161,15 +161,57 @@ export interface BoundedReadOutcome<T> {
   error: string | null;
 }
 
-export interface BoundedReadHooks {
-  sleep?: (ms: number) => Promise<void>;
-  random?: () => number;
-  /** Aborting settles the read at the attempt in flight instead of continuing. */
-  signal?: { aborted: boolean };
+/**
+ * The slice of `AbortSignal` this module observes. Structural on purpose: a test
+ * may pass a plain `{ aborted: false }`, and a real `AbortController.signal`
+ * satisfies it with no cast. The listener methods are what make a pending backoff
+ * CANCELLABLE rather than merely checked between attempts.
+ */
+export interface BoundedReadAbortSignal {
+  aborted: boolean;
+  addEventListener?: (type: "abort", listener: () => void) => void;
+  removeEventListener?: (type: "abort", listener: () => void) => void;
 }
 
-const realSleep = (ms: number): Promise<void> =>
-  ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
+export interface BoundedReadHooks {
+  /**
+   * Backoff wait. The default is cancellable through `signal` (see `realSleep`);
+   * a caller-supplied one receives the signal as a second argument and may ignore
+   * it, in which case the loop's own checks bound the wait the same way.
+   */
+  sleep?: (ms: number, signal?: BoundedReadAbortSignal) => Promise<void>;
+  random?: () => number;
+  /** Aborting settles the read at the attempt in flight instead of continuing. */
+  signal?: BoundedReadAbortSignal;
+}
+
+/**
+ * The default backoff wait — and it is CANCELLABLE, which a bare
+ * `new Promise((r) => setTimeout(r, ms))` is not.
+ *
+ * Forwarding a signal the sleep never looks at is half a cancellation: a caller
+ * that aborts 1 ms into a 250 ms backoff still waits out the remaining 249 ms
+ * before the loop's next `aborted` check can fire. The card that renders a
+ * skeleton while a read is in flight shows exactly those 249 ms as a stuck
+ * skeleton, for a run that can no longer change anything. So the timer is
+ * cleared and the wait settles the moment the signal aborts; the loop's own
+ * check then breaks out before another attempt is issued.
+ */
+const realSleep = (ms: number, signal?: BoundedReadAbortSignal): Promise<void> => {
+  if (ms <= 0 || signal?.aborted) return Promise.resolve();
+  return new Promise((resolve) => {
+    let timer: ReturnType<typeof setTimeout>;
+    // Detached on BOTH paths: one listener per backoff would otherwise pile up
+    // on a long-lived signal.
+    const settle = (): void => {
+      clearTimeout(timer);
+      signal?.removeEventListener?.("abort", settle);
+      resolve();
+    };
+    timer = setTimeout(settle, ms);
+    signal?.addEventListener?.("abort", settle);
+  });
+};
 
 /**
  * Run one read under the policy above and settle for good.
@@ -216,9 +258,13 @@ export async function readWithBoundedRetry<T>(
         error: null,
       };
     }
+    // Checked HERE, not only at the top of the loop: an abort observed the
+    // moment this attempt settled must decide the run, or the loop would enter
+    // the retry path — spending a backoff and then discovering at the next
+    // iteration's guard that it had already been superseded.
     if (hooks.signal?.aborted) break;
     if (!shouldRetryBoundedRead(last, attemptNumber, p)) break;
-    await sleep(boundedReadBackoffDelayMs(attemptNumber, p, random));
+    await sleep(boundedReadBackoffDelayMs(attemptNumber, p, random), hooks.signal);
   }
 
   return {

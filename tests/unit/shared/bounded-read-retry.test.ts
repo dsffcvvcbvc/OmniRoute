@@ -66,6 +66,17 @@ function countingReader(...results: BoundedReadAttempt[]) {
 const noSleep = async (): Promise<void> => undefined;
 const identity = (raw: unknown) => raw;
 
+/**
+ * Drain the microtask queue and one macrotask turn. Under `mock.timers` only
+ * `setTimeout` is faked, so `setImmediate` still yields to the real event loop —
+ * which is exactly what "has the run settled, or is it parked on a pending
+ * timer?" needs to observe, and what a real 250 ms wait would ruin.
+ */
+const flush = async (): Promise<void> =>
+  new Promise<void>((resolve) => {
+    setImmediate(resolve);
+  });
+
 describe("classifyBoundedRead", () => {
   it("routes 2xx to ok", () => {
     assert.equal(classifyBoundedRead(ok()), "ok");
@@ -308,6 +319,87 @@ describe("readWithBoundedRetry — transient reads", () => {
       signal,
     });
     assert.equal(state.calls, 1, "no further attempt once the caller has aborted");
+    assert.equal(outcome.ok, false);
+    assert.equal(outcome.classification, "transient");
+  });
+
+  it("returns PROMPTLY when the caller aborts mid-backoff — the wait is cancellable", async (t) => {
+    t.mock.timers.enable({ apis: ["setTimeout"] });
+    try {
+      const controller = new AbortController();
+      // jitterRatio 0 so the pending wait is exactly baseDelayMs: this test is
+      // about the abort, not about a random delay.
+      const policy: BoundedReadPolicy = {
+        maxAttempts: 3,
+        baseDelayMs: 250,
+        maxDelayMs: 4_000,
+        jitterRatio: 0,
+      };
+      const { read, state } = countingReader(serverError());
+
+      let settled = false;
+      const pending = readWithBoundedRetry(read, identity, policy, {
+        signal: controller.signal,
+      }).then((outcome) => {
+        settled = true;
+        return outcome;
+      });
+
+      // The first attempt has failed and the 250 ms backoff is now pending.
+      await flush();
+      assert.equal(state.calls, 1, "the first attempt is in, with the backoff pending");
+      assert.equal(settled, false, "the run is still inside its backoff at this point");
+
+      // The caller gives up while that backoff is pending. A forwarded signal
+      // that nothing observes during the sleep is not a cancellation: this run
+      // would otherwise sit here for the remaining 250 ms — the stuck skeleton
+      // the consuming card renders — for a result that can no longer land.
+      controller.abort();
+      await flush();
+
+      assert.equal(
+        settled,
+        true,
+        "a superseded run must not wait out a backoff it can never use: the wait has to be cancellable"
+      );
+      const outcome = await pending;
+      assert.equal(state.calls, 1, "no further attempt once the caller has aborted");
+      assert.equal(outcome.attempts, 1);
+      assert.equal(outcome.ok, false);
+      assert.equal(outcome.classification, "transient");
+    } finally {
+      t.mock.timers.reset();
+    }
+  });
+
+  it("lets an abort seen the moment an attempt settles decide the run, without entering the retry path", async () => {
+    const controller = new AbortController();
+    const waits: number[] = [];
+    let calls = 0;
+    // The caller gives up while the request is IN FLIGHT, so the signal is
+    // already aborted by the time the attempt resolves. The guard at the top of
+    // the loop has therefore not had its turn yet and cannot be what stops this
+    // run — the check made right after the attempt is.
+    const read = async (): Promise<BoundedReadAttempt> => {
+      calls++;
+      controller.abort();
+      return serverError();
+    };
+
+    const outcome = await readWithBoundedRetry(read, identity, undefined, {
+      sleep: async (ms) => {
+        waits.push(ms);
+      },
+      signal: controller.signal,
+    });
+
+    assert.equal(calls, 1, "the rest of the budget is not spent on a superseded run");
+    assert.deepEqual(
+      waits,
+      [],
+      "a superseded run must not start a backoff it can never use, even one that settles immediately"
+    );
+    assert.equal(outcome.attempts, 1);
     assert.equal(outcome.ok, false);
     assert.equal(outcome.classification, "transient");
   });
