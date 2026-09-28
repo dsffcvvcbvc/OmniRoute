@@ -32,6 +32,16 @@ const STATIC_TREE = "/_next/";
 /** RSC payloads and the prerendered segment tree, which the client validates by content type. */
 const RSC_PATTERN = /\.(?:txt)$/;
 
+/**
+ * What a `.txt` RSC payload must be served as on this deployment.
+ *
+ * There is no Next.js server behind the dashboard here: the Rust static
+ * handler's mime table answers, and `.txt` is `text/plain`. The client
+ * validates the content type before it will treat a response as flight data,
+ * so this is the value whose loss breaks a client-side navigation.
+ */
+const RSC_CONTENT_TYPE = "text/plain";
+
 test.describe("static assets", () => {
   test("every _next/static request the dashboard makes returns 2xx", async ({ page }) => {
     const watch = new PageWatch(page);
@@ -78,20 +88,38 @@ test.describe("static assets", () => {
     const payloads = watch.responses.filter(
       (r) => r.url.startsWith(BASE_URL) && RSC_PATTERN.test(new URL(r.url).pathname)
     );
+    const mislabelled = payloads
+      .filter((r) => !r.contentType.startsWith(RSC_CONTENT_TYPE))
+      .map((r) => `${r.url.replace(BASE_URL, "")} → "${r.contentType || "(no content-type)"}"`);
     writeEvidence("05-rsc-payloads.json", {
-      payloads: payloads.map((r) => `${r.status} ${r.url.replace(BASE_URL, "")}`),
+      payloads: payloads.map(
+        (r) => `${r.status} ${r.contentType || "(none)"} ${r.url.replace(BASE_URL, "")}`
+      ),
     });
 
     expect(
       payloads.length,
-      "the client never fetched an RSC payload, so the content type the router validates " +
-        "against was never exercised"
+      "CONTROL: the client never fetched an RSC payload, so the content type the router " +
+        "validates against was never exercised"
     ).toBeGreaterThan(0);
     expect(
       payloads
         .filter((r) => r.status >= 400)
         .map((r) => `${r.status} ${r.url.replace(BASE_URL, "")}`),
       "an RSC payload the router depends on did not load"
+    ).toEqual([]);
+    // The content type itself, which a status code cannot see. This host has no
+    // Next.js server behind the dashboard: the Rust static handler's mime table
+    // decides what a `.txt` RSC payload is served as, and the router is handed
+    // whatever that says. This test used to be named for the content type while
+    // only asserting 2xx, so a host that answered `text/html` — or an HTML error
+    // page, which is 200 — passed it while the router was being fed a document
+    // instead of a flight payload.
+    expect(
+      mislabelled,
+      `${mislabelled.length} RSC payload(s) were not served as ${RSC_CONTENT_TYPE}. The router ` +
+        "parses these as flight data; served as anything else they are not payload, and the " +
+        "navigation that asked for them renders from whatever the response happened to be."
     ).toEqual([]);
   });
 
@@ -149,16 +177,47 @@ test.describe("static assets", () => {
       })
       .map((r) => `${r.status} ${new URL(r.url).pathname}`);
 
+    // ── Which artifact is this run grading? ─────────────────────────────────
+    //
+    // Three consecutive recorded runs reported 14, 16 and 16 `404
+    // /providers/*.svg` here, and every one of them was filed as a product
+    // bug. They were not: the GATEWAY BINARY predated the source. `/providers/*`
+    // and `/sw.js` are mounted at the admin origin by
+    // `resources_handler.rs::ORIGIN_ROOT_ROUTES` (`:538`) and `lib.rs:240` in
+    // the tree under review, and the running binary answers 404 for both. A
+    // stale build therefore reports as a defect in the artifact it is not
+    // grading, and the run says nothing that lets anyone tell the two apart.
+    //
+    // So the two origin-root mounts are probed DIRECTLY, from the suite rather
+    // than through the page, and recorded whether the test passes or fails.
+    // A 404 here with the source present in the tree is a build-provenance
+    // finding, not a defect in the artifact under review.
+    const provenance = await Promise.all(
+      ["/sw.js", "/providers/openai.svg"].map(async (path) => {
+        try {
+          const res = await fetch(`${BASE_URL}${path}`);
+          return `${res.status} ${path}`;
+        } catch (error) {
+          return `ERR ${path} ${String(error)}`;
+        }
+      })
+    );
+
     writeEvidence("05-root-files.json", {
       failures: rootFileFailures,
       allSameOriginFailures: watch.non2xx().map((r) => `${r.status} ${new URL(r.url).pathname}`),
+      buildProvenance: provenance,
     });
 
     expect(
       rootFileFailures,
       "the document asked the host for files the export ships and the host does not serve: " +
         `${rootFileFailures.length} failed. An operator sees a page whose service worker never ` +
-        "registers and whose vendor logos never appear, with nothing on screen to say why."
+        "registers and whose vendor logos never appear, with nothing on screen to say why. " +
+        `Build provenance, probed directly: ${provenance.join(", ")} — a 404 on /sw.js and on a ` +
+        "/providers/*.svg means the RUNNING BINARY predates `ORIGIN_ROOT_ROUTES` " +
+        "(resources_handler.rs:538) and is not the build under review. Rebuild and redeploy " +
+        "before reading this as a defect in the artifact."
     ).toEqual([]);
   });
 
@@ -412,10 +471,24 @@ test.describe("the /api surface is classified, not just silenced", () => {
 
     // A 0-model snapshot would make the comparison below vacuous.
     expect(
-      native.statusModelCount,
+      native.modelCount,
       "the core reported no models in /status/models, so this gateway cannot distinguish a " +
         "repointed read from an empty one"
     ).toBeGreaterThan(0);
+    // A status token nobody classified is a vocabulary gap: the gateway is
+    // reporting a runtime state the dashboard has never been told how to read,
+    // so the operator is not being told about it either. This is an allow-list
+    // precisely so that gap is loud instead of being counted as degradation —
+    // which is how this oracle came to agree with the bug it was written to
+    // catch (`not_applicable`, i.e. every virtual router, counted as a fault).
+    expect(
+      native.unrecognisedStatusTokens,
+      `the core emitted status token(s) ${JSON.stringify(native.unrecognisedStatusTokens)}, which ` +
+        `this harness does not know. The token histogram was ${JSON.stringify(native.statusTokens)}. ` +
+        "Either the gateway's RuntimeStatus vocabulary has grown and the dashboard's " +
+        "classification of it has not been updated, or the payload carries a field this oracle " +
+        "misreads. Both are findings, neither may be counted as degradation."
+    ).toEqual([]);
 
     expect(
       statusReads.length,
@@ -594,17 +667,60 @@ test.describe("the /api surface is classified, not just silenced", () => {
         `answer: ${stillAsked.join(", ")}`
     ).toEqual([]);
 
-    // The storage tab used to render a confident "sqlite - ~/.omniroute/
-    // storage.sqlite - 0 bytes" on a gateway that has no database at all. If the
-    // tab is present on this page it must be showing the refusal, not numbers.
-    const storage = page.locator('[data-testid="system-storage-unsupported"]');
-    if ((await storage.count()) > 0) {
-      await expect(storage).toBeVisible();
-      const text = (await storage.innerText()).trim();
-      expect(
-        text.length,
-        "the storage refusal is empty - the operator is shown a refusal with nothing in it"
-      ).toBeGreaterThan(20);
-    }
+    // NOTE: the storage surface used to be checked from here, behind
+    // `if ((await storage.count()) > 0)`. It is not on this route —
+    // `SystemStorageTab` is mounted by `/dashboard/settings/general` — so the
+    // branch could never be taken and the only check on the regression was a
+    // check that did not run. It is a test of its own now, on the route that
+    // owns the component.
+  });
+
+  test("the storage tab states its absence instead of inventing a database", async ({ page }) => {
+    // `SystemStorageTab` used to render a confident "sqlite - ~/.omniroute/
+    // storage.sqlite - 0 bytes" on a gateway that has no database at all. Two
+    // claims, both observable, and either alone is satisfied by a broken build:
+    //
+    //   (a) the operator is told the surface is absent, in words;
+    //   (b) and nothing was asked for it — on the static export the refusal is
+    //       decided BEFORE any request (`resolveAisixSurfaceSupport`), so the
+    //       zero-request half is what proves the refusal is the architecture's
+    //       answer and not a 404 the card dressed up.
+    //
+    // (b) alone would pass on a page that renders nothing; (a) alone would pass
+    // on a card that asked, got a 404, and apologised. The pair is the claim.
+    const watch = new PageWatch(page);
+    await page.goto("/dashboard/settings/general", { waitUntil: "load", timeout: 90_000 });
+    await readContent(page, { minLength: 120, timeoutMs: 90_000 });
+
+    const storage = page.getByTestId("system-storage-unsupported");
+    await expect(
+      storage,
+      "the storage tab rendered no refusal. The export ships no database at all, so the honest " +
+        "state is 'this build has no storage surface', not a path and a byte count invented by " +
+        "the card."
+    ).toBeVisible({ timeout: 60_000 });
+    await page.waitForTimeout(3000);
+
+    const text = (await storage.innerText()).trim();
+    const storageReads = watch
+      .non2xx()
+      .map((r) => new URL(r.url).pathname)
+      .filter((path) => path.startsWith("/api/storage") || path.startsWith("/api/db-backups"));
+    writeEvidence("05-system-storage.json", {
+      refusalText: text,
+      storageReads,
+      totalRequests: watch.requests.length,
+    });
+
+    expect(
+      text.length,
+      "the storage refusal is empty - the operator is shown a refusal with nothing in it"
+    ).toBeGreaterThan(20);
+    expect(
+      storageReads,
+      `the tab was told the surface is absent and asked for it anyway (${storageReads.join(", ")}). ` +
+        "The refusal has to be decided before the request; a 404 dressed up as an answer is what " +
+        "this used to be."
+    ).toEqual([]);
   });
 });

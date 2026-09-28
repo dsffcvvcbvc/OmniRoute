@@ -1,6 +1,14 @@
 import { expect, test } from "@playwright/test";
 
-import { BASE_URL, PageWatch, readContent, writeEvidence } from "./harness";
+import {
+  BASE_URL,
+  MAX_REPEATS_PER_URL_PER_WINDOW,
+  PageWatch,
+  REQUEST_BUDGET_WINDOW_MS,
+  isOverRequestBudget,
+  readContent,
+  writeEvidence,
+} from "./harness";
 
 /**
  * 08 — REQUEST BUDGET and FAULT TOLERANCE.
@@ -27,13 +35,14 @@ import { BASE_URL, PageWatch, readContent, writeEvidence } from "./harness";
  * reviewer picks still separates "a page fetching data" from "a page spinning".
  */
 
-const WINDOW_MS = 5000;
 /**
- * Generous. A dashboard route that legitimately refreshes on focus or on a
- * poll would not come close to this, and the observed behaviour is ~40 repeats
- * of the same URL inside a single window.
+ * The window, the ceiling and the verdict live in `harness.ts`, because the C8
+ * negative control has to judge an INJECTED storm against the same numbers this
+ * file judges the real page against. A control quoting its own copy of the
+ * ceiling proves only that its own copy is what it is — the defect that made C8
+ * a control in name only.
  */
-const MAX_REPEATS_PER_URL_PER_WINDOW = 5;
+const WINDOW_MS = REQUEST_BUDGET_WINDOW_MS;
 
 /**
  * A `/api/*` read on the static export is answered 404 by the HOST, not by the
@@ -50,6 +59,18 @@ const MAX_REPEATS_PER_API_URL = 1;
 /** The three provider-rule rows on `/dashboard/providers/{id}`. */
 const PROVIDER_RULE_PATHS = ["param-filters", "interception-rules", "cc-alias"];
 
+/**
+ * The refusal affordance of each provider-rule card, by the testid it renders.
+ *
+ * Named rather than swept by `[role="status"]`, because a role sweep cannot
+ * say WHICH card answered and would be satisfied by any status on the page.
+ */
+const REFUSAL_BANNERS = [
+  "param-filters-unavailable-banner",
+  "interception-rules-unavailable-banner",
+  "cc-alias-unavailable-banner",
+] as const;
+
 test.describe("request budget and fault tolerance", () => {
   test("a provider detail route does not spin on its own failed reads", async ({ page }) => {
     const watch = new PageWatch(page);
@@ -58,20 +79,38 @@ test.describe("request budget and fault tolerance", () => {
     await page.waitForTimeout(5000);
 
     const peak = watch.peakRepeats(WINDOW_MS);
-    const histogram = [...watch.requestHistogram()].sort((a, b) => b[1] - a[1]);
+    const counts = watch.requestHistogram();
     writeEvidence("08-request-budget.json", {
       peak,
       windowMs: WINDOW_MS,
-      histogram: histogram.map(([url, count]) => `${count}x ${url}`),
+      histogram: [...counts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .map(([url, count]) => `${count}x ${url}`),
       totalRequests: watch.requests.length,
     });
-
+    // Non-vacuity. A budget is satisfied by a page that read nothing at all —
+    // `peakRepeats()` on an empty recording returns `{key:"", count:0}`, and
+    // 0 ≤ 5. So the reads this budget is about have to have been issued before
+    // "at most 5 repeats of each" is a statement about anything. The next test
+    // guards its own claim the same way.
+    const providerRuleReads = PROVIDER_RULE_PATHS.map((suffix) => {
+      const key = `GET /api/providers/openai/${suffix}`;
+      return `${key} → ${counts.get(key) ?? 0}x`;
+    });
     expect(
-      peak.count,
-      `${peak.key} was requested ${peak.count} times inside a ${WINDOW_MS / 1000}s window. A ` +
-        "failed read is being retried without a ceiling, which starves the page's own renderer " +
-        "until the tab stops responding. A dashboard route may fetch; it may not hammer."
-    ).toBeLessThanOrEqual(MAX_REPEATS_PER_URL_PER_WINDOW);
+      providerRuleReads.some((line) => !line.endsWith(" → 0x")),
+      "the page issued none of the three provider-rule reads, so a ceiling on how often one URL " +
+        "may be read was never applied to anything. The histogram above describes a page that " +
+        `did not try: ${providerRuleReads.join(", ")}`
+    ).toBe(true);
+    expect(
+      isOverRequestBudget(peak),
+      `${peak.key || "(nothing was requested at all)"} was requested ${peak.count} times inside a ` +
+        `${WINDOW_MS / 1000}s window, over the ceiling of ` +
+        `${MAX_REPEATS_PER_URL_PER_WINDOW}. A failed read is being retried without a ceiling, ` +
+        "which starves the page's own renderer until the tab stops responding. A dashboard route " +
+        "may fetch; it may not hammer."
+    ).toBe(false);
   });
 
   test("a known-unsupported read is asked ONCE, not retried", async ({ page }) => {
@@ -131,42 +170,47 @@ test.describe("request budget and fault tolerance", () => {
     // A 404 must never reach the operator as an empty success or an eternal
     // skeleton: "this provider has no filters configured" and "there is no filter
     // store on this deployment" are different facts, and only one of them is true.
-    // The affordance is the same amber `role="status"` banner the other
-    // gateway-only surfaces already use, which is why it is looked up by role
-    // rather than by a component-specific testid.
+    //
+    // Each card is waited for BY ITS OWN testid, and only then read. The
+    // previous version swept `[role="status"]` the moment the content region
+    // settled, which reads the DOM before the subject of the assertion exists:
+    // the recorded run wrote `{"statuses": [], "spinnersLeft": 0}` — no banners
+    // because the cards had not mounted yet, which reads exactly like a page
+    // that renders no refusals at all. A sweep over a role also cannot say WHICH
+    // card answered, and would pass on an unrelated status elsewhere on the page.
     await page.goto("/dashboard/providers/openai", { waitUntil: "load", timeout: 90_000 });
     await readContent(page, { minLength: 120, timeoutMs: 90_000 });
 
-    const refused = await page.locator('[role="status"]').evaluateAll((nodes) =>
-      nodes.map((node) => ({
-        testId: node.getAttribute("data-testid") ?? "",
-        text: (node.textContent ?? "").trim(),
+    for (const testId of REFUSAL_BANNERS) {
+      await expect(
+        page.getByTestId(testId),
+        `${testId} never rendered. A read the export cannot satisfy has to be stated as a ` +
+          "refusal; a card that renders an empty form instead tells the operator this provider " +
+          "has nothing configured, which is a different fact and a false one."
+      ).toBeVisible({ timeout: 60_000 });
+    }
+
+    const refused = await Promise.all(
+      REFUSAL_BANNERS.map(async (testId) => ({
+        testId,
+        text: (await page.getByTestId(testId).innerText()).trim(),
       }))
     );
+    const spinnersLeft = await page.locator(".animate-pulse").count();
+    writeEvidence("08-refusal-surfaces.json", { statuses: refused, spinnersLeft });
 
-    writeEvidence("08-refusal-surfaces.json", {
-      statuses: refused,
-      spinnersLeft: await page.locator(".animate-pulse").count(),
-    });
-
-    const ruleRefusals = refused.filter((entry) =>
-      /param-filters|interception|cc-alias/.test(entry.testId)
-    );
-    expect(
-      refused.length,
-      "the page reported no unsupported-surface status. The provider-rule cards must state " +
-        "their absence instead of rendering an empty form that reads as 'not configured'."
-    ).toBeGreaterThan(0);
-    expect(
-      ruleRefusals.length,
-      "none of the three provider-rule cards reported an unsupported surface"
-    ).toBe(3);
-    for (const entry of ruleRefusals) {
+    for (const entry of refused) {
       expect(
         entry.text.length,
         `${entry.testId} rendered an empty refusal — the operator is told nothing`
       ).toBeGreaterThan(20);
     }
+    // A skeleton is an infinite spinner in disguise: once every card has stated
+    // its refusal, none of them may still be pulsing.
+    expect(
+      spinnersLeft,
+      `${spinnersLeft} skeleton(s) still pulsing after every card stated its refusal`
+    ).toBe(0);
   });
 
   test("a failed read surfaces as a handled state, never as an uncaught exception", async ({

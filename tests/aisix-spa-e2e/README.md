@@ -49,11 +49,11 @@ npx playwright test -c playwright.aisix-spa.config.ts
 Stop the gateway with `pkill -x aisix`. **Never `pkill -f aisix`** — the `-f`
 pattern also matches the invoking shell and kills the session.
 
-| Env var                  | Default                 | Meaning                                                                                                                         |
-| ------------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `AISIX_SPA_BASE_URL`     | `http://127.0.0.1:3001` | gateway admin origin                                                                                                            |
-| `AISIX_SPA_ADMIN_KEY`    | _(unset)_               | `admin.admin_keys[0]`. Optional only for the signed-out assertions; the signed-in ones fail with instructions if it is missing. |
-| `AISIX_SPA_EVIDENCE_DIR` | `aisix-spa-evidence`    | where scrubbed JSON evidence lands                                                                                              |
+| Env var                  | Default                 | Meaning                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------ | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AISIX_SPA_BASE_URL`     | `http://127.0.0.1:3001` | gateway admin origin                                                                                                                                                                                                                                                                                                                                                         |
+| `AISIX_SPA_ADMIN_KEY`    | _(unset)_               | `admin.admin_keys[0]`. Optional only for the signed-out assertions; the signed-in ones — `07` and control C6 — **fail with instructions** if it is missing, rather than skipping, so a keyless run is red by design. With it unset the harness also says so once at start-up, and `scrub()` redacts only what does not need it (bearer tokens, credential query parameters). |
+| `AISIX_SPA_EVIDENCE_DIR` | `aisix-spa-evidence`    | where scrubbed JSON evidence lands                                                                                                                                                                                                                                                                                                                                           |
 
 ### Why this is a separate Playwright config
 
@@ -75,16 +75,39 @@ happy to publish.
 
 ## What each file covers
 
-| File                           | Claim it defends                                                                                                                                                                                                                                                                                    |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `01-hydration.spec.ts`         | The app boots and hydrates. Served bytes are not hydration, so nothing here reads the HTML: it asserts the content region settles, no uncaught exception and no hydration mismatch is logged, and that two purely client-side controls (theme, sidebar collapse) change the document when operated. |
-| `02-deep-link.spec.ts`         | Deep routes render on a **cold URL entry** and again after a **refresh**. These are `<Suspense fallback={null}>` shells, so `readSettledContent` distinguishes "still loading" (text keeps changing) from "rendered nothing" (text settles empty).                                                  |
-| `03-client-navigation.spec.ts` | The same dynamic routes reached by clicking. Client-side-ness is asserted with a `window` marker, which survives a router navigation and cannot survive a document load — the fallback a wrong RSC content type produces.                                                                           |
-| `04-locale.spec.ts`            | `ja` and `ar` (non-Latin, one right-to-left) actually switch, `<html lang>`/`dir` follow, the visible copy carries that writing system, **and the choice survives a reload**. The last half is separate because a preference that is stored and then ignored on entry is not a preference.          |
-| `05-static-assets.spec.ts`     | Every `/_next/**` request the browser makes returns 2xx, RSC payloads are accepted as flight responses, a refresh re-proves the tree, and no subresource failure reaches the console. Guarded against a vacuous pass by asserting a minimum request count.                                          |
-| `06-absent-routes.spec.ts`     | Unknown URLs are answered honestly: ≥400, no redirect chain, a body the operator can read, and the browser left where it started. Plus the inverse control, so "everything 404s" cannot pass.                                                                                                       |
-| `07-admin-surfaces.spec.ts`    | Providers and combos distinguish **refused** from **ready**. The signed-in assertions are made against what the real gateway holds (read over HTTP), never a count written into the test. Signed-out and wrong-key tests clear the credential themselves, so they always run.                       |
-| `08-request-budget.spec.ts`    | A failed read does not become an unbounded retry loop, and does not surface as an uncaught exception. Also that every image the catalog renders actually loads.                                                                                                                                     |
+| File                           | Claim it defends                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `01-hydration.spec.ts`         | The app boots and hydrates. Served bytes are not hydration, so nothing here reads the HTML: it asserts the content region settles, no uncaught exception and no hydration mismatch is logged, and that two purely client-side controls (theme, sidebar collapse) change the document when operated.                                                                                                                                |
+| `02-deep-link.spec.ts`         | Deep routes render on a **cold URL entry** and again after a **refresh**. These are `<Suspense fallback={null}>` shells, so `readSettledContent` distinguishes "still loading" (text keeps changing) from "rendered nothing" (text settles empty).                                                                                                                                                                                 |
+| `03-client-navigation.spec.ts` | The same dynamic routes reached by clicking. Client-side-ness is asserted with a `window` marker, which survives a router navigation and cannot survive a document load — the fallback a wrong RSC content type produces.                                                                                                                                                                                                          |
+| `04-locale.spec.ts`            | `ja` and `ar` (non-Latin, one right-to-left) actually switch, `<html lang>`/`dir` follow, the visible copy carries that writing system, **and the choice survives a reload**. The last half is separate because a preference that is stored and then ignored on entry is not a preference.                                                                                                                                         |
+| `05-static-assets.spec.ts`     | Every `/_next/**` request the browser makes returns 2xx, RSC payloads are accepted as flight responses, a refresh re-proves the tree, and no subresource failure reaches the console. Guarded against a vacuous pass by asserting a minimum request count.                                                                                                                                                                         |
+| `06-absent-routes.spec.ts`     | Unknown URLs are answered honestly: ≥400, no redirect chain, a body the operator can read, and the browser left where it started. Plus the inverse control, so "everything 404s" cannot pass.                                                                                                                                                                                                                                      |
+| `07-admin-surfaces.spec.ts`    | Providers and combos distinguish **refused** from **ready**. The signed-in assertions are made against what the real gateway holds (read over HTTP), never a count written into the test. Signed-out and wrong-key tests clear the credential themselves, so they always run.                                                                                                                                                      |
+| `08-request-budget.spec.ts`    | A failed read does not become an unbounded retry loop, and does not surface as an uncaught exception. Also that every image the catalog renders actually loads.                                                                                                                                                                                                                                                                    |
+| `negative-controls.spec.ts`    | The falsifiability audit: one control per mechanism the files above measure with. Each control **injects** the fault the production assertion exists to catch — a storm of 20 real identical GETs, a real uncaught throw, an `<img>` pointing at a file the export does not ship, a real document load, a real 404 — and then requires the production verdict to come out the **other** way. It runs in **every** pass; see below. |
+
+### The controls run in every pass, and are green when they should be
+
+`negative-controls.spec.ts` used to be excluded from every run by
+`testIgnore: process.env.AISIX_SPA_NEGATIVE_CONTROLS ? [] : [...]` in
+`playwright.aisix-spa.config.ts`, because every control in it was an INVERTED
+assertion — red whenever the product was healthy. Two things followed, and both
+were defects:
+
+1. A green run said nothing about whether the audit had run. The recorded
+   failing run's `aisix-spa-results.json` contained no control at all.
+2. The convention let a control be a copy of the assertion it audits. C8 quoted
+   the production ceiling back at the production page, so it passed on the very
+   run that fixed the storm it was written to catch.
+
+Every control is now green on a healthy deployment and red on a broken one:
+each injects a fault and requires the production verdict to reject it. The
+`testIgnore` line is gone — there is no env var, no `test.fail()`, no
+`test.skip()` in the directory — so a green run of this suite has audited
+itself. C6 (the signed-in half of the admin-denial control) **fails with
+instructions** when `AISIX_SPA_ADMIN_KEY` is unset, exactly as `07` does, so a
+keyless run is red rather than quietly unaudited.
 
 ## Assertion discipline
 

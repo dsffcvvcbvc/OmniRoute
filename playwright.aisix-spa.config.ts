@@ -35,22 +35,28 @@ import { defineConfig, devices } from "@playwright/test";
  *   pattern also matches the invoking shell and kills the session.
  *
  * ── trace is off on purpose ─────────────────────────────────────────────────
- * `extraHTTPHeaders` puts the admin key on every request, and a Playwright
- * trace archives request headers verbatim. A trace uploaded or attached to an
- * issue would therefore carry a live gateway credential, so the suite records
- * its own scrubbed JSON evidence instead (see `writeEvidence` in harness.ts)
- * and never writes the key to disk.
+ * The suite attaches the admin key as a request header (scoped to the admin
+ * origin — see `authenticate` in harness.ts), and a Playwright trace archives
+ * request headers verbatim. A trace uploaded or attached to an issue would
+ * therefore carry a live gateway credential, so the suite records its own
+ * scrubbed JSON evidence instead (see `writeEvidence` in harness.ts) and never
+ * writes the key to disk. The scoping does not make this safe to turn on: the
+ * header is still on every request the authenticated tests make to the admin
+ * plane.
  */
 const baseURL = process.env.AISIX_SPA_BASE_URL || "http://127.0.0.1:3001";
 
 export default defineConfig({
   testDir: "./tests/aisix-spa-e2e",
   testMatch: "**/*.spec.ts",
-  // The falsifiability audit. Every test in it is expected to FAIL, so it is
-  // kept out of every normal run: a suite whose audit pass is expected to go
-  // red must never be mixed into a run someone is trying to make green.
-  // Opt in with AISIX_SPA_NEGATIVE_CONTROLS=1, and expect everything to fail.
-  testIgnore: process.env.AISIX_SPA_NEGATIVE_CONTROLS ? [] : ["**/negative-controls.spec.ts"],
+  // `negative-controls.spec.ts` is NOT excluded. It used to be, behind
+  // AISIX_SPA_NEGATIVE_CONTROLS, because every control in it was an inverted
+  // assertion and therefore red on a healthy deployment — which also meant a
+  // green run said nothing about whether the falsifiability audit had run at
+  // all. The controls are now green on a healthy deployment and red on a
+  // broken one (each one injects the fault it exists to catch and requires the
+  // production verdict to reject it), so they belong in every pass. A green run
+  // of this suite has audited itself.
   // One worker: the gateway is a single shared instance and the dashboard
   // pages are heavy enough that a second Chromium on this host tips it over.
   workers: 1,
