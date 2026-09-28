@@ -33,10 +33,9 @@ export default function manifest(): MetadataRoute.Manifest {
     prefer_related_applications: false,
     icons: [
       {
-        src: "/icon-192.png",
+        src: "/icon-192.svg",
         sizes: "192x192",
-        type: "image/png",
-        purpose: "any",
+        type: "image/svg+xml",
       },
       {
         src: "/icon-512.png",
@@ -56,14 +55,6 @@ export default function manifest(): MetadataRoute.Manifest {
         type: "image/png",
       },
     ],
-    screenshots: [
-      {
-        src: "/screenshots/dashboard.png",
-        sizes: "1280x720",
-        type: "image/png",
-        form_factor: "wide",
-        label: "OmniRoute Dashboard",
-      },
-    ],
+    screenshots: [],
   };
 }
