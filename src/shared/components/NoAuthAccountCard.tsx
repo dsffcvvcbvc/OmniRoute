@@ -206,6 +206,12 @@ function egressShieldText(
   if (egress.kind === "inherited-pool") {
     return t(getEgressLabelKey(egress.kind), { count: egress.count ?? 0 });
   }
+  // `own` is not an inherited egress and has no catalogue key of its own; it is
+  // named from its proxy above. `getEffectiveEgress` only ever produces it
+  // together with that proxy, so this is the unreachable remainder, and saying
+  // nothing is truer than naming a connection this card cannot describe. What
+  // is left is exactly `EgressLabelKind`.
+  if (egress.kind === "own") return "";
   return t(getEgressLabelKey(egress.kind));
 }
 
