@@ -57,6 +57,22 @@
  * `subscribeAisixSessionEpoch` is the companion "a new session exists, go read
  * again" notification, bumped once per successful exchange so surfaces can
  * refetch without polling.
+ *
+ * ## Why there is a state and not only a flag
+ *
+ * `signedOut` alone answers "is there no usable session right now", which is the
+ * only question a guard needs. It cannot answer "did this operator ever have
+ * one" — and a dashboard that conflates the two tells someone who has never
+ * signed in that their session ended, which is a false claim about their
+ * history and the fastest way to make an honest 401 banner unbelievable.
+ *
+ * `getAisixSessionState` is the three-valued answer, and `hasSession` is the
+ * evidence behind it: set by a successful key exchange, by an explicit
+ * sign-out, and by ANY 2xx from the admin API — the last one being what makes
+ * it survive a page reload, where the exchange is history and the cookie is
+ * `HttpOnly` and unreadable. A 401 only turns `anonymous` into `ended` when
+ * `hasSession` is already true, which is precisely the case where "your session
+ * ended" is a true statement.
  */
 
 import { fetchWithTimeout } from "./fetchTimeout";
@@ -158,6 +174,16 @@ const sessionEpochListeners = new Set<SessionEpochListener>();
 let signedOut = false;
 /** Bumped once per successful exchange. Surfaces refetch on a change. */
 let sessionEpoch = 0;
+/**
+ * `true` once this page load has PROVED a working credential, by any means.
+ *
+ * This is the flag that separates "never signed in" from "was signed in, no
+ * longer is" — see `getAisixSessionState`. It is deliberately NOT set by the key
+ * exchange alone: after a reload the module is fresh, and an operator whose
+ * cookie is still valid would otherwise look anonymous on their first 401 and
+ * never be told their session ended.
+ */
+let hasSession = false;
 
 /**
  * Subscribe to "the admin session is gone". Returns the unsubscribe function.
@@ -185,6 +211,43 @@ export function subscribeAisixSessionEpoch(listener: SessionEpochListener): () =
 /** `true` when an admin request has answered 401 since the last successful exchange. */
 export function isAisixSignedOut(): boolean {
   return signedOut;
+}
+
+/**
+ * The three situations `signedOut` used to collapse into one boolean.
+ *
+ * The boolean cannot tell "this operator has never signed in" from "this
+ * operator's session ended", and a UI that cannot tell them either ends up
+ * telling the first one their session ended — which is a claim about their
+ * history that never happened.
+ *
+ *   `anonymous` — nothing has ever authenticated in this page load. A 401 here is
+ *                 the expected answer for a browser that simply has no credential
+ *                 yet, so it must NOT be reported as a lost session.
+ *   `active`    — a credential was presented and accepted.
+ *   `ended`     — a credential WAS working, and is not now. The only state in
+ *                 which telling the operator their session ended is true.
+ */
+export type AisixSessionState = "anonymous" | "active" | "ended";
+
+/** The current session state. Derived fresh on every call — never cached. */
+export function getAisixSessionState(): AisixSessionState {
+  if (!hasSession) return "anonymous";
+  return signedOut ? "ended" : "active";
+}
+
+/**
+ * `true` when a URL is on the admin API itself — the surface that REQUIRES a
+ * credential, and therefore the only answer that can prove one existed.
+ *
+ * Narrower than `isAisixAdminUrl`, and deliberately so. The admin base also
+ * serves `/livez` and `/readyz`, which are unauthenticated and answer 200 to
+ * anyone; a liveness probe that concluded "a session exists" would put the
+ * dashboard permanently in `active`, and the 401 that follows would then be
+ * reported as an ended session for an operator who never had one.
+ */
+function isCredentialedAdminEndpoint(url: string): boolean {
+  return isAisixAdminUrl(url) && url.toLowerCase().includes("/admin/v1/");
 }
 
 /** The current session epoch. Changes only on a successful exchange. */
@@ -217,6 +280,7 @@ export function noteAisixAdminStatus(status: number): AisixAdminFailureKind | nu
 
 /** Called by a successful exchange: the session exists, so clear the state and bump the epoch. */
 function markAisixSignedIn(): void {
+  hasSession = true;
   signedOut = false;
   sessionEpoch += 1;
   for (const listener of [...sessionEpochListeners]) {
@@ -238,6 +302,7 @@ export function __resetAisixAdminAuthForTests(): void {
   loginRequestedListeners.clear();
   signedOut = false;
   sessionEpoch = 0;
+  hasSession = false;
 }
 
 // ─── "open the prompt" ────────────────────────────────────────────────────
@@ -309,6 +374,15 @@ export async function aisixAdminFetch(
     fetchFn: fetchFn ?? (globalThis.fetch as typeof fetch),
   });
   noteAisixAdminStatus(response.status);
+  // A 2xx from the admin API is the ONLY proof that a credential exists, and it
+  // is the only evidence available after a reload — the exchange that set the
+  // cookie is long gone, and the cookie is `HttpOnly` so JS cannot check it.
+  // Without this, an operator whose cookie outlives a page reload comes back
+  // "anonymous", and the 401 that later ends their real session is misreported
+  // as never having had one.
+  if (response.ok && isCredentialedAdminEndpoint(url)) {
+    hasSession = true;
+  }
   return response;
 }
 
@@ -465,6 +539,11 @@ export async function revokeAdminSession(options: AisixAdminRequestOptions = {})
   }
   // Clear the local signed-out state either way: the operator asked to be
   // signed out, and we are not in a position to argue about it.
+  //
+  // `hasSession = true` is not an optimisation here — an explicit sign-out is
+  // itself proof that a session existed, which is what makes the resulting
+  // `ended` state honest rather than a guess.
+  hasSession = true;
   signedOut = true;
   sessionEpoch += 1;
 }

@@ -27,7 +27,9 @@ interface NoAuthProvidersSectionProps {
   /** Visible (non-blocked) entries, already filtered for the active display mode. */
   visibleEntries: NoAuthEntry[];
   /** Count badge props derived from the full visible set (configured/total). */
-  count: { configured: number; total: number };
+  // `configured: null` = the admin plane refused the read, so the count is
+  // unknown rather than zero. ProviderCountBadge renders that as a dash.
+  count: { configured: number | null; total: number };
   /** Entries currently in `blockedProviders` — surfaced, never hidden (#5183). */
   blockedEntries: NoAuthEntry[];
   /** Current blocked-provider list (id/alias), used to compute the un-block delta. */
