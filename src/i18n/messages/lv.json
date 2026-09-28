@@ -6599,7 +6599,8 @@
     "providerKeysDeleteTitle": "Dzēst pakalpojumu sniedzēja atslēgu",
     "providerKeysDeleteConfirm": "Dzēst pakalpojumu sniedzēja atslēgu „{name}“? Jebkurš modelis vai caurlaidzes maršruts, kas joprojām to atsaucas, liek vārtiem atbilst ar 409.",
     "providerKeysNotPersisted": "Pielietots atmiņā, bet NAV saglabāts diskā: resursu failā ir rindas, ko viena atsevišķa atslēgas ierakstīšana nevar atsaukt. Tiks zaudēts pēc pārlādēšanas — izmantojiet POST /admin/v1/resources.",
-    "adminAuthSignIn": "Pieteikties"
+    "adminAuthSignIn": "Pieteikties",
+    "aisixConnectionsUnknown": "Vārteja neapstiprināja, kurus pakalpojumus konfigurējāt, tāpēc zemāk esošie skaitļi tiek rādīti kā „—”, nevis kā skaitlis. Svītrojums nav nulle: šeit nekas neapgalvo, ka jūs neesat konfigurējis nevienu pakalpojumu sniedzēju."
   },
   "settings": {
     "title": "Iestatījumi",

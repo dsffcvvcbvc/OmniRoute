@@ -62,8 +62,10 @@ describe("ProviderCountBadge — an unanswered count is not a zero", () => {
     const unknown = container.querySelector("[data-testid='provider-count-unknown']");
     expect(unknown).not.toBeNull();
     // A dash with no explanation is a mystery; the title is the sentence the
-    // page is already showing in its banner.
-    expect(unknown?.getAttribute("title")).toBe("aisixAdminKeyRequired");
+    // page is already showing in its banner. It is NOT the 401 copy: the count
+    // goes unknown for a 5xx, a dropped connection and the fetch timeout too, so
+    // a tooltip that names a status would be false on most of those.
+    expect(unknown?.getAttribute("title")).toBe("aisixConnectionsUnknown");
   });
 
   it("renders nothing for an empty section, answered or not", () => {

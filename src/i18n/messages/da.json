@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Udbudernøglen blev slettet.",
     "providerKeysDeleteTitle": "Slet udbydernøgle",
     "providerKeysDeleteConfirm": "Slet udbydernøglen \"{name}\"? Enhver model eller passthrough-rute, der stadig henviser til den, får gatewayen til at svare 409.",
-    "adminAuthSignIn": "Log ind"
+    "adminAuthSignIn": "Log ind",
+    "aisixConnectionsUnknown": "Gatewayen bekræftede ikke, hvilke udbydere du har konfigureret, så antallene nedenfor vises som — i stedet for som et tal. Bindestregen er ikke nul: intet her påstår, at du ikke har konfigureret nogen udbydere."
   },
   "settings": {
     "title": "Indstillinger",

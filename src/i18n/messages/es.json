@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Se eliminó la clave de proveedor.",
     "providerKeysDeleteTitle": "Eliminar clave de proveedor",
     "providerKeysDeleteConfirm": "¿Eliminar la clave de proveedor «{name}»? Cualquier modelo o ruta de paso que aún la referencie hará que la pasarela rechace con 409.",
-    "adminAuthSignIn": "Iniciar sesión"
+    "adminAuthSignIn": "Iniciar sesión",
+    "aisixConnectionsUnknown": "La pasarela no confirmó qué proveedores has configurado, así que los recuentos de abajo se muestran como — en lugar de como un número. El guion no es un cero: nada de aquí afirma que no hayas configurado ningún proveedor."
   },
   "settings": {
     "title": "Configuración",

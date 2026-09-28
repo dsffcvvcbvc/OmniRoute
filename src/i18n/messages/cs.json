@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Klíč poskytovatele byl smazán.",
     "providerKeysDeleteTitle": "Smazat klíč poskytovatele",
     "providerKeysDeleteConfirm": "Smazat klíč poskytovatele „{name}“? Jakýkoli model nebo passthrough trasa, která na něj stále odkazuje, přimě gateway odmítnout s 409.",
-    "adminAuthSignIn": "Přihlásit se"
+    "adminAuthSignIn": "Přihlásit se",
+    "aisixConnectionsUnknown": "Brána nepotvrdila, které poskytovatele jste nakonfigurovali, takže se počty níže zobrazují jako — místo jako číslo. Pomlčka není nula: nic zde netvrdi, že jste nenastavili žádného poskytovatele."
   },
   "settings": {
     "title": "Nastavení",

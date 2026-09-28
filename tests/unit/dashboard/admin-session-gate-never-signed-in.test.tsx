@@ -30,8 +30,12 @@ vi.mock("@/shared/utils/aisixEndpoints", async (importOriginal) => ({
   isAisixSpaExport: () => true,
 }));
 
-const { __resetAisixAdminAuthForTests, aisixAdminFetch, requestAdminLogin } =
-  await import("@/shared/utils/aisixAdminAuth");
+const {
+  __resetAisixAdminAuthForTests,
+  aisixAdminFetch,
+  exchangeAdminKeyForSession,
+  requestAdminLogin,
+} = await import("@/shared/utils/aisixAdminAuth");
 const { getAisixAdminBase } = await import("@/shared/utils/aisixTransportBase");
 
 const { default: AdminSessionGate } = await import("@/shared/components/AdminSessionGate");
@@ -131,5 +135,73 @@ describe("AdminSessionGate — a refusal is only an ended session if there was o
 
     expect(dialog()).toBeNull();
     expect(endedNote()).toBeNull();
+  });
+});
+
+/**
+ * The same distinction, from the other side: an operator who SIGNS OUT has
+ * answered the prompt, they have not lost a session.
+ *
+ * `revokeAdminSession` deliberately ends on `ended` — a sign-out is itself
+ * proof a session existed — and `ended` is the only state the auto-open effect
+ * watches. So "Sign out" put the operator straight back into the same modal,
+ * with a "Your session ended" note about a session they ended on purpose. The
+ * gate already keeps a dismissal flag for exactly this distinction; signing out
+ * is answering the prompt, and it had to say so.
+ */
+describe("AdminSessionGate — a deliberate sign-out is not a lost session", () => {
+  const strip = () => container.querySelector("[data-testid='admin-session-strip']");
+  const signOutButton = () => container.querySelector("[data-testid='admin-session-sign-out']");
+
+  /** A real exchange, so the strip renders exactly as it does in the browser. */
+  async function signIn() {
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/auth/session")) return new Response(null, { status: 204 });
+      return new Response(JSON.stringify({ models: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }) as unknown as typeof fetch;
+    await act(async () => {
+      const outcome = await exchangeAdminKeyForSession("a-key");
+      expect(outcome.ok, "the exchange should have produced a session").toBe(true);
+    });
+  }
+
+  it("signing out leaves the operator signed out, with no prompt springing back", async () => {
+    await signIn();
+    renderGate();
+
+    // Without the strip there is nothing to click and the case would pass
+    // vacuously.
+    expect(strip(), "the signed-in strip should be rendered").not.toBeNull();
+
+    await act(async () => {
+      signOutButton()?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    // The prompt stays shut. Before the fix it reopened here, with the
+    // "Your session ended" note beside the strip that was just dismissed.
+    expect(dialog(), "the sign-in prompt reopened after a deliberate sign-out").toBeNull();
+    expect(endedNote(), "a session the operator ended is not a lost one").toBeNull();
+    // And the strip is gone, so the assertion above is not satisfied by a
+    // component that rendered nothing at all.
+    expect(strip(), "the operator is still shown as signed in").toBeNull();
+  });
+
+  it("still prompts for a session that ends on its own afterwards", async () => {
+    // The positive half. If the case above passed only because the gate never
+    // opens, this one would fail — and the fix must not have turned "your
+    // session ended" into silence.
+    await signIn();
+    renderGate();
+
+    // A gateway restart: the next admin read is refused, and nobody asked it to
+    // be. A credential WAS working and is not now.
+    await readAs(401);
+
+    expect(dialog(), "a genuinely lost session must still prompt").not.toBeNull();
+    expect(endedNote(), "and must say so").not.toBeNull();
   });
 });

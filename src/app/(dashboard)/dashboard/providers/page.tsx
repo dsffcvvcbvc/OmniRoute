@@ -33,6 +33,7 @@ import {
   shouldShowProviderSection,
   upsertProviderNodeById,
   loadProviderPageData,
+  readConnectionCount,
 } from "./providerPageUtils";
 import type { ProviderEntry, OpenRouterProviderStatsEntry } from "./providerPageUtils";
 import { OpenRouterProviderStatsProvider } from "./context/openRouterProviderStatsContext";
@@ -91,14 +92,14 @@ type DashboardProviderEntry = ProviderEntry<DashboardProviderInfo>;
  * answered.
  *
  * The number is a count of CONNECTIONS, and connections are only knowable from
- * the admin plane. When the admin plane refuses, the count is not zero: it is
- * unknown, and `0` would assert that the operator configured nothing on a
- * gateway whose configuration the page was not allowed to read. `null` is what
- * lets the badge say "—/N" instead of making that claim.
+ * the admin plane. When the admin plane did not answer, the count is not zero:
+ * it is unknown, and `0` would assert that the operator configured nothing on a
+ * gateway whose configuration the page was not allowed — or was unable — to
+ * read. `null` is what lets the badge say "—/N" instead of making that claim.
  */
-function countConfigured<T>(entries: ProviderEntry<T>[], withheld: boolean) {
+function countConfigured<T>(entries: ProviderEntry<T>[], unknown: boolean) {
   return {
-    configured: withheld
+    configured: unknown
       ? null
       : entries.filter((entry) => Number(entry.stats?.total || 0) > 0).length,
     total: entries.length,
@@ -247,12 +248,15 @@ function ProvidersPageContent() {
   const [codexGlobalServiceMode, setCodexGlobalServiceMode] =
     useState<CodexGlobalServiceMode>("none");
   const [loading, setLoading] = useState(true);
-  // The admin plane refused (401/403): the list below is WITHHELD, not empty.
-  // Rendered as such rather than as "no providers configured", which a 401
-  // cannot support.
-  const [adminDenied, setAdminDenied] = useState(false);
+  // The admin plane did not give us a connection list (401/403, 5xx, a reset
+  // connection, the fetch timeout). "How many providers are configured" then has
+  // no answer, and 0 is not one: rendered as "—/N" and never derived from.
+  const [connectionsUnknown, setConnectionsUnknown] = useState(false);
+  // The narrower fact the sign-in banner is about — the credential was turned
+  // away, which is the one failure a key prompt fixes.
+  const [adminRefused, setAdminRefused] = useState(false);
   // A successful key exchange bumps the epoch and this page re-reads, so the
-  // withheld state clears itself instead of waiting for a manual reload.
+  // unknown-count state clears itself instead of waiting for a manual reload.
   const adminSessionEpoch = useAisixSessionEpoch();
   const [showAllProviders, setShowAllProviders] = useState(false);
   const [showAddCompatibleModal, setShowAddCompatibleModal] = useState(false);
@@ -330,7 +334,8 @@ function ProvidersPageContent() {
         if (data.blockedProviders) setBlockedProviders(data.blockedProviders);
         setCodexGlobalServiceMode(getCodexGlobalServiceMode(data.settings));
         setOpenRouterProviderStats(data.openRouterProviderStats);
-        setAdminDenied(data.adminDenied);
+        setConnectionsUnknown(data.connectionsUnknown);
+        setAdminRefused(data.adminRefused);
       } catch (error) {
         console.log("Error fetching data:", error);
       } finally {
@@ -340,22 +345,33 @@ function ProvidersPageContent() {
     fetchData();
   }, [adminSessionEpoch]);
 
+  // Derived once, from the two facts the loader reports, because the same pair
+  // of booleans decides four separate things below and they used to be spelled
+  // out from `connections.length === 0` four times — which is true even when the
+  // array is empty only because the read failed.
+  const { known: connectionsKnown, none: noConfiguredConnections } = readConnectionCount(
+    connections,
+    connectionsUnknown
+  );
+
   useEffect(() => {
     if (!shouldSyncProviderDisplayMode(displayModePreferenceReady, loading)) return;
 
+    // The operator's saved view is theirs. A read that failed is not a reason to
+    // rewrite it: flipping to "all" here would persist a preference the operator
+    // never chose, and nothing in the UI ever said a preference was discarded.
     const storedDisplayMode =
-      connections.length === 0 && providerDisplayMode === "configured"
-        ? "all"
-        : providerDisplayMode;
+      noConfiguredConnections && providerDisplayMode === "configured" ? "all" : providerDisplayMode;
     writeProviderDisplayModePreference(storedDisplayMode);
-  }, [connections.length, displayModePreferenceReady, providerDisplayMode, loading]);
+  }, [noConfiguredConnections, displayModePreferenceReady, providerDisplayMode, loading]);
 
   // "No connections → fall back to the 'all' view" is a state adjustment
   // derived from other state, applied during render (self-invalidating guard,
   // converges in one extra pass) instead of a synchronous setState effect.
+  // Guarded on the count being KNOWN, for the same reason as the effect above.
   if (
     shouldSyncProviderDisplayMode(displayModePreferenceReady, loading) &&
-    connections.length === 0 &&
+    noConfiguredConnections &&
     providerDisplayMode === "configured"
   ) {
     setProviderDisplayMode("all");
@@ -578,8 +594,12 @@ function ProvidersPageContent() {
   const anthropicCompatibleProviders = compatibleProviderGroups.anthropic;
   const ccCompatibleProviders = compatibleProviderGroups.claudeCode;
 
+  // Only a KNOWN empty count may move the operator off the "configured" view. An
+  // unknown one leaves the saved mode alone, and the filter below then declines
+  // to apply itself rather than hiding the whole catalogue behind a set nobody
+  // has read.
   const effectiveProviderDisplayMode =
-    providerDisplayMode === "configured" && connections.length === 0 ? "all" : providerDisplayMode;
+    providerDisplayMode === "configured" && noConfiguredConnections ? "all" : providerDisplayMode;
   const effectiveShowConfiguredOnly = shouldFilterProviderEntriesForDisplayMode(
     effectiveProviderDisplayMode,
     connections.length
@@ -898,20 +918,20 @@ function ProvidersPageContent() {
   });
 
   const summaryStats = {
-    all: countConfigured(dashboardProviderEntriesAll, adminDenied),
-    free: countConfigured(freeSectionEntriesAll, adminDenied),
-    noauth: countConfigured(noAuthEntriesAll, adminDenied),
-    oauth: countConfigured(oauthOnlyEntriesAll, adminDenied),
-    apikey: countConfigured(apiKeyProviderEntriesAll, adminDenied),
-    compatible: countConfigured(compatibleProviderEntriesAll, adminDenied),
-    webcookie: countConfigured(webCookieProviderEntriesAll, adminDenied),
-    search: countConfigured(searchProviderEntriesAll, adminDenied),
-    audio: countConfigured(audioProviderEntriesAll, adminDenied),
-    local: countConfigured(localProviderEntriesAll, adminDenied),
-    upstreamproxy: countConfigured(upstreamProxyEntriesAll, adminDenied),
-    cloudagent: countConfigured(cloudAgentProviderEntriesAll, adminDenied),
-    ide: countConfigured(ideProviderEntriesAll, adminDenied),
-    webfetch: countConfigured(webFetchEntriesAll, adminDenied),
+    all: countConfigured(dashboardProviderEntriesAll, connectionsUnknown),
+    free: countConfigured(freeSectionEntriesAll, connectionsUnknown),
+    noauth: countConfigured(noAuthEntriesAll, connectionsUnknown),
+    oauth: countConfigured(oauthOnlyEntriesAll, connectionsUnknown),
+    apikey: countConfigured(apiKeyProviderEntriesAll, connectionsUnknown),
+    compatible: countConfigured(compatibleProviderEntriesAll, connectionsUnknown),
+    webcookie: countConfigured(webCookieProviderEntriesAll, connectionsUnknown),
+    search: countConfigured(searchProviderEntriesAll, connectionsUnknown),
+    audio: countConfigured(audioProviderEntriesAll, connectionsUnknown),
+    local: countConfigured(localProviderEntriesAll, connectionsUnknown),
+    upstreamproxy: countConfigured(upstreamProxyEntriesAll, connectionsUnknown),
+    cloudagent: countConfigured(cloudAgentProviderEntriesAll, connectionsUnknown),
+    ide: countConfigured(ideProviderEntriesAll, connectionsUnknown),
+    webfetch: countConfigured(webFetchEntriesAll, connectionsUnknown),
   };
   if (loading) {
     return (
@@ -923,12 +943,13 @@ function ProvidersPageContent() {
   }
 
   // "Add your first provider" is a statement about the operator's configuration,
-  // and it is derived from the connection count. With the admin plane refusing
-  // there is no count to derive it from, so the hint is suppressed rather than
-  // shown on top of a page that is also saying "we could not read your
-  // configuration" — two claims, one of which is now known to be unverified.
+  // and it is derived from the connection count. When the admin plane did not
+  // give us that count there is nothing to derive it from, so the hint is
+  // suppressed rather than shown on top of a page that is also saying "we could
+  // not read your configuration" — two claims, one of which is now known to be
+  // unverified.
   const showFirstProviderHint =
-    !adminDenied &&
+    connectionsKnown &&
     shouldShowFirstProviderHint(connections.length, searchQuery) &&
     !showAllProviders;
 
@@ -972,7 +993,11 @@ function ProvidersPageContent() {
           activeCategory={activeCategory}
           activeServiceKind={activeServiceKind}
           onServiceKindChange={setActiveServiceKind}
-          disabledConfigured={connections.length === 0}
+          // Disabled whenever the count cannot justify it: a page that could not
+          // read the connections cannot evaluate "configured only", so the chip
+          // is withheld rather than letting the operator filter against a set
+          // nobody knows.
+          disabledConfigured={!connectionsKnown || connections.length === 0}
           displayMode={effectiveProviderDisplayMode}
           modelSearchQuery={modelSearchQuery}
           onBatchTest={handleBatchTest}
@@ -1059,36 +1084,52 @@ function ProvidersPageContent() {
           )
         ) : (
           <>
-            {/* The admin plane answered 401/403. This banner is ADDITIVE, not a
-                replacement: the catalog below is a static registry that needs no
-                session, so withholding it would hide state the refusal does not
-                contradict. What the refusal actually withholds is the
-                CONNECTIONS data — the configured counts — and those are drawn as
-                "—" for exactly that reason. (Compact mode already worked this
-                way, which is why this only ever aligned the two.) */}
-            {adminDenied && (
+            {/* The page could not read the CONNECTION LIST. This banner is
+                ADDITIVE, not a replacement: the catalog below is a static
+                registry that needs no session, so withholding it would hide
+                state the failed read does not contradict. What is withheld is
+                the connections data — the configured counts — and those are
+                drawn as "—" for exactly that reason. (Compact mode already
+                worked this way, which is why this only ever aligned the two.)
+
+                The sign-in button is narrower still: it is offered only when the
+                CREDENTIAL was refused, because that is the one failure it can
+                fix. A 5xx or a timed-out read has no key that would help.
+
+                The testid follows the flag, not the older story: it was
+                `providers-admin-denied`, which let a test that grabbed it read
+                a 500 as a refusal. */}
+            {connectionsUnknown && (
               <div
                 className="flex flex-wrap items-center gap-3 py-6 px-4 border border-dashed border-amber-500/40 rounded-xl text-sm"
-                data-testid="providers-admin-denied"
+                data-testid="providers-connections-unknown"
                 role="status"
               >
                 <span className="material-symbols-outlined text-[18px] text-amber-500">lock</span>
                 <span className="text-text-main flex-1 min-w-[240px]">
+                  {/* Byte-identical to `providers.aisixConnectionsUnknown` in
+                      en.json, like every other `providerText` fallback here.
+                      The two answer the same question — is the list below
+                      withheld? — so a fallback that said something different
+                      would make the answer depend on whether the catalogue
+                      loaded, which is the one thing the banner denies. */}
                   {providerText(
                     t,
-                    "aisixAdminKeyRequired",
-                    "The gateway answered 401: this list needs an admin session. The providers below are withheld, not empty."
+                    "aisixConnectionsUnknown",
+                    "The gateway did not confirm which providers you have configured, so the counts below are shown as — instead of as a number. A dash is not a zero: nothing here claims you have configured nothing."
                   )}
                 </span>
-                <Button
-                  size="sm"
-                  variant="primary"
-                  icon="login"
-                  onClick={requestAdminLogin}
-                  data-testid="providers-sign-in"
-                >
-                  {providerText(t, "adminAuthSignIn", "Sign in")}
-                </Button>
+                {adminRefused && (
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    icon="login"
+                    onClick={requestAdminLogin}
+                    data-testid="providers-sign-in"
+                  >
+                    {providerText(t, "adminAuthSignIn", "Sign in")}
+                  </Button>
+                )}
               </div>
             )}
             {/* API Key Compatible Providers — dynamic (OpenAI/Anthropic compatible) */}
@@ -1102,7 +1143,7 @@ function ProvidersPageContent() {
                       title={t("compatibleLabel")}
                     />
                     <ProviderCountBadge
-                      {...countConfigured(compatibleProviderEntriesAll, adminDenied)}
+                      {...countConfigured(compatibleProviderEntriesAll, connectionsUnknown)}
                     />
                   </h2>
                   <div className="flex flex-wrap gap-2">
@@ -1187,7 +1228,7 @@ function ProvidersPageContent() {
                     <ProviderCountBadge
                       {...countConfigured(
                         oauthProviderEntriesAll.filter((e) => !IDE_PROVIDER_IDS.has(e.providerId)),
-                        adminDenied
+                        connectionsUnknown
                       )}
                     />
                   </h2>
@@ -1260,7 +1301,9 @@ function ProvidersPageContent() {
                       className="size-2.5 rounded-full bg-cyan-500"
                       title={t("ideProviders") || "IDE Providers"}
                     />
-                    <ProviderCountBadge {...countConfigured(ideProviderEntriesAll, adminDenied)} />
+                    <ProviderCountBadge
+                      {...countConfigured(ideProviderEntriesAll, connectionsUnknown)}
+                    />
                   </h2>
                   <button
                     onClick={() => handleBatchTest("ide")}
@@ -1321,7 +1364,7 @@ function ProvidersPageContent() {
                       title={t("webCookieProviders")}
                     />
                     <ProviderCountBadge
-                      {...countConfigured(webCookieProviderEntriesAll, adminDenied)}
+                      {...countConfigured(webCookieProviderEntriesAll, connectionsUnknown)}
                     />
                   </h2>
                   <button
@@ -1371,7 +1414,7 @@ function ProvidersPageContent() {
                       {t("freeTierProviders")}
                       <CategoryDot color="bg-green-500" label={t("freeTierLabel")} />
                       <ProviderCountBadge
-                        {...countConfigured(freeSectionEntriesAll, adminDenied)}
+                        {...countConfigured(freeSectionEntriesAll, connectionsUnknown)}
                       />
                     </h2>
                     <p className="text-sm text-text-muted mt-1">{t("freeAggregated")}</p>
@@ -1421,7 +1464,7 @@ function ProvidersPageContent() {
                     {t("apiKeyProviders")}{" "}
                     <span className="size-2.5 rounded-full bg-amber-500" title={t("apiKeyLabel")} />
                     <ProviderCountBadge
-                      {...countConfigured(apiKeyProviderEntriesAll, adminDenied)}
+                      {...countConfigured(apiKeyProviderEntriesAll, connectionsUnknown)}
                     />
                   </h2>
                   <button
@@ -1476,7 +1519,7 @@ function ProvidersPageContent() {
               (noAuthEntriesAll.length > 0 || blockedNoAuthEntries.length > 0) && (
                 <NoAuthProvidersSection
                   visibleEntries={noAuthEntries}
-                  count={countConfigured(noAuthEntriesAll, adminDenied)}
+                  count={countConfigured(noAuthEntriesAll, connectionsUnknown)}
                   blockedEntries={blockedNoAuthEntries}
                   blockedProviders={blockedProviders}
                   onBlockedChange={setBlockedProviders}
@@ -1498,7 +1541,7 @@ function ProvidersPageContent() {
                       title={t("upstreamProxyProviders")}
                     />
                     <ProviderCountBadge
-                      {...countConfigured(upstreamProxyEntriesAll, adminDenied)}
+                      {...countConfigured(upstreamProxyEntriesAll, connectionsUnknown)}
                     />
                   </h2>
                   <button
@@ -1547,7 +1590,9 @@ function ProvidersPageContent() {
                       className="size-2.5 rounded-full bg-orange-500"
                       title={t("webFetchTooltip")}
                     />
-                    <ProviderCountBadge {...countConfigured(webFetchEntriesAll, adminDenied)} />
+                    <ProviderCountBadge
+                      {...countConfigured(webFetchEntriesAll, connectionsUnknown)}
+                    />
                   </h2>
                 </div>
                 <p className="text-sm text-text-muted -mt-2">{t("webFetchProvidersDesc")}</p>
@@ -1581,7 +1626,7 @@ function ProvidersPageContent() {
                       title={t("aggregatorsGateways")}
                     />
                     <ProviderCountBadge
-                      {...countConfigured(aggregatorProviderEntriesAll, adminDenied)}
+                      {...countConfigured(aggregatorProviderEntriesAll, connectionsUnknown)}
                     />
                   </h2>
                 </div>
@@ -1616,7 +1661,7 @@ function ProvidersPageContent() {
                       title={t("enterpriseCloud")}
                     />
                     <ProviderCountBadge
-                      {...countConfigured(enterpriseProviderEntriesAll, adminDenied)}
+                      {...countConfigured(enterpriseProviderEntriesAll, connectionsUnknown)}
                     />
                   </h2>
                 </div>
@@ -1651,7 +1696,7 @@ function ProvidersPageContent() {
                       title={t("cloudAgentProviders")}
                     />
                     <ProviderCountBadge
-                      {...countConfigured(cloudAgentProviderEntriesAll, adminDenied)}
+                      {...countConfigured(cloudAgentProviderEntriesAll, connectionsUnknown)}
                     />
                   </h2>
                   <button
@@ -1703,7 +1748,7 @@ function ProvidersPageContent() {
                       title={t("localProviders")}
                     />
                     <ProviderCountBadge
-                      {...countConfigured(localProviderEntriesAll, adminDenied)}
+                      {...countConfigured(localProviderEntriesAll, connectionsUnknown)}
                     />
                   </h2>
                   <button
@@ -1753,7 +1798,7 @@ function ProvidersPageContent() {
                       title={t("searchProvidersHeading")}
                     />
                     <ProviderCountBadge
-                      {...countConfigured(searchProviderEntriesAll, adminDenied)}
+                      {...countConfigured(searchProviderEntriesAll, connectionsUnknown)}
                     />
                   </h2>
                   <button
@@ -1803,7 +1848,7 @@ function ProvidersPageContent() {
                       title={t("embeddingRerankProviders")}
                     />
                     <ProviderCountBadge
-                      {...countConfigured(embeddingRerankProviderEntriesAll, adminDenied)}
+                      {...countConfigured(embeddingRerankProviderEntriesAll, connectionsUnknown)}
                     />
                   </h2>
                 </div>
@@ -1838,7 +1883,7 @@ function ProvidersPageContent() {
                       title={t("imageProviders")}
                     />
                     <ProviderCountBadge
-                      {...countConfigured(imageProviderEntriesAll, adminDenied)}
+                      {...countConfigured(imageProviderEntriesAll, connectionsUnknown)}
                     />
                   </h2>
                 </div>
@@ -1873,7 +1918,7 @@ function ProvidersPageContent() {
                       title={t("audioProvidersHeading")}
                     />
                     <ProviderCountBadge
-                      {...countConfigured(audioProviderEntriesAll, adminDenied)}
+                      {...countConfigured(audioProviderEntriesAll, connectionsUnknown)}
                     />
                   </h2>
                   <button
@@ -1923,7 +1968,7 @@ function ProvidersPageContent() {
                       title={t("videoProviders")}
                     />
                     <ProviderCountBadge
-                      {...countConfigured(videoProviderEntriesAll, adminDenied)}
+                      {...countConfigured(videoProviderEntriesAll, connectionsUnknown)}
                     />
                   </h2>
                 </div>

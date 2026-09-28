@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Chave de fornecedor eliminada.",
     "providerKeysDeleteTitle": "Eliminar chave de fornecedor",
     "providerKeysDeleteConfirm": "Eliminar a chave de fornecedor \"{name}\"? Qualquer modelo ou rota de passagem que ainda a referencie fará o gateway recusar com 409.",
-    "adminAuthSignIn": "Iniciar sessão"
+    "adminAuthSignIn": "Iniciar sessão",
+    "aisixConnectionsUnknown": "O gateway não confirmou que fornecedores configuraste, pelo que as contagens abaixo são apresentadas como — em vez de como um número. O traço não é zero: nada aqui afirma que não configuraste nenhum fornecedor."
   },
   "settings": {
     "title": "Configurações",

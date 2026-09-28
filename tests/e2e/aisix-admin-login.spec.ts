@@ -71,10 +71,18 @@ async function capture(page: Page, name: string): Promise<string> {
 }
 
 /** One row of a native admin collection, as far as this test reads it. */
-type AdminRow = { id?: string; name?: string; display_name?: string; value?: AdminRow } & Record<string, unknown>;
+type AdminRow = { id?: string; name?: string; display_name?: string; value?: AdminRow } & Record<
+  string,
+  unknown
+>;
 
 /** A native admin collection envelope, of any of the shapes the plane ships. */
-type AdminEnvelope = { models?: AdminRow[]; data?: AdminRow[]; items?: AdminRow[]; combos?: AdminRow[] };
+type AdminEnvelope = {
+  models?: AdminRow[];
+  data?: AdminRow[];
+  items?: AdminRow[];
+  combos?: AdminRow[];
+};
 
 /** Every admin request the page made, and the status each one got. */
 function trackAdminRequests(page: Page): Array<{ method: string; url: string; status: number }> {
@@ -129,22 +137,67 @@ test.describe("the gateway key prompt, against the real gateway", () => {
     // ── 1. land unauthenticated ──────────────────────────────────────────
     await page.goto(PROVIDERS_ROUTE, { waitUntil: "domcontentloaded" });
     await expect
-      .poll(
-        () => requests.filter((r) => r.status === 401).length,
-        { timeout: 30_000, message: "the page must attempt an admin read" }
-      )
+      .poll(() => requests.filter((r) => r.status === 401).length, {
+        timeout: 30_000,
+        message: "the page must attempt an admin read",
+      })
       .toBeGreaterThan(0);
     await capture(page, "01-landed-unauthenticated");
 
     // ── 2. honest signed-out state, and the prompt opens ─────────────────
-    // The withheld banner must not be an empty provider table: "not signed in"
-    // and "no providers exist" are opposite facts.
-    const withheld = page.getByTestId("providers-admin-denied");
-    await expect(withheld).toBeVisible({ timeout: 30_000 });
-    await expect(withheld).toContainText(/withheld, not empty/i);
-    // An honest signed-out state is not an empty list presented as a fact.
-    const beforeLogin = requests.filter((r) => r.method === "GET").length;
-    expect(beforeLogin).toBeGreaterThan(0);
+    // "not signed in" and "no providers exist" are opposite facts, and the
+    // banner has to say which one it is. It names the COUNTS and the em-dash
+    // they are drawn as; the previous copy said "the providers below are
+    // withheld, not empty" while the page was showing the providers below.
+    // The id says `connections-unknown` and not `admin-denied` for the same
+    // reason: the banner fires for a 5xx and a timeout too.
+    const unknownBanner = page.getByTestId("providers-connections-unknown");
+    await expect(unknownBanner).toBeVisible({ timeout: 30_000 });
+    await expect(unknownBanner).toContainText(/counts below are shown as —/i);
+    // And the sentence that kills the false claim outright: a dash is not a
+    // zero. Without it the banner only implies what the page must never assert.
+    await expect(unknownBanner).toContainText(/dash is not a zero/i);
+    // A refused credential is the one failure a key prompt can fix, so the
+    // banner carries the button on exactly this path.
+    await expect(page.getByTestId("providers-sign-in")).toBeVisible();
+    // The empty state is a FACT about the operator's configuration and is
+    // derived from the connection count, which this page has not read. Rendering
+    // it is the "empty list presented as a fact" the old comment claimed to
+    // exclude — a GET count cannot see it, so the heading itself is asserted.
+    await expect(
+      page.getByRole("heading", { name: /add your first provider/i }),
+      "the page shows the 'add your first provider' empty state while the 401 banner is up: an " +
+        "empty list presented as a fact is exactly what the signed-out state must not be"
+    ).toHaveCount(0);
+
+    // The positive half, and the reason the banner exists at all: the catalogue
+    // is ADDITIVE. It is a static registry that needs no session, so the refusal
+    // hides the CONNECTION COUNTS and nothing else. Without this a page that
+    // rendered an empty shell behind a banner would satisfy every assertion
+    // above — the banner, the button, the absent empty state and the
+    // `toHaveCount(0)` are all satisfiable by rendering nothing.
+    await expect(
+      page.getByRole("heading", { name: /api key providers/i }),
+      "the static catalogue is withheld behind a banner that says it is not"
+    ).toBeVisible({ timeout: 30_000 });
+
+    // And the count the gateway never sent is drawn as a dash, not as a zero.
+    // This is the claim the whole patch exists to remove, asserted on the real
+    // page: `0/N` here is the operator being told they configured nothing on a
+    // gateway the page was not allowed to read.
+    const unknownBadges = page.locator("[data-testid='provider-count-unknown']");
+    expect(await unknownBadges.count(), "no section rendered a '—/N' count").toBeGreaterThan(0);
+    const badgeTexts = await unknownBadges.allTextContents();
+    for (const badgeText of badgeTexts) {
+      expect(
+        badgeText,
+        `a count the gateway never sent is drawn as a number: ${badgeText}`
+      ).toMatch(/^\s*—\s*\/\s*\d+\s*$/);
+      expect(
+        badgeText,
+        `a count the gateway never sent is drawn as a zero: ${badgeText}`
+      ).not.toMatch(/^\s*0\s*\//);
+    }
 
     await expect(keyInput).toBeVisible({ timeout: 15_000 });
     await capture(page, "02-login-prompt-open");
@@ -164,7 +217,9 @@ test.describe("the gateway key prompt, against the real gateway", () => {
     await expect(wrongKeyError).not.toContainText(/400|cross-origin/i);
     await capture(page, "03-wrong-key");
     // A 401 on the exchange — not a 400 and not a 403.
-    const exchangeCalls = requests.filter((r) => r.url.includes("/auth/session") && r.method === "POST");
+    const exchangeCalls = requests.filter(
+      (r) => r.url.includes("/auth/session") && r.method === "POST"
+    );
     expect(exchangeCalls).toHaveLength(1);
     expect(exchangeCalls[0].status).toBe(401);
 
@@ -173,12 +228,14 @@ test.describe("the gateway key prompt, against the real gateway", () => {
     await submit.click();
     await expect(keyInput).toBeHidden({ timeout: 30_000 });
     await expect(page.getByTestId("admin-session-strip")).toBeVisible({ timeout: 30_000 });
-    // The withheld state is gone: the list is answered, not withheld.
-    await expect(page.getByTestId("providers-admin-denied")).toBeHidden({ timeout: 30_000 });
+    // The unknown count is gone: the list is answered, so a number is honest again.
+    await expect(page.getByTestId("providers-connections-unknown")).toBeHidden({ timeout: 30_000 });
     await capture(page, "04-authenticated");
 
     // The exchange itself was a 204 with no body.
-    const okExchange = requests.filter((r) => r.url.includes("/auth/session") && r.method === "POST");
+    const okExchange = requests.filter(
+      (r) => r.url.includes("/auth/session") && r.method === "POST"
+    );
     expect(okExchange[okExchange.length - 1].status).toBe(204);
 
     // ── 6. the key is NOT anywhere JS can read it ────────────────────────
@@ -280,7 +337,9 @@ test.describe("the gateway key prompt, against the real gateway", () => {
     expect(afterSignOut, "a read after logout must be 401").toBe(401);
 
     await page.reload({ waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("providers-admin-denied")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("providers-connections-unknown")).toBeVisible({
+      timeout: 30_000,
+    });
     await expect(keyInput).toBeVisible({ timeout: 30_000 });
     await capture(page, "07-signed-out-again");
 
@@ -297,7 +356,10 @@ test.describe("the gateway key prompt, against the real gateway", () => {
     expect(looped.length, "the page must never re-POST the exchange on its own").toBe(2);
   });
 
-  test("the Secure-only failure mode is handled honestly, not by spinning", async ({ page, context }) => {
+  test("the Secure-only failure mode is handled honestly, not by spinning", async ({
+    page,
+    context,
+  }) => {
     // The documented failure: the gateway marks the cookie `Secure` exactly
     // when the admin listener terminates TLS, and a browser DROPS a `Secure`
     // cookie received over plain HTTP — so a 204 arrives and no session exists.
@@ -336,7 +398,9 @@ test.describe("the gateway key prompt, against the real gateway", () => {
     expect((await context.cookies()).find((c) => c.name === "aisix_admin_session")).toBeUndefined();
   });
 
-  test("a 400 from the exchange is reported as a shape refusal, not a bad key", async ({ page }) => {
+  test("a 400 from the exchange is reported as a shape refusal, not a bad key", async ({
+    page,
+  }) => {
     // The classification the whole design rests on. Reproduced at the network
     // layer because a correctly-built client cannot make the gateway answer 400
     // — which is exactly why the 400 path is untestable otherwise, and exactly

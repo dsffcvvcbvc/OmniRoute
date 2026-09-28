@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Il-ċewwa tal-fornitur tqiefer.",
     "providerKeysDeleteTitle": "Qief il-ċewwa tal-fornitur",
     "providerKeysDeleteConfirm": "Qief il-ċewwa tal-fornitur \"{name}\"? Kwalunkull mudell jew rotta ta' pass-through li għadha xorta jirreferenzjaha se l-gateway jirrifjuta bi 409.",
-    "adminAuthSignIn": "Idħol"
+    "adminAuthSignIn": "Idħol",
+    "aisixConnectionsUnknown": "Il-gateway ma kkonfermax liema providers int konfigurajt, għalhekk iż-żewġ wara jintraw ħadd kif — minn numru. Il-dash mhuwa żerod: xejn hawn jassert li ma kkonfigurajt l-ebda ta' providers."
   },
   "settings": {
     "title": "Issettjar",

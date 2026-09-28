@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "የአቅራቦይ ቁልፍ ጠፍቷል።",
     "providerKeysDeleteTitle": "የአቅራቦይ ቁልፍ አጥፋ",
     "providerKeysDeleteConfirm": "የአቅራቦይ ቁልፍ \"{name}\" እንወግድ? አንድ ሞዴል ወይም ፓስስትሩ ሩት ካለው ጌትዌው 409 በመመልስ ውድቅራ ያሰናባል።",
-    "adminAuthSignIn": "ግባ"
+    "adminAuthSignIn": "ግባ",
+    "aisixConnectionsUnknown": "ጌት፡ አቅራቢዎችዎን የትክክት አይደረጉም። ስለዚህ ከታች ያሉት ብዛቶች በቁጥር ሳይሆኑ በ — በርታት ይታያሉ።በድር ክልሽ በዜሮ አይደለም፤ እነዚህ ገጽ ላይ አንድነትዎን ስለማልመገበር ምንም አይገባም።"
   },
   "settings": {
     "title": "ቅንብሮች",

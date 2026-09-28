@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Chave de provedor excluída.",
     "providerKeysDeleteTitle": "Excluir chave de provedor",
     "providerKeysDeleteConfirm": "Excluir a chave de provedor \"{name}\"? Qualquer modelo ou rota de passagem que ainda a referencie fará o gateway recusar com 409.",
-    "adminAuthSignIn": "Entrar"
+    "adminAuthSignIn": "Entrar",
+    "aisixConnectionsUnknown": "O gateway não confirmou quais provedores você configurou, então as contagens abaixo são mostradas como — em vez de um número. O traço não é zero: nada aqui afirma que você não configurou nenhum provedor."
   },
   "settings": {
     "title": "Configurações",

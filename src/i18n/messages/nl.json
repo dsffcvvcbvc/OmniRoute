@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Provider-sleutel verwijderd.",
     "providerKeysDeleteTitle": "Provider-sleutel verwijderen",
     "providerKeysDeleteConfirm": "Provider-sleutel \"{name}\" verwijderen? Elk model of passthrough-route dat er nog naar verwijst laat de gateway met 409 weigeren.",
-    "adminAuthSignIn": "Inloggen"
+    "adminAuthSignIn": "Inloggen",
+    "aisixConnectionsUnknown": "De gateway heeft niet bevestigd welke providers u hebt geconfigureerd, dus de aantallen hieronder worden als — getoond in plaats van als een getal. De streep is geen nul: niets hier beweert dat u geen enkele provider hebt geconfigureerd."
   },
   "settings": {
     "title": "Instellingen",

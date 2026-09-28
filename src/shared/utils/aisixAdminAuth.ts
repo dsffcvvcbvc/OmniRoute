@@ -68,11 +68,19 @@
  *
  * `getAisixSessionState` is the three-valued answer, and `hasSession` is the
  * evidence behind it: set by a successful key exchange, by an explicit
- * sign-out, and by ANY 2xx from the admin API — the last one being what makes
- * it survive a page reload, where the exchange is history and the cookie is
- * `HttpOnly` and unreadable. A 401 only turns `anonymous` into `ended` when
- * `hasSession` is already true, which is precisely the case where "your session
- * ended" is a true statement.
+ * sign-out, and by ANY 2xx from a credentialed admin read. A 401 only turns
+ * `anonymous` into `ended` when `hasSession` is already true, which is precisely
+ * the case where "your session ended" is a true statement.
+ *
+ * What that evidence does NOT cover, stated plainly because the type promises
+ * more than it can deliver: a session that died while the tab was CLOSED, so the
+ * first answer of the new page load is already a 401. Nothing in that page load
+ * has then proven a credential, the state is honestly `anonymous`, and the
+ * auto-prompt stays shut. Calling that "your session ended" would be a claim
+ * about a session this page load never saw. The cookie is `HttpOnly`, so no
+ * client-side state can close the gap — only the SERVER can, by saying on the 401
+ * whether a session cookie arrived. Until it does, `ended` survives a reload
+ * only for the window in which a 2xx precedes the first 401.
  */
 
 import { fetchWithTimeout } from "./fetchTimeout";
@@ -93,9 +101,12 @@ export function isAisixAdminUrl(url: string): boolean {
   return url.toLowerCase().startsWith(`${base}/`);
 }
 
+/** The path of the key exchange, on the admin base. */
+const AISIX_SESSION_PATH = "/admin/v1/auth/session";
+
 /** The admin session endpoints, built from the same base every admin read uses. */
 export function aisixSessionUrl(): string {
-  return `${getAisixAdminBase()}/admin/v1/auth/session`;
+  return `${getAisixAdminBase()}${AISIX_SESSION_PATH}`;
 }
 
 /**
@@ -178,10 +189,11 @@ let sessionEpoch = 0;
  * `true` once this page load has PROVED a working credential, by any means.
  *
  * This is the flag that separates "never signed in" from "was signed in, no
- * longer is" — see `getAisixSessionState`. It is deliberately NOT set by the key
- * exchange alone: after a reload the module is fresh, and an operator whose
- * cookie is still valid would otherwise look anonymous on their first 401 and
- * never be told their session ended.
+ * longer is" — see `getAisixSessionState`. A 2xx from a CREDENTIALED admin read
+ * is the one proof that survives a reload: the exchange that set the cookie is
+ * history, and the cookie is `HttpOnly` so JS cannot check it. It is not a
+ * complete proof, and the module doc says which case it misses rather than
+ * letting the type imply one.
  */
 let hasSession = false;
 
@@ -240,14 +252,28 @@ export function getAisixSessionState(): AisixSessionState {
  * `true` when a URL is on the admin API itself — the surface that REQUIRES a
  * credential, and therefore the only answer that can prove one existed.
  *
- * Narrower than `isAisixAdminUrl`, and deliberately so. The admin base also
- * serves `/livez` and `/readyz`, which are unauthenticated and answer 200 to
- * anyone; a liveness probe that concluded "a session exists" would put the
- * dashboard permanently in `active`, and the 401 that follows would then be
- * reported as an ended session for an operator who never had one.
+ * Narrower than `isAisixAdminUrl`, and deliberately so, on two counts:
+ *
+ *   1. The admin base also serves `/livez` and `/readyz`, which are
+ *      unauthenticated and answer 200 to anyone; a liveness probe that
+ *      concluded "a session exists" would put the dashboard permanently in
+ *      `active`, and the 401 that follows would then be reported as an ended
+ *      session for an operator who never had one. The test is on the PATH, not
+ *      on the whole URL: a query or fragment on a public route
+ *      (`/livez?next=/admin/v1/models`) carries no credential and must not be
+ *      able to smuggle a credentialed path past the check.
+ *   2. The exchange itself is excluded. Its 204 proves the KEY was accepted,
+ *      not that the browser kept the cookie — `confirmSession` answers that
+ *      with a real read and is the only writer of `hasSession` on the sign-in
+ *      path. Counting that 204 here made the documented `session_not_kept`
+ *      failure report `ended` beside its own error message: a session that
+ *      never existed, described to the operator as one that had ended.
  */
 function isCredentialedAdminEndpoint(url: string): boolean {
-  return isAisixAdminUrl(url) && url.toLowerCase().includes("/admin/v1/");
+  if (!isAisixAdminUrl(url)) return false;
+  const { pathname } = new URL(url);
+  const path = pathname.toLowerCase();
+  return path.startsWith("/admin/v1/") && path !== AISIX_SESSION_PATH;
 }
 
 /** The current session epoch. Changes only on a successful exchange. */
@@ -380,6 +406,10 @@ export async function aisixAdminFetch(
   // Without this, an operator whose cookie outlives a page reload comes back
   // "anonymous", and the 401 that later ends their real session is misreported
   // as never having had one.
+  //
+  // "a 2xx from the admin API" is not "a 2xx from anywhere on the admin base",
+  // nor "a 2xx from the key exchange" — `isCredentialedAdminEndpoint` is what
+  // makes both exclusions structural instead of a convention.
   if (response.ok && isCredentialedAdminEndpoint(url)) {
     hasSession = true;
   }
@@ -453,6 +483,13 @@ async function readErrorMsg(response: Response): Promise<string | null> {
  * credential and its reads are authenticated by the header — a cookie check
  * would report a false `session_not_kept` for a request that is in fact
  * authorized. The browser path (no key) is the one that needs proving.
+ *
+ * This read, and only this read, is what puts a freshly exchanged session into
+ * `hasSession`. The exchange's own 204 is excluded from
+ * `isCredentialedAdminEndpoint` precisely so that a FAILED confirmation leaves
+ * the module honest: an operator who has just been told the cookie was not
+ * kept has no session, and their state stays `anonymous` instead of flipping to
+ * `ended` and opening a "Your session ended" note beside the real error.
  */
 async function confirmSession(adminKey: string | undefined): Promise<AdminSessionOutcome> {
   if (typeof adminKey === "string" && adminKey.trim().length > 0) {

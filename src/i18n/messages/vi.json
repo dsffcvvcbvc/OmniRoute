@@ -6600,7 +6600,8 @@
     "providerKeysDeleted": "Đã xóa khóa nhà cung cấp.",
     "providerKeysDeleteTitle": "Xóa khóa nhà cung cấp",
     "providerKeysDeleteConfirm": "Xóa khóa nhà cung cấp \"{name}\"? Bất kỳ mô hình hay tuyến passthrough nào vẫn tham chiếu tới nó sẽ khiến gateway từ chối với 409.",
-    "adminAuthSignIn": "Đăng nhập"
+    "adminAuthSignIn": "Đăng nhập",
+    "aisixConnectionsUnknown": "Gateway không xác nhận bạn đã cấu hình những nhà cung cấp nào, nên các số đếm bên dưới hiển thị bằng — thay vì là một con số. Dấu gạch không phải số không: không có gì ở đây nói rằng bạn chưa cấu hình nhà cung cấp nào."
   },
   "settings": {
     "title": "Cài đặt",

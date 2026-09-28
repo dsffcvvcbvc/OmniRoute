@@ -6599,7 +6599,8 @@
     "providerKeysDeleteTitle": "Ewula ụdịnaya nchọọcha",
     "providerKeysDeleteConfirm": "Igbu ụdịnaya nchọọcha \"{name}\"? Ụdị ọ bụla ma ọ bụ ụzọ passthrough nke ka na-ezigharị ya bụ́ ga-abanye ụgbọ site na 409.",
     "providerKeysNotPersisted": "A appliedị na memorie mana ABỌGHỊ ebe e debere dịka: faịlụ ahụ okwu nwere ahụnwere ọzọ dị ma igbu ụdịnaya otu nwere ike ịmegharị ya. Ị ga-akpọta mgbe a na-ebugharị ụzọ — jiri POST /admin/v1/resources.",
-    "adminAuthSignIn": "Banye"
+    "adminAuthSignIn": "Banye",
+    "aisixConnectionsUnknown": "Gateway enweghị nkwenye na ihe ọ gị anyị na-eweta ọrụ ihe ọ bụla, ya mere ọnụọgụ dị n'okpuru a na-egpazị ebe ọ bụ — ọ bụghị ọnụọgụ. Ụkpụrụ ahụ ọ bụghị eze ọnụọgụ: ihe ọ dị n'aka anaghị agbanyeghị na ị nweghị ọbụna onye na-eweta ọrụ."
   },
   "settings": {
     "title": "Ntọala",

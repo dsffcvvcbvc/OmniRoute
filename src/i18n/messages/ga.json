@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Cuadh leata an eochair soláthraithe.",
     "providerKeysDeleteTitle": "Scrios an eochair soláthraithe",
     "providerKeysDeleteConfirm": "Scrios an eochair soláthraithe \"{name}\"? Samhail ar bith ar shlíre passthrough a chuireann fós i leata tá, cuirfidh sé an geatail diúlú 409 a thabhairt.",
-    "adminAuthSignIn": "Logáil isteach"
+    "adminAuthSignIn": "Logáil isteach",
+    "aisixConnectionsUnknown": "Níor dheimhnigh an geatailé sol bhfuil tú cumraithe, mar sin tá na contaí thíos á dtaispeánadh mar — in ionad uimhre. Níl an líne stad níl faoi ndéar: níl aon rud sa bhfuil ag maith gur nár shocraigh tú aon soláthraí."
   },
   "settings": {
     "title": "Socruithe",

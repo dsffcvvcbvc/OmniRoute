@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Provayder kaliti o'chirildi.",
     "providerKeysDeleteTitle": "Provayder kalitini o'chirish",
     "providerKeysDeleteConfirm": "«{name}» provayder kalitini o'chirilsizmi? Agar biror model yoki passthrough marshruti hali hamon unga muroja qilsa, gateway 409 bilan rad qiladi.",
-    "adminAuthSignIn": "Kirish"
+    "adminAuthSignIn": "Kirish",
+    "aisixConnectionsUnknown": "Gateway qaysi provayderlarni sozlaganingizni tasdiqlamadi, shuning uchun quyidagi sonlar raqam o'rniga — ko'rinishida ko'rsatiladi. Tire nolga teng emas: bu sahifada hech narsa siz hech qanday provayderni sozlamaganingizni tasdiqlamaydi."
   },
   "settings": {
     "title": "Sozlamalar",

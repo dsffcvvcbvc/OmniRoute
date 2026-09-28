@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Sağlayıcı anahtarı silindi.",
     "providerKeysDeleteTitle": "Sağlayıcı anahtarını sil",
     "providerKeysDeleteConfirm": "\"{name}\" sağlayıcı anahtarı silinsin mi? Hâlâ buna başvuran bir model veya passthrough rotası, ağ geçidinin 409 ile reddetmesine yol açar.",
-    "adminAuthSignIn": "Oturum aç"
+    "adminAuthSignIn": "Oturum aç",
+    "aisixConnectionsUnknown": "Ağ geçidi hangi sağlayıcıları yapılandırdığınızı doğrulamadı; bu yüzden aşağıdaki sayılar bir sayı yerine — olarak gösteriliyor. Kısa çizgi sıfır değildir; bu sayfada hiçbir yerde bir sağlayıcıyı yapılandırmadığınız ileri sürülmüyor."
   },
   "settings": {
     "title": "Ayarlar",

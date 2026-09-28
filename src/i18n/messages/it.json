@@ -6599,7 +6599,8 @@
     "providerKeysDeleteTitle": "Elimina chiave provider",
     "providerKeysDeleteConfirm": "Eliminare la chiave provider «{name}»? Qualsiasi modello o rotta passthrough che vi fa ancora riferimento farà rispondere 409 alla passerella.",
     "providerKeysNotPersisted": "Applicato in memoria ma NON scritto su disco: il file delle risorse contiene righe che una singola scrittura di chiave non può rigenerare. Andrà perso al ricaricamento — usa POST /admin/v1/resources.",
-    "adminAuthSignIn": "Accedi"
+    "adminAuthSignIn": "Accedi",
+    "aisixConnectionsUnknown": "Il gateway non ha confermato quali provider hai configurato, quindi i conteggi qui sotto sono mostrati come — invece che come un numero. Il trattino non è uno zero: qui non si sostiene che tu non abbia configurato alcun provider."
   },
   "settings": {
     "title": "Impostazioni",

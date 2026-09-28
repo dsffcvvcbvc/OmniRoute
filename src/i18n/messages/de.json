@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Der Anbieterschlüssel wurde gelöscht.",
     "providerKeysDeleteTitle": "Anbieterschlüssel löschen",
     "providerKeysDeleteConfirm": "Anbieterschlüssel „{name}“ löschen? Ein Modell oder eine Passthrough-Route, die noch darauf verweist, lässt das Gateway mit 409 ablehnen.",
-    "adminAuthSignIn": "Anmelden"
+    "adminAuthSignIn": "Anmelden",
+    "aisixConnectionsUnknown": "Das Gateway hat nicht bestätigt, welche Anbieter du konfiguriert hast, daher werden die Anzahlen unten als — statt als Zahl angezeigt. Der Gedankenstrich ist keine Null: Nichts hier behauptet, dass du keine Anbieter konfiguriert hast."
   },
   "settings": {
     "title": "Einstellungen",

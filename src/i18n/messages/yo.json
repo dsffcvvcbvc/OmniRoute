@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "A ti pa àtúnṣe ọ̀rọ̀ ìwé àtúnṣe òkè kíta wa nísàlẹ̀.",
     "providerKeysDeleteTitle": "Pa àtúnṣe ọ̀rọ̀ ìwé àtúnṣe òkè kíta wa nísàlẹ̀",
     "providerKeysDeleteConfirm": "Pa àtúnṣe ọ̀rọ̀ ìwé àtúnṣe òkè kíta wa nísàlẹ̀ \"{name}\"? Ọ̀kọ́ tàbí ọ̀nà ìkọjá ọ̀nà passthrough tí ó tún tún yí sí ní 409 ní bá jẹ́ kí ànáwọn gateway sọ ọ́ yí padàlà.",
-    "adminAuthSignIn": "Wọlé"
+    "adminAuthSignIn": "Wọlé",
+    "aisixConnectionsUnknown": "Ilẹ̀kọ́ ni kò ṣe àfihàn ohun tí o ṣe títọ̀ àwọn provider. Nítorí náà, àwọn ìṣàpò tí ó wà nísàlẹ̀ wọn ní hàn ní — dípò bí iṣe ìṣe. Ammá náà kì í kìí, ìwọ kò ṣe àtúnṣe provider. Kò sí ohun tí ó wà níbí tí ó bá sọ pé o kò ṣe àtúnṣe provider."
   },
   "settings": {
     "title": "Àwọn Ààtò",

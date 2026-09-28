@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "מפתח הספק נמחק.",
     "providerKeysDeleteTitle": "מחיקת מפתח הספק",
     "providerKeysDeleteConfirm": "למחוק את מפתח הספק „{name}“? כל מודל או נתיב passthrough שעדיין מפנה אליו יגרום לשער לדחות עם 409.",
-    "adminAuthSignIn": "התחבר"
+    "adminAuthSignIn": "התחבר",
+    "aisixConnectionsUnknown": "השער לא אישר אילו ספקים הגדרת, ולכן הספירות שלמטה מוצגות כ־— במקום כמספר. המקף אינו אפס: שום דבר כאן אינו טוען שלא הגדרת אף ספק."
   },
   "settings": {
     "title": "הגדרות",
