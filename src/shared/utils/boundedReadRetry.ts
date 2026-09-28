@@ -161,15 +161,62 @@ export interface BoundedReadOutcome<T> {
   error: string | null;
 }
 
-export interface BoundedReadHooks {
-  sleep?: (ms: number) => Promise<void>;
-  random?: () => number;
-  /** Aborting settles the read at the attempt in flight instead of continuing. */
-  signal?: { aborted: boolean };
+/**
+ * The slice of `AbortSignal` this module observes. Structural on purpose: a test
+ * may pass a plain `{ aborted: false }`, and a real `AbortController.signal`
+ * satisfies it with no cast. The listener methods are what make a pending backoff
+ * CANCELLABLE rather than merely checked between attempts.
+ */
+export interface BoundedReadAbortSignal {
+  aborted: boolean;
+  addEventListener?: (type: "abort", listener: () => void) => void;
+  removeEventListener?: (type: "abort", listener: () => void) => void;
 }
 
-const realSleep = (ms: number): Promise<void> =>
-  ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
+export interface BoundedReadHooks {
+  /**
+   * Backoff wait. The default is cancellable through `signal` (see `realSleep`);
+   * a caller-supplied one receives the signal as a second argument and may ignore
+   * it, in which case the loop's own checks bound the wait the same way.
+   */
+  sleep?: (ms: number, signal?: BoundedReadAbortSignal) => Promise<void>;
+  random?: () => number;
+  /** Aborting settles the read at the attempt in flight instead of continuing. */
+  signal?: BoundedReadAbortSignal;
+}
+
+/**
+ * The default backoff wait, and it is CANCELLABLE. A bare
+ * `new Promise((resolve) => setTimeout(resolve, ms))` is not, and that was the
+ * defect: the signal was forwarded to this loop, and nothing here ever observed
+ * it, so a caller that gave up 1 ms into a 250 ms backoff still waited out the
+ * remaining 249 ms before the next `aborted` check could fire.
+ *
+ * That is not a theoretical wait. The consuming card renders a skeleton while a
+ * read is in flight, so those 249 ms are a stuck skeleton for a run whose result
+ * can no longer be retained by anyone. The timer is therefore cleared and the
+ * wait settles the moment the signal aborts; the loop's own check then breaks
+ * out before another attempt is issued.
+ */
+const realSleep = (ms: number, signal?: BoundedReadAbortSignal): Promise<void> => {
+  // Already aborted, or nothing to wait for: resolving now is what keeps a
+  // superseded run from paying a backoff it has no use for.
+  if (ms <= 0 || signal?.aborted) return Promise.resolve();
+  const { promise, resolve } = Promise.withResolvers<void>();
+  let timer: ReturnType<typeof setTimeout>;
+  // Detached on BOTH paths: one listener per backoff would otherwise pile up on
+  // a long-lived signal, and this module may be driving several runs from it.
+  const settle = (): void => {
+    clearTimeout(timer);
+    signal?.removeEventListener?.("abort", settle);
+    resolve();
+  };
+  // `timer` is assigned before the listener is attached, and an already-aborted
+  // signal never fires on attach, so `settle` cannot observe it unset.
+  timer = setTimeout(settle, ms);
+  signal?.addEventListener?.("abort", settle);
+  return promise;
+};
 
 /**
  * Run one read under the policy above and settle for good.
@@ -216,9 +263,17 @@ export async function readWithBoundedRetry<T>(
         error: null,
       };
     }
+    // Checked HERE as well as at the top of the loop, and this is the branch that
+    // decides: an abort observed the moment this attempt settled must stop the
+    // run outright. Falling through to `shouldRetryBoundedRead` would classify a
+    // retry worth taking and enter the backoff, spending wait and attempt budget
+    // on a run that has already been superseded, before the next iteration's
+    // guard noticed and unwound the damage.
     if (hooks.signal?.aborted) break;
     if (!shouldRetryBoundedRead(last, attemptNumber, p)) break;
-    await sleep(boundedReadBackoffDelayMs(attemptNumber, p, random));
+    // The signal reaches the wait, so a pending backoff ends on the abort rather
+    // than after the delay a superseded run can no longer use.
+    await sleep(boundedReadBackoffDelayMs(attemptNumber, p, random), hooks.signal);
   }
 
   return {
