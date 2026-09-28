@@ -408,17 +408,96 @@ export async function fetchDirectModelNames(
   return parseDirectModelNames(result.data);
 }
 
+/**
+ * The combo rows of a combos COLLECTION read, under EITHER wire contract.
+ *
+ * Both are LIVE RIGHT NOW, in the same deployment of this same component, and
+ * one build flag decides which: `resolveAisixRequestUrl` sends `/api/combos`
+ * to the native collection in the SPA export and leaves it on the Next route
+ * everywhere else. So this is not one contract plus tolerance for drift — it
+ * is two real, simultaneously-served contracts:
+ *   - the SPA export → native `GET /admin/v1/combos`, a BARE `AisixCombo[]`
+ *     (`combos_handler::list_combos` returns `Json<Vec<Value>>`, no wrapper);
+ *   - a normal Next build → `GET /api/combos`, `{ combos: Combo[], total }`
+ *     (`src/app/api/combos/route.ts`, the monolith's own route).
+ *
+ * WHICH IS AUTHORITATIVE: the bare array. It is the gateway's own route, and
+ * the gateway is a different product that this repo does not get to reshape
+ * for dashboard convenience. The envelope is the monolith's, and the monolith
+ * can change it unilaterally — so drift there is a dashboard bug we own, not a
+ * silent external mismatch. Native-side drift is still loud: the write path
+ * goes through `buildComboDocument`/`normalizeCombo`, which drop or reject a
+ * renamed field instead of quietly rendering an empty table.
+ *
+ * WHEN THE ENVELOPE BRANCH GOES: with `src/app/api/combos/route.ts`, i.e. when
+ * the Next monolith's `/api/*` layer is retired. At that point
+ * `resolveAisixRequestUrl` is only ever reached in the export and this
+ * collapses to the bare array.
+ *
+ * WHAT SELECTS THE CONTRACT is `isAisixSpaExport()` inside
+ * `resolveAisixRequestUrl` — the flag, never the file layout. So this stays
+ * correct even if the export build stopped moving `src/app/api` aside (it does
+ * not: `build-next-isolated.mjs:53-68` moves it for `OMNIROUTE_EXPORT=1`,
+ * because a request handler cannot be exported at all — Next E301/E278); that
+ * move is what makes the DECLARED-UNSUPPORTED pass-throughs 404 honestly, not
+ * what routes the combos read. The tests pin the flag, not the layout.
+ *
+ * Consumers that need their OWN fields (Next-only `isActive`/`isHidden`, quota
+ * model names) take the raw rows from here and filter as before; only the list
+ * envelope is dual-shaped. The pre-fix state — envelope only, no bare array —
+ * is what lost the API-key editor its combo list on a real 200.
+ */
+export function readComboList(payload: unknown): unknown[] {
+  if (Array.isArray(payload)) return payload;
+  if (isRecord(payload)) {
+    for (const field of ["combos", "data", "items"]) {
+      const candidate = payload[field];
+      if (Array.isArray(candidate)) return candidate;
+    }
+  }
+  return [];
+}
+
+/**
+ * A combos row reduced to the three fields a picker renders, with each one
+ * checked. `readComboList` deliberately hands back `unknown[]` — the two wire
+ * contracts do not agree on the row shape — so a consumer that only needs a
+ * nameable row parses here instead of casting.
+ */
+export interface NamedComboRow {
+  id?: string;
+  name: string;
+  models?: unknown[];
+}
+
+/**
+ * The named rows of a combos read, in wire order, under either contract. A row
+ * with no non-empty string `name` is dropped: it cannot be selected, labelled
+ * or matched, so rendering it would be a blank entry in a security-relevant
+ * picker rather than data.
+ */
+export function readNamedCombos(payload: unknown): NamedComboRow[] {
+  const out: NamedComboRow[] = [];
+  for (const row of readComboList(payload)) {
+    // `isRecord` rather than an `in` check, so `id` and `models` are both
+    // readable: an `in` narrowing yields `object & Record<"name", unknown>`,
+    // on which `row.models` is TS2339 under this project's own compiler
+    // options (`strict: false` does not rescue a nonexistent property).
+    if (!isRecord(row)) continue;
+    const name = row.name;
+    if (typeof name !== "string" || !name.trim()) continue;
+    out.push({
+      name,
+      ...(typeof row.id === "string" ? { id: row.id } : {}),
+      ...(Array.isArray(row.models) ? { models: row.models } : {}),
+    });
+  }
+  return out;
+}
+
 export function parseCombos(payload: unknown): AisixCombo[] {
-  const raw: unknown = Array.isArray(payload)
-    ? payload
-    : isRecord(payload)
-      ? (["combos", "data", "items"] as const)
-          .map((field) => payload[field])
-          .find((candidate) => Array.isArray(candidate))
-      : [];
-  if (!Array.isArray(raw)) return [];
   const out: AisixCombo[] = [];
-  for (const entry of raw) {
+  for (const entry of readComboList(payload)) {
     const normalized = normalizeCombo(entry);
     if (normalized) out.push(normalized);
   }

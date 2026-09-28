@@ -88,7 +88,11 @@ import { getComboStepTarget } from "@/lib/combos/steps";
 import { DEAD_COMBO_CONFIG_KEYS } from "@/lib/combos/deadConfigKeys";
 import { modelFamily } from "@/lib/combos/invariants";
 import { resolveProviderAlias } from "@omniroute/open-sse/services/providerAlias.ts";
-import { resolveAisixRequestUrl, resolveAisixSurfaceSupport } from "@/shared/utils/aisixEndpoints";
+import {
+  aisixUnsupportedRead,
+  resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
+} from "@/shared/utils/aisixEndpoints";
 import {
   AISIX_COMBO_DEFAULT_STRATEGY,
   AISIX_COMBO_REFUSED_DOCUMENT_FIELDS,
@@ -939,7 +943,13 @@ function CombosPageContent() {
   const notify = useNotificationStore();
   const [proxyTargetCombo, setProxyTargetCombo] = useState(null);
   const [proxyConfig, setProxyConfig] = useState(null);
-  const { comboProxyAssignedIds, fetchComboProxyAssignments } = useComboProxyAssignments();
+  const { comboProxyAssignedIds, fetchComboProxyAssignments, assignmentsSupported } =
+    useComboProxyAssignments();
+  // `null` = the assignment registry is readable (so an empty set really means
+  // "no combo has a proxy"). A reason string = this host cannot answer the read
+  // at all, and the card must say THAT rather than render the same quiet
+  // no-badge state a completed read found.
+  const proxyRegistry = assignmentsSupported ? null : aisixUnsupportedRead("settings").reason;
   const [providerNodes, setProviderNodes] = useState([]);
   // SSR has no localStorage, so a lazy initializer reading it here returns a
   // different value server-side (always "not dismissed") than the client's
@@ -1803,6 +1813,7 @@ function CombosPageContent() {
                 testing={testingCombo === combo.name}
                 onProxy={() => setProxyTargetCombo(combo)}
                 hasProxy={comboProxyAssignedIds.has(combo.id) || !!proxyConfig?.combos?.[combo.id]}
+                proxyRegistry={proxyRegistry}
                 dragDisabled={savingComboOrder || activeFilter !== "all" || combos.length < 2}
                 isDragged={comboDragIndex === index}
                 isDropTarget={comboDragOverIndex === index && comboDragIndex !== index}
@@ -2193,6 +2204,7 @@ function ComboCardInner({
   testing,
   onProxy,
   hasProxy,
+  proxyRegistry,
   providerNodes,
   dragDisabled,
   isDragged,
@@ -2252,13 +2264,15 @@ function ComboCardInner({
                   {getStrategyLabel(t, strategy)}
                 </span>
               </Tooltip>
-              {hasProxy && (
+              {(hasProxy || proxyRegistry) && (
                 <span
-                  className="text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary flex items-center gap-0.5"
-                  title={t("proxyConfigured")}
+                  className={`text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${hasProxy ? "bg-primary/15 text-primary" : "bg-black/5 dark:bg-white/5 text-text-muted"}`}
+                  title={hasProxy ? t("proxyConfigured") : proxyRegistry}
                 >
-                  <span className="material-symbols-outlined text-[11px]">vpn_lock</span>
-                  proxy
+                  <span className="material-symbols-outlined text-[11px]">
+                    {hasProxy ? "vpn_lock" : "help"}
+                  </span>
+                  proxy{hasProxy ? "" : " ?"}
                 </span>
               )}
               <button

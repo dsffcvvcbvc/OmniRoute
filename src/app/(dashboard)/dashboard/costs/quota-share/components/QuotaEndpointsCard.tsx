@@ -11,6 +11,7 @@ import {
   resolveAisixRequestUrl,
   resolveAisixSurfaceSupport,
 } from "@/shared/utils/aisixEndpoints";
+import { readNamedCombos } from "@/shared/utils/aisixCombos";
 import {
   quotaModelName,
   quotaGroupSlug,
@@ -120,11 +121,9 @@ export default function QuotaEndpointsCard({
           ? native.data
           : (await fetchAisixJson(resolveAisixRequestUrl("/api/combos"))).data;
       if (!alive) return;
-      const names = Array.isArray((body as { combos?: unknown } | null)?.combos)
-        ? (body as { combos: Array<{ name?: unknown }> }).combos
-            .map((c) => (typeof c.name === "string" ? c.name : ""))
-            .filter((n) => n.length > 0 && isQuotaModelName(n))
-        : [];
+      const names = readNamedCombos(body)
+        .map((combo) => combo.name)
+        .filter((name) => isQuotaModelName(name));
       // `null` (vs `[]`) is kept distinct: "no combos could be read" must not
       // masquerade as "the quota model catalog is empty".
       setRealCombos(names);
