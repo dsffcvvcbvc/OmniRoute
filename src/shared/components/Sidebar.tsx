@@ -46,6 +46,7 @@ import {
   type SidebarItemGroup,
   type SidebarItemOrder,
 } from "@/shared/constants/sidebarVisibility";
+import { resolveAisixSurfaceSupport } from "@/shared/utils/aisixEndpoints";
 
 const isE2EMode = process.env.NEXT_PUBLIC_OMNIROUTE_E2E_MODE === "1";
 const DEFAULT_EXPANDED: SidebarSectionId = "omni-proxy";
@@ -218,18 +219,28 @@ export default function Sidebar({
       setRadarAdminUrl(data?.radarAdminUrl ?? null);
     };
 
-    fetch("/api/settings")
-      .then((res) => res.json())
-      .then((data) => {
-        applySettings(data);
-        if (Array.isArray(data?.[SIDEBAR_SECTION_ORDER_KEY])) {
-          setSidebarSectionOrder(data[SIDEBAR_SECTION_ORDER_KEY] as SidebarSectionId[]);
-        }
-        if (data?.[SIDEBAR_ITEM_ORDER_KEY] && typeof data[SIDEBAR_ITEM_ORDER_KEY] === "object") {
-          setSidebarItemOrder(data[SIDEBAR_ITEM_ORDER_KEY] as SidebarItemOrder);
-        }
-      })
-      .catch(() => {});
+    // OmniRoute's own settings are SQLite-backed and the gateway has no
+    // readable settings collection (`POST /admin/v1/resources` is write-only),
+    // so the read is skipped instead of being fired into a guaranteed 404.
+    // Nothing is lost by skipping: every value below is a CUSTOMISATION with a
+    // default, and a failed read already left the defaults in place. The
+    // refusal itself belongs on the settings page, which is where an operator
+    // goes to change these — the sidebar must keep rendering its full default
+    // navigation rather than collapse because a preference could not be read.
+    if (resolveAisixSurfaceSupport("settings", "read").supported) {
+      fetch("/api/settings")
+        .then((res) => res.json())
+        .then((data) => {
+          applySettings(data);
+          if (Array.isArray(data?.[SIDEBAR_SECTION_ORDER_KEY])) {
+            setSidebarSectionOrder(data[SIDEBAR_SECTION_ORDER_KEY] as SidebarSectionId[]);
+          }
+          if (data?.[SIDEBAR_ITEM_ORDER_KEY] && typeof data[SIDEBAR_ITEM_ORDER_KEY] === "object") {
+            setSidebarItemOrder(data[SIDEBAR_ITEM_ORDER_KEY] as SidebarItemOrder);
+          }
+        })
+        .catch(() => {});
+    }
 
     const handleSettingsUpdated = (event: Event) => {
       const detail = (event as CustomEvent<Record<string, unknown>>).detail || {};

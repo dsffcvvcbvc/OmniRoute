@@ -1,5 +1,6 @@
 import { DASHBOARD_CSRF_HEADER } from "@/shared/constants/dashboardCsrf";
 import { isPublicApiRoute } from "@/shared/constants/publicApiRoutes";
+import { isDashboardCsrfInterceptorNeeded } from "./aisixEndpoints";
 
 interface CachedDashboardCsrfToken {
   token: string;
@@ -76,6 +77,11 @@ async function getDashboardCsrfToken(): Promise<string | null> {
 }
 
 export function prefetchDashboardCsrfToken(): Promise<string | null> {
+  // Static AISIX export: there is no Next.js server to mint the token, so this
+  // read is a guaranteed 404 on every dashboard load. Returning `null` here is
+  // what the failing read already produced — the difference is that it no longer
+  // costs a request, and no longer hides a fact: there is no token to have.
+  if (!isDashboardCsrfInterceptorNeeded()) return Promise.resolve(null);
   return getDashboardCsrfToken();
 }
 
@@ -158,6 +164,16 @@ function mergedHeaders(input: RequestInfo | URL, init?: RequestInit): Headers {
 
 export function installDashboardCsrfFetch(): () => void {
   if (typeof globalThis.fetch !== "function") return () => {};
+
+  // Static AISIX export. The interceptor patches `globalThis.fetch` to stamp a
+  // CSRF header on same-origin `/api/*` mutations — a guard for the Next.js
+  // dashboard's own write surface. In the export that surface does not exist:
+  // the only same-origin mutations reachable are the core's `/admin/v1/*`
+  // verbs, which authenticate by admin key / session cookie and check no CSRF
+  // token. So the patch is not "failing open" here — there is nothing behind it
+  // to protect, and leaving it installed means every mutation first awaits a
+  // token fetch that can only 404. See `isDashboardCsrfInterceptorNeeded`.
+  if (!isDashboardCsrfInterceptorNeeded()) return () => {};
 
   if (installCount === 0) {
     originalFetch = globalThis.fetch;

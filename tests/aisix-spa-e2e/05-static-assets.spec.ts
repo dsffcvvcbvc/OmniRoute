@@ -1,6 +1,14 @@
 import { expect, test } from "@playwright/test";
 
-import { BASE_URL, PageWatch, readContent, writeEvidence } from "./harness";
+import {
+  BASE_URL,
+  PageWatch,
+  authenticate,
+  readContent,
+  readNativeCatalog,
+  readNativeHealth,
+  writeEvidence,
+} from "./harness";
 
 /**
  * 05 — the asset tree.
@@ -218,5 +226,385 @@ test.describe("static assets", () => {
       scriptFailure,
       "the browser reported a script fetch that answered 404 while the dashboard booted"
     ).toEqual([]);
+  });
+});
+
+/**
+ * ── the `/api` surface, classified ─────────────────────────────────────────
+ *
+ * The test above asserts the SHAPE of the claim ("no unanswered read on
+ * /dashboard"). These assert the CAUSE, because "the 404s stopped" and "the 404s
+ * stopped for the right reason" are different things and only the second is a
+ * fix. A page that merely stopped asking would pass the first test while leaving
+ * every capability it used to have silently missing.
+ *
+ * So each read is pinned to one of exactly two endings, and the assertions are
+ * made against the real gateway rather than against a list written here:
+ *
+ *   REPOINTED  the browser asks a `/admin/v1/*` or `/livez` URL, it answers 2xx,
+ *              and the payload is the data the core really holds — compared over
+ *              HTTP, not against a hard-coded count.
+ *   DECLARED   the browser never asks at all, and the page states the refusal.
+ *              Absence of the request is the assertion; a fabricated empty list
+ *              would fail it.
+ */
+const PROVIDER_DETAIL = "/dashboard/providers/openai";
+
+/** The gateway's metrics plane, as `start-aisix-spa-gateway.mjs` maps it. */
+const METRICS_PORT = Number(process.env.AISIX_SPA_METRICS_PORT || 3003);
+
+/** Legacy paths the shell used to ask for and must now never ask for. */
+const RETIRED_SHELL_READS = [
+  "/api/auth/csrf",
+  "/api/settings",
+  "/api/sync/cloud",
+  "/api/token-health",
+  "/api/health/ping",
+  "/api/health/degradation",
+];
+
+/** Legacy paths with no gateway counterpart: never asked, always refused. */
+const RETIRED_EXTERNAL_READS = [
+  "/api/models/alias",
+  "/api/keys",
+  "/api/settings/proxy",
+  "/api/storage/health",
+  "/api/settings/database",
+  "/api/settings/compression",
+];
+
+function requestedApiPaths(watch: PageWatch): string[] {
+  return watch.requests
+    .map((r) => new URL(r.url).pathname)
+    .filter((pathname) => pathname.startsWith("/api/"));
+}
+
+test.describe("the /api surface is classified, not just silenced", () => {
+  test("the shell asks no retired /api path", async ({ page, context }) => {
+    // The native reads are on the authenticated admin plane, so the test supplies the
+    // gateway credential the way an ingress in front of the admin port does — the same
+    // contract `authenticate` is used for in 07. Without it every repointed read is a 401
+    // and these assertions would be measuring the credential, not the repoint.
+    await authenticate(context);
+    const watch = new PageWatch(page);
+    await page.goto("/dashboard", { waitUntil: "load", timeout: 90_000 });
+    await readContent(page, { minLength: 400, timeoutMs: 60_000 });
+    await page.waitForTimeout(4000);
+
+    const asked = requestedApiPaths(watch);
+    const retired = RETIRED_SHELL_READS.filter((path) =>
+      asked.some((askedPath) => askedPath === path || askedPath.startsWith(`${path}/`))
+    );
+    writeEvidence("05-shell-api-surface.json", {
+      asked: [...new Set(asked)],
+      retired,
+      allSameOriginFailures: watch.non2xx().map((r) => `${r.status} ${new URL(r.url).pathname}`),
+    });
+
+    expect(
+      retired,
+      `the shell still asks ${retired.length} legacy /api path(s) this gateway cannot answer: ` +
+        `${retired.join(", ")}. Each one is a guaranteed 404 that re-enters its own effect, so the ` +
+        "cost is a request storm and not merely a missing number."
+    ).toEqual([]);
+
+    // Non-vacuity, stated about the LOG rather than about /api traffic: after the
+    // fix the shell is expected to ask NO /api path at all, so "asked.length > 0"
+    // would assert the bug back in. What must hold is that the page issued
+    // requests and that they were observed — and that a native read it SHOULD
+    // make was among them, which is the positive counterpart of the assertion
+    // above (see the /livez test for the per-endpoint version).
+    expect(
+      watch.requests.length,
+      "the page issued no requests at all, so the network log is not capturing and the " +
+        "assertion above would pass without proving anything"
+    ).toBeGreaterThan(0);
+    expect(
+      watch.responses.filter((r) => r.url.startsWith(BASE_URL)).length,
+      "no same-origin response was recorded, so the network log is not capturing responses"
+    ).toBeGreaterThan(0);
+  });
+
+  test("the repointed liveness read hits the core's own /livez and gets a real answer", async ({
+    page,
+    context,
+  }) => {
+    // The native reads are on the authenticated admin plane, so the test supplies the
+    // gateway credential the way an ingress in front of the admin port does — the same
+    // contract `authenticate` is used for in 07. Without it every repointed read is a 401
+    // and these assertions would be measuring the credential, not the repoint.
+    await authenticate(context);
+    // The strongest form of "repointed": not "a 404 disappeared" but "a request
+    // the core actually routes went out and returned what the core holds". The
+    // comparison is a live HTTP read of the same endpoint, so an artifact whose
+    // browser never reached it cannot pass by coincidence.
+    const watch = new PageWatch(page);
+    await page.goto("/dashboard", { waitUntil: "load", timeout: 90_000 });
+    await readContent(page, { minLength: 400, timeoutMs: 60_000 });
+    await page.waitForTimeout(4000);
+
+    const native = await readNativeHealth();
+    const livez = watch.responses.filter((r) => new URL(r.url).pathname === "/livez");
+    writeEvidence("05-livez-repoint.json", {
+      gateway: native,
+      browserLivez: livez.map((r) => `${r.status} ${new URL(r.url).pathname}`),
+    });
+
+    expect(
+      native.livezStatus,
+      "the gateway's own /livez did not answer, so there is nothing to compare the browser " +
+        "against and this test could not distinguish a real repoint from a coincidence"
+    ).toBe(200);
+
+    expect(
+      livez.length,
+      "the browser never asked the core's /livez. The maintenance banner's health check is " +
+        "repointed there; if it is not being asked, the banner is still reading a legacy route " +
+        "and will report a healthy gateway as down."
+    ).toBeGreaterThan(0);
+    expect(
+      livez.filter((r) => r.status >= 400).map((r) => `${r.status} ${r.url}`),
+      "the browser's /livez read was refused even though a direct read of the same endpoint answers"
+    ).toEqual([]);
+  });
+
+  test("the repointed health read hits the core's own status surface, unauthenticated", async ({
+    page,
+  }) => {
+    // Deliberately run WITHOUT an admin key. The degradation badge is a header
+    // control that renders on every page, so it must be answerable by a visitor
+    // who has not signed in — and the badge sits on the metrics plane rather than
+    // the admin plane precisely because an admin-plane 401 flips the dashboard's
+    // global signed-out state (see `useAisixSignedOut`). So this test guards two
+    // things at once: that the read is repointed, and that it is not the reason an
+    // anonymous visitor got signed out.
+    const watch = new PageWatch(page);
+    await page.goto("/dashboard", { waitUntil: "load", timeout: 90_000 });
+    await readContent(page, { minLength: 400, timeoutMs: 60_000 });
+    await page.waitForTimeout(4000);
+
+    const native = await readNativeHealth(METRICS_PORT);
+    const statusReads = watch.responses.filter((r) => new URL(r.url).pathname === "/status/models");
+    const degradationReads = watch.responses.filter(
+      (r) => new URL(r.url).pathname === "/api/health/degradation"
+    );
+    const adminPlaneReads = watch.responses.filter((r) => r.url.includes("/admin/v1/"));
+    const signedOutBanner = await page
+      .locator("body")
+      .innerText()
+      .then((text) => /session ended|sign in to the gateway/i.test(text))
+      .catch(() => false);
+    writeEvidence("05-health-repoint.json", {
+      gateway: native,
+      browserStatusModels: statusReads.map(
+        (r) => `${r.status} :${new URL(r.url).port}${new URL(r.url).pathname}`
+      ),
+      legacyDegradationReads: degradationReads.length,
+      adminPlaneReads: adminPlaneReads.map((r) => `${r.status} ${new URL(r.url).pathname}`),
+      signedOutBanner,
+    });
+
+    expect(
+      native.statusModelsReachable,
+      "the gateway's /status/models did not answer, so the repointed read cannot be verified " +
+        "against the server truth"
+    ).toBe(true);
+
+    // A 0-model snapshot would make the comparison below vacuous.
+    expect(
+      native.statusModelCount,
+      "the core reported no models in /status/models, so this gateway cannot distinguish a " +
+        "repointed read from an empty one"
+    ).toBeGreaterThan(0);
+
+    expect(
+      statusReads.length,
+      "the browser never asked the core's /status/models. The degradation badge is repointed " +
+        "there; without it the badge is reading a route that does not exist here and reporting " +
+        '"not degraded" from a 404.'
+    ).toBeGreaterThan(0);
+    expect(
+      degradationReads.length,
+      "the browser still asked the legacy /api/health/degradation route"
+    ).toEqual(0);
+
+    expect(
+      signedOutBanner,
+      "loading the shell with NO admin key produced a signed-out state. Some shell read went " +
+        "to the authenticated admin plane, and a 401 there signs the whole dashboard out — which " +
+        "is how the provider index stopped rendering its cards for a signed-out visitor."
+    ).toBe(false);
+  });
+
+  test("the provider detail page asks none of the three unsupported per-provider reads", async ({
+    page,
+    context,
+  }) => {
+    // The native reads are on the authenticated admin plane, so the test supplies the
+    // gateway credential the way an ingress in front of the admin port does — the same
+    // contract `authenticate` is used for in 07. Without it every repointed read is a 401
+    // and these assertions would be measuring the credential, not the repoint.
+    await authenticate(context);
+    // These are the reads that turned into the retry storm: three sections, one
+    // SQLite row each, three guaranteed 404s, and a 404 that re-entered its own
+    // effect. The gateway has no resource type for any of them, so the correct
+    // ending is that the browser never asks.
+    const watch = new PageWatch(page);
+    await page.goto(PROVIDER_DETAIL, { waitUntil: "load", timeout: 90_000 });
+    await readContent(page, { minLength: 120, timeoutMs: 90_000 });
+    await page.waitForTimeout(5000);
+
+    const forbidden = ["/param-filters", "/interception-rules", "/cc-alias"].filter((suffix) =>
+      watch.requests.some((r) => r.url.includes(suffix))
+    );
+
+    writeEvidence("05-provider-extras.json", {
+      forbidden,
+      allSameOriginFailures: watch.non2xx().map((r) => `${r.status} ${new URL(r.url).pathname}`),
+    });
+
+    expect(
+      forbidden,
+      `the provider detail page still asked ${forbidden.length} per-provider read(s) this ` +
+        `gateway cannot answer: ${forbidden.join(", ")}. Each is a 404 that re-enters its own ` +
+        "effect, so the page hammers the host instead of rendering."
+    ).toEqual([]);
+  });
+
+  test("the unsupported per-provider capability is stated on the page, not left blank", async ({
+    page,
+    context,
+  }) => {
+    // The native reads are on the authenticated admin plane, so the test supplies the
+    // gateway credential the way an ingress in front of the admin port does — the same
+    // contract `authenticate` is used for in 07. Without it every repointed read is a 401
+    // and these assertions would be measuring the credential, not the repoint.
+    await authenticate(context);
+    // The other half of "stop asking": an operator looking at the provider page
+    // must be able to tell the difference between "this gateway has no filters
+    // configured" and "this gateway cannot hold filters". A skeleton that
+    // resolves to an empty form claims the first, which is a different claim.
+    await page.goto(PROVIDER_DETAIL, { waitUntil: "load", timeout: 90_000 });
+    await readContent(page, { minLength: 120, timeoutMs: 90_000 });
+
+    const refusal = page.locator('[data-testid="provider-extras-unsupported"]');
+    await expect(
+      refusal,
+      "the three per-provider cards were replaced by nothing at all. The operator cannot tell " +
+        "an absent capability from an absent configuration, and the page shows a blank region " +
+        "where its settings used to be."
+    ).toBeVisible({ timeout: 60_000 });
+
+    const reason = page.locator('[data-testid="provider-extras-reason"]');
+    await expect(reason, "the refusal card carries no reason").toBeVisible();
+    const reasonText = (await reason.innerText()).trim();
+    writeEvidence("05-provider-extras-reason.json", { reasonText });
+
+    expect(
+      reasonText.length,
+      "the refusal is empty. A refusal with no text is a blank region wearing a refusal's " +
+        "borders — the operator still learns nothing."
+    ).toBeGreaterThan(20);
+  });
+
+  test("the model catalog is repointed at the core and shows the core's real rows", async ({
+    page,
+    context,
+  }) => {
+    // The native reads are on the authenticated admin plane, so the test supplies the
+    // gateway credential the way an ingress in front of the admin port does — the same
+    // contract `authenticate` is used for in 07. Without it every repointed read is a 401
+    // and these assertions would be measuring the credential, not the repoint.
+    await authenticate(context);
+    // Proves the repoint delivers DATA, not just a 2xx. The count comes from a
+    // live read of /admin/v1/models, so this fails for an empty gateway AND for
+    // an artifact whose adapter renders an empty table over a full catalog —
+    // the exact failure a URL-only repoint would ship.
+    const native = await readNativeCatalog();
+    const watch = new PageWatch(page);
+    await page.goto("/dashboard/models", { waitUntil: "load", timeout: 90_000 });
+    await readContent(page, { minLength: 120, timeoutMs: 90_000 });
+    await page.waitForTimeout(3000);
+
+    const catalogReads = watch.responses.filter(
+      (r) => new URL(r.url).pathname === "/admin/v1/models"
+    );
+    const legacyReads = watch.responses.filter(
+      (r) => new URL(r.url).pathname === "/api/models/catalog"
+    );
+    const bodyText = (await page.locator("body").innerText()).slice(0, 20000);
+    writeEvidence("05-models-repoint.json", {
+      gateway: native,
+      browserCatalogReads: catalogReads.map((r) => `${r.status} ${new URL(r.url).pathname}`),
+      legacyCatalogReads: legacyReads.length,
+    });
+
+    expect(
+      native.reachable && native.modelCount > 0,
+      "the gateway's /admin/v1/models is empty or unreachable, so this test cannot tell a " +
+        "working repoint from an empty page and must not be trusted here"
+    ).toBe(true);
+
+    expect(
+      catalogReads.length,
+      "the browser never asked /admin/v1/models. The model-catalog page is repointed at the " +
+        "core's catalog; if it is not being asked, the page is reading a route that does not " +
+        "exist here and rendering its failure state."
+    ).toBeGreaterThan(0);
+    expect(
+      legacyReads.length,
+      "the browser still asked the legacy /api/models/catalog route"
+    ).toEqual(0);
+
+    // A REAL row: the core's own model id must be visible on the page. This is
+    // the assertion a shape-mismatch bug cannot survive — the native payload is
+    // `{id, value:{model_name, display_name, …}}` and a reader that does not
+    // unwrap `value` produces an empty table even though the request succeeded.
+    expect(
+      bodyText.includes(native.sampleModelId as string) ||
+        bodyText.includes(native.sampleDisplayName as string),
+      `the core's own catalog rows are not on the page. The gateway holds ${native.modelCount} ` +
+        `models across ${native.providers.length} providers, including "${native.sampleModelId}" ` +
+        `(label "${native.sampleDisplayName}"), and the page shows none of them. The read is ` +
+        "repointed but its payload is not being understood."
+    ).toBe(true);
+  });
+
+  test("the settings route asks none of the unsupported reads it used to", async ({
+    page,
+    context,
+  }) => {
+    // The native reads are on the authenticated admin plane, so the test supplies the
+    // gateway credential the way an ingress in front of the admin port does — the same
+    // contract `authenticate` is used for in 07. Without it every repointed read is a 401
+    // and these assertions would be measuring the credential, not the repoint.
+    await authenticate(context);
+    const watch = new PageWatch(page);
+    await page.goto("/dashboard/settings", { waitUntil: "load", timeout: 90_000 });
+    await readContent(page, { minLength: 200, timeoutMs: 90_000 });
+    await page.waitForTimeout(3000);
+
+    const asked = requestedApiPaths(watch);
+    const stillAsked = RETIRED_EXTERNAL_READS.filter((path) => asked.includes(path));
+    writeEvidence("05-other-api-surface.json", { asked: [...new Set(asked)], stillAsked });
+
+    expect(
+      stillAsked,
+      `the settings route still asked ${stillAsked.length} legacy read(s) this gateway cannot ` +
+        `answer: ${stillAsked.join(", ")}`
+    ).toEqual([]);
+
+    // The storage tab used to render a confident "sqlite - ~/.omniroute/
+    // storage.sqlite - 0 bytes" on a gateway that has no database at all. If the
+    // tab is present on this page it must be showing the refusal, not numbers.
+    const storage = page.locator('[data-testid="system-storage-unsupported"]');
+    if ((await storage.count()) > 0) {
+      await expect(storage).toBeVisible();
+      const text = (await storage.innerText()).trim();
+      expect(
+        text.length,
+        "the storage refusal is empty - the operator is shown a refusal with nothing in it"
+      ).toBeGreaterThan(20);
+    }
   });
 });

@@ -13,6 +13,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { resolveAisixSurfaceSupport } from "@/shared/utils/aisixEndpoints";
 
 // #6147 — user-facing labels renamed from "Cloud …" to "Remote Settings Sync"
 // wording (this feature syncs the operator's own settings to their own remote
@@ -32,8 +33,19 @@ export default function CloudSyncStatus({ collapsed = false }) {
   const [lastSync, setLastSync] = useState(null);
   const mountedRef = useRef(true);
   const router = useRouter();
+  // Remote settings sync is a Next.js subsystem with no counterpart in the
+  // gateway. The read is skipped rather than fired into a 404 — and note what
+  // the 404 used to do: `!res.ok` set the state to "disconnected", which tells
+  // the operator their sync is BROKEN. It is not broken; it is not part of this
+  // gateway. The `disabled` state below is the honest one, and the reason
+  // travels in the title so the control is not a mute mystery.
+  const syncSupport = resolveAisixSurfaceSupport("sync", "read");
 
   const poll = useCallback(async () => {
+    if (!syncSupport.supported) {
+      if (mountedRef.current) setStatus("disabled");
+      return;
+    }
     try {
       const res = await fetch("/api/sync/cloud");
       if (!mountedRef.current) return;
@@ -53,7 +65,7 @@ export default function CloudSyncStatus({ collapsed = false }) {
     } catch {
       if (mountedRef.current) setStatus("disconnected");
     }
-  }, []);
+  }, [syncSupport.supported]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -75,25 +87,35 @@ export default function CloudSyncStatus({ collapsed = false }) {
     };
   }, [poll]);
 
-  // Don't render if cloud sync is disabled
-  if (status === "disabled") return null;
-
   const config = STATUS_CONFIG[status];
   const label = t(config.labelKey);
+  // The gateway has no sync subsystem, so the row is rendered as "disabled"
+  // with the reason attached — NOT hidden. Rendering nothing was the previous
+  // answer for the disabled state, and on a gateway where the feature does not
+  // exist at all that reads as a control that silently vanished.
+  const unsupportedReason = syncSupport.supported ? null : syncSupport.reason;
+  const onClick = syncSupport.supported ? () => router.push("/dashboard/endpoint") : undefined;
+  const controlClass = syncSupport.supported
+    ? "flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg hover:bg-white/5 transition-colors cursor-pointer w-full"
+    : "flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg w-full";
 
   return (
     <button
-      onClick={() => router.push("/dashboard/endpoint")}
-      className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg hover:bg-white/5 transition-colors cursor-pointer w-full"
+      onClick={onClick}
+      disabled={!syncSupport.supported}
+      className={controlClass}
+      data-testid="cloud-sync-status"
+      data-unsupported={syncSupport.supported ? undefined : "sync"}
       title={
-        lastSync
+        unsupportedReason ??
+        (lastSync
           ? t("lastSync", {
               status: status === "connected" ? t("connected") : t("disconnected"),
               time: lastSync.toLocaleTimeString(),
             })
-          : label
+          : label)
       }
-      aria-label={t("statusLabel", { status: label })}
+      aria-label={unsupportedReason ?? t("statusLabel", { status: label })}
     >
       <span className={`material-symbols-outlined text-[16px] ${config.color}`} aria-hidden="true">
         {config.icon}

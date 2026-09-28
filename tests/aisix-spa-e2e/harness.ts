@@ -437,7 +437,6 @@ export function localeButton(page: Page) {
     .filter({ has: page.locator('img[src*="flagcdn"]') })
     .first();
 }
-
 /** Scripts that carry a specific writing system, e.g. Han, Hiragana, Arabic. */
 export const SCRIPT_PATTERNS = {
   han: /\p{Script=Han}/u,
@@ -447,3 +446,109 @@ export const SCRIPT_PATTERNS = {
 } as const;
 
 export type WrittenScript = keyof typeof SCRIPT_PATTERNS;
+
+/**
+ * What the REAL gateway's native catalog holds, read over HTTP with the same
+ * credential the browser uses.
+ *
+ * The point is the same as `readAdminSnapshot`: a UI assertion about "the model
+ * catalog is populated" is worthless if the count is written into the test. The
+ * comparison is made against what the core actually returns, so an empty page
+ * with an empty gateway passes and an empty page with a populated gateway fails.
+ */
+export type NativeCatalogSnapshot = {
+  reachable: boolean;
+  modelCount: number;
+  providers: string[];
+  /** A provider that actually has models, for a per-provider cross-check. */
+  sampleProvider: string | null;
+  sampleModelId: string | null;
+  sampleDisplayName: string | null;
+};
+
+export async function readNativeCatalog(): Promise<NativeCatalogSnapshot> {
+  const empty: NativeCatalogSnapshot = {
+    reachable: false,
+    modelCount: 0,
+    providers: [],
+    sampleProvider: null,
+    sampleModelId: null,
+    sampleDisplayName: null,
+  };
+  try {
+    const response = await fetch(`${BASE_URL}/admin/v1/models`, {
+      headers: ADMIN_KEY ? { Authorization: `Bearer ${ADMIN_KEY}` } : {},
+    });
+    if (!response.ok) return empty;
+    const body = (await response.json()) as Array<{
+      id?: string;
+      value?: { provider?: string; model_name?: string; display_name?: string };
+    }>;
+    if (!Array.isArray(body)) return empty;
+    const providers = new Set<string>();
+    for (const row of body) {
+      const provider = row?.value?.provider;
+      if (typeof provider === "string" && provider.length > 0) providers.add(provider);
+    }
+    const first = body.find(
+      (row) =>
+        typeof row?.value?.provider === "string" && typeof row?.value?.model_name === "string"
+    );
+    return {
+      reachable: true,
+      modelCount: body.length,
+      providers: [...providers].sort(),
+      sampleProvider: first?.value?.provider ?? null,
+      sampleModelId: first?.value?.model_name ?? null,
+      sampleDisplayName: first?.value?.display_name ?? null,
+    };
+  } catch {
+    return empty;
+  }
+}
+
+/**
+ * What the REAL gateway's UNAUTHENTICATED health surface holds, read over HTTP.
+ *
+ * Deliberately the METRICS-plane `/status/models` and the root `/livez`, not the
+ * admin plane: the two shell reads under test live on those planes precisely
+ * because an admin-plane 401 flips the dashboard's global signed-out state, which
+ * a header badge must not be able to do to a visitor carrying no admin key.
+ */
+export async function readNativeHealth(metricsPort = 9090): Promise<{
+  statusModelsReachable: boolean;
+  statusModelCount: number;
+  degradedCount: number;
+  livezStatus: number | null;
+}> {
+  const result = {
+    statusModelsReachable: false,
+    statusModelCount: 0,
+    degradedCount: 0,
+    livezStatus: null as number | null,
+  };
+  const origin = new URL(BASE_URL);
+  try {
+    const status = await fetch(`http://${origin.hostname}:${metricsPort}/status/models`);
+    if (status.ok) {
+      const body = (await status.json()) as unknown;
+      if (Array.isArray(body)) {
+        result.statusModelsReachable = true;
+        result.statusModelCount = body.length;
+        result.degradedCount = body.filter((row) => {
+          const token = String((row as { status?: unknown })?.status ?? "").toLowerCase();
+          return token !== "" && token !== "healthy" && token !== "ok";
+        }).length;
+      }
+    }
+  } catch {
+    // leave statusModelsReachable false — the assertion says so
+  }
+  try {
+    const livez = await fetch(`${BASE_URL}/livez`);
+    result.livezStatus = livez.status;
+  } catch {
+    // leave livezStatus null
+  }
+  return result;
+}

@@ -66,6 +66,45 @@ export function aisixProviderKeysItemUrl(id: string): string {
   return `${getAisixAdminBase()}/admin/v1/provider_keys/${encodeURIComponent(id)}`;
 }
 
+/**
+ * Core liveness — native replacement for `/api/health/ping`.
+ *
+ * `/api/health/ping` answers "can this Next.js process reach its SQLite file"
+ * (`SELECT 1`, see `src/lib/db/core.ts:1436`). On the AISIX gateway the process
+ * is the Rust core and there is no SQLite to ping, so the honest equivalent is
+ * the core's OWN probe. `livez` is unauthenticated (the admin listener is
+ * private in production), which also means the maintenance banner can keep
+ * working on a host where the operator has no admin key yet — the case the
+ * banner most needs to report.
+ */
+export function aisixLivezUrl(): string {
+  return `${getAisixAdminBase()}/livez`;
+}
+
+/** Readiness — the stricter sibling of `livez`, for callers that want dependencies up. */
+export function aisixReadyzUrl(): string {
+  return `${getAisixAdminBase()}/readyz`;
+}
+
+/**
+ * OmniRoute's OWN inbound consumer API keys — native replacement for `/api/keys`.
+ *
+ * Deliberately NOT `aisixProviderKeysUrl`: `/admin/v1/provider_keys` holds
+ * upstream provider credentials (what the core SENDS), while this holds the
+ * consumer keys clients PRESENT. The two are different resources and the native
+ * core keeps them at different paths for exactly that reason.
+ *
+ * LIMITATION, and the reason `resolveAisixRequestUrl` does not map `/api/keys`
+ * onto it: the native document carries `key_hash`, never the plaintext. A caller
+ * that needs a usable key (the playground's credential picker) cannot be served
+ * from here, and handing it a hash would be worse than refusing — so `keys`
+ * stays in `AisixUnsupportedDomain`. Read-only key INVENTORY callers may use this
+ * URL and must render the hash as a hash.
+ */
+export function aisixApiKeysUrl(query = ""): string {
+  return `${getAisixAdminBase()}/admin/v1/api_keys${query}`;
+}
+
 /** Preset-provider catalog — backing store for the providers-page preset grid. */
 export function aisixPresetProvidersUrl(): string {
   return `${getAisixAdminBase()}/admin/v1/preset_providers`;
@@ -134,6 +173,26 @@ export function resolveAisixRequestUrl(legacyUrl: string): string {
   if (path.endsWith("/metrics")) {
     if (path.startsWith("/api/")) return aisixMetricsUrl(suffix);
   }
+  // Liveness BEFORE the health rule below: `/api/health/ping` is a reachability
+  // probe whose entire contract is "did the response answer 2xx", and
+  // `/admin/v1/health` is a heavy authenticated snapshot — mapping the banner
+  // onto it would turn "is the core up" into "is my key valid".
+  if (path === "/api/health/ping") {
+    return aisixLivezUrl();
+  }
+  // Degradation is a METRICS-plane read, not an admin-plane one, and the
+  // difference is load-bearing rather than cosmetic: `aisixAdminFetch` treats ANY
+  // admin-plane 401 as "the operator's session ended" and flips the global
+  // signed-out store (see `useAisixSignedOut`). A header badge that runs on every
+  // page must therefore never touch the authenticated plane — on a static host
+  // where an operator has not entered a key yet, one 401 from this badge signs
+  // the whole dashboard out and the provider index stops rendering its cards at
+  // all. `:9090/status/models` is unauthenticated, answers a real per-model
+  // verdict, and is already the native target of the two sibling shell health
+  // reads mapped just below.
+  if (path === "/api/health/degradation" || path.startsWith("/api/health/degradation?")) {
+    return aisixStatusModelsUrl(suffix);
+  }
   if (path === "/api/monitoring/health" || path.startsWith("/api/providers/health")) {
     return aisixStatusModelsUrl(suffix);
   }
@@ -154,6 +213,33 @@ export function resolveAisixRequestUrl(legacyUrl: string): string {
   if (path === "/api/providers/openrouter-stats") {
     return aisixMetricsUrl(suffix);
   }
+  // The native model catalog IS the provider↔model relation the three legacy
+  // reads were projections of. The core ignores a `?provider=` filter (it
+  // returns the whole catalog), so the query is preserved for a core that later
+  // honours it and the per-provider split is done by the adapters in
+  // `aisixNativeCatalog.ts` — never by guessing a narrower native path.
+  //
+  // `/api/v1/providers/{id}/models` is here, NOT below with the other
+  // `/api/v1/*` calls: that rule sends the path to the OpenAI-compatible data
+  // plane, and `/v1/providers/…` is not part of that surface — it would 404 on
+  // every deployment. The catalog is the real source for it.
+  if (
+    path === "/api/models/catalog" ||
+    path === "/api/provider-models" ||
+    path === "/api/synced-available-models" ||
+    path === "/api/models"
+  ) {
+    return `${aisixAdminModelsUrl()}${suffix}`;
+  }
+  if (path === "/api/v1/providers" || /^\/api\/v1\/providers\/[^/]+\/models$/.test(path)) {
+    return `${aisixAdminModelsUrl()}${suffix}`;
+  }
+  // Native combos collection. The legacy `/api/combos*` item/write verbs
+  // (`/reorder`, `/test`, `/builder/options`, `/{id}`) stay unmapped — the core
+  // exposes `POST /admin/v1/resources` for writes, not per-combo verbs.
+  if (path === "/api/combos") {
+    return aisixCombosUrl(suffix);
+  }
   // Playground proxy shape: `/api` + `/v1/...` → data plane directly.
   if (path.startsWith("/api/v1/")) {
     return `${getAisixDataBase()}${path.slice("/api".length)}${suffix}`;
@@ -161,8 +247,9 @@ export function resolveAisixRequestUrl(legacyUrl: string): string {
   if (path === "/v1/models" || path.startsWith("/v1/")) {
     return `${getAisixDataBase()}${path}${suffix}`;
   }
-  // No native equivalent (`/api/combos*`, `/api/keys*`, `/api/settings*`,
-  // `/api/db/health`, `/api/usage/*`, `/api/rate-limits`, …) — pass through.
+  // No native equivalent (`/api/keys*` — the core holds only the key HASH,
+  // `/api/settings*`, `/api/db/health`, `/api/usage/*`, `/api/rate-limits`, …)
+  // — pass through.
   return legacyUrl;
 }
 
@@ -181,20 +268,66 @@ export function resolveAisixRequestUrl(legacyUrl: string): string {
  *                which is NOT the same data — see `adaptAisixTelemetry`.
  *   - `logs`   — call-log rows, log export, request-history purge.
  *   - `relay`  — relay proxy tokens.
- *   - `keys`   — OmniRoute's own inbound API keys. NOT the same thing as
- *                `:3001/admin/v1/provider_keys` (upstream provider
- *                credentials), so it must never be mapped onto them.
- *   - `providerRules` — the per-provider tuning rows on the provider detail
- *                page: param filters, web-search/fetch interception rules and
- *                the Claude Code discovery-alias gate. Each is a SQLite row
- *                behind a Next-only route, and the export ships no
- *                `src/app/api/**` at all (`getTransientBuildPaths`), so on a
- *                static host all three GETs are a guaranteed 404. They are
- *                permanent by architecture, not transient: a page that retries
- *                one is spinning on a certainty.
+ *   - `keys`   — OmniRoute's own inbound API keys. The core DOES keep this
+ *                resource (`GET /admin/v1/api_keys`, see `aisixApiKeysUrl`) but
+ *                exposes only `key_hash`, never the plaintext a caller would
+ *                have to present, so a read that needs a usable credential has
+ *                no honest native source. `provider_keys` is a different
+ *                resource entirely (upstream credentials) and must never stand
+ *                in for it.
+ *   - `providerRules` — the same three Next-only SQLite tables as
+ *                `providerExtras` below, read at the *card* layer: the three
+ *                per-provider sections declare their own domain so each can
+ *                refuse independently. `providerExtras` is the *panel* layer,
+ *                one level up, that gates mounting all three at once. Both
+ *                exist because the cards must stay correct whether or not the
+ *                panel is present.
+ *   - `settings`     — the app's own SQLite-backed configuration. `POST
+ *                      /admin/v1/resources` is the core's only settings verb and
+ *                      it is WRITE-only: there is no readable settings
+ *                      collection, so `/api/settings` and every
+ *                      `/api/settings/*` projection (proxy registry, proxy
+ *                      assignments, compression) has nothing to read.
+ *   - `storage`      — SQLite file health, size, vacuum. There is no SQLite.
+ *   - `session`      — the Next.js CSRF token behind the dashboard's own
+ *                      mutation guard. The core's session endpoint is
+ *                      `POST /admin/v1/auth/session` and needs no CSRF token;
+ *                      in the SPA export the whole Next mutation layer is
+ *                      absent, so the interceptor must not be installed at all
+ *                      (see `isDashboardCsrfInterceptorNeeded`).
+ *   - `sync`         — remote settings sync (the operator's own settings pushed
+ *                      to their own remote store). No AISIX counterpart.
+ *   - `credentials`  — per-credential health probing and the environment-repair
+ *                      wizard. The core reports per-MODEL status
+ *                      (`/admin/v1/models/status`) and holds per-provider-key
+ *                      documents, but never probes a credential's own health —
+ *                      that is a Next.js scheduler (see
+ *                      `src/lib/credentialHealth/scheduler.ts`).
+ *   - `providerExtras` — the panel that would mount the per-provider
+ *                      request-shaping rows: param filters, web-search
+ *                      interception rules and the Claude Code discovery-alias
+ *                      gate. Three SQLite tables with no resource-type
+ *                      equivalent in the core's `resources` model.
+ *   - `modelAliases` — the model→alias map. A Next.js join table.
+ *   - `deprecated`   — which providers are flagged deprecated. Next.js-only
+ *                      metadata with no core counterpart.
  */
 export type AisixUnsupportedDomain =
-  "radar" | "quota" | "usage" | "logs" | "relay" | "keys" | "providerRules";
+  | "radar"
+  | "quota"
+  | "usage"
+  | "logs"
+  | "relay"
+  | "keys"
+  | "providerRules"
+  | "providerExtras"
+  | "settings"
+  | "storage"
+  | "session"
+  | "sync"
+  | "credentials"
+  | "modelAliases"
+  | "deprecated";
 
 /**
  * Result of asking "can this surface be reached through the AISIX gateway?".
@@ -217,6 +350,20 @@ const AISIX_UNSUPPORTED_REASON: Record<AisixUnsupportedDomain, string> = {
   keys: "Ключи API OmniRoute (входящие) не входят в AISIX-шлюз: /admin/v1/provider_keys — это ключи вышестоящих провайдеров, а не потребительские ключи.",
   providerRules:
     "Правила провайдера (фильтры параметров, перехват web_search/web_fetch, алиасы Claude Code) хранятся в SQLite за Next.js-маршрутами, которых нет в статической сборке AISIX — читать и менять их здесь нельзя.",
+  settings:
+    "Настройки приложения не входят в AISIX-шлюз: у ядра есть только запись POST /admin/v1/resources, а читаемой коллекции настроек нет.",
+  storage:
+    "Состояние и обслуживание локальной базы данных (размер, vacuum) не входят в AISIX-шлюз: у Rust-ядра нет SQLite.",
+  session:
+    "CSRF-токен и сессионный слой Next.js не входят в AISIX-шлюз: ядро использует собственную сессию POST /admin/v1/auth/session и CSRF-токена не требует.",
+  sync: "Синхронизация настроек с удалённым хранилищем не входит в AISIX-шлюз: у него нет этой подсистемы.",
+  credentials:
+    "Проверка здоровья учётных данных и мастер восстановления окружения не входят в AISIX-шлюз: ядро отдаёт статус моделей, но не проверяет каждый ключ.",
+  providerExtras:
+    "Фильтры параметров, правила перехвата веб-поиска и алиас Claude Code не входят в AISIX-шлюз: это отдельные подсистемы Next.js поверх его SQLite.",
+  modelAliases: "Карта алиасов моделей не входит в AISIX-шлюз: у ядра нет этой таблицы.",
+  deprecated:
+    "Список устаревших провайдеров не входит в AISIX-шлюз: это метаданные Next.js без соответствия в ядре.",
 };
 
 /**
@@ -244,6 +391,30 @@ export function aisixUnsupportedWrite(domain: AisixUnsupportedDomain): AisixSurf
  */
 export function isAisixSpaExport(): boolean {
   return process.env.NEXT_PUBLIC_AISIX_SPA_EXPORT === "1";
+}
+
+/**
+ * `false` in the SPA export, `true` in a normal Next build.
+ *
+ * The dashboard CSRF interceptor monkey-patches `globalThis.fetch` to attach
+ * `DASHBOARD_CSRF_HEADER` to every same-origin `/api/*` mutation, and it first
+ * reads a token from `GET /api/auth/csrf`. In the export there is no Next.js
+ * server behind that path, so:
+ *
+ *   - the token read is a guaranteed 404 on every load — the shell's `/dashboard`
+ *     read count carries it today;
+ *   - there is no Next.js dashboard left for the header to protect: the only
+ *     same-origin mutations the SPA can make are the core's `/admin/v1/*`
+ *     verbs, which authenticate by admin key / session cookie and carry no
+ *     CSRF token of their own.
+ *
+ * So the interceptor is not "failing to find a token" in the export — it is
+ * guarding a server that is not there. Not installing it removes the read, the
+ * global fetch patch, and the `server/authz/csrf.ts` verify path it feeds, and
+ * changes no behaviour a real Next deployment depends on.
+ */
+export function isDashboardCsrfInterceptorNeeded(): boolean {
+  return !isAisixSpaExport();
 }
 
 /**

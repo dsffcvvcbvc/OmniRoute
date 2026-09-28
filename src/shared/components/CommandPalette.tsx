@@ -14,6 +14,7 @@ import {
   type SidebarItemDefinition,
   type SidebarSectionChild,
 } from "@/shared/constants/sidebarVisibility";
+import { resolveAisixSurfaceSupport } from "@/shared/utils/aisixEndpoints";
 
 function isSidebarGroup(
   child: SidebarSectionChild
@@ -68,6 +69,12 @@ function CommandPaletteDialog({ onClose }: { onClose: () => void }) {
   const [radarAdminUrl, setRadarAdminUrl] = useState<unknown>(null);
 
   useEffect(() => {
+    // Same declaration as the sidebar's own settings read (see
+    // `Sidebar.tsx`): no readable settings collection on the gateway, so the
+    // read is skipped rather than 404ing. The palette's own comment already
+    // documented that it "still works with empty hidden set" — this makes the
+    // skip explicit instead of leaving it to a rejected `.json()`.
+    if (!resolveAisixSurfaceSupport("settings", "read").supported) return;
     const ctrl = new AbortController();
     fetch("/api/settings", { signal: ctrl.signal })
       .then((res) => res.json())

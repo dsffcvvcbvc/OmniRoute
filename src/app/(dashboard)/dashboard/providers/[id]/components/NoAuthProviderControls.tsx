@@ -6,6 +6,7 @@ import { NoAuthAccountCard, NoAuthProviderCard } from "@/shared/components";
 import { getProviderAlias, supportsNoAuthProviderProxy } from "@/shared/constants/providers";
 import { useNotificationStore } from "@/store/notificationStore";
 import { providerText } from "../providerPageHelpers";
+import { resolveAisixSurfaceSupport } from "@/shared/utils/aisixEndpoints";
 
 const ACCOUNT_PROVIDER_NAMES: Record<string, string> = {
   opencode: "OpenCode",
@@ -39,6 +40,12 @@ export default function NoAuthProviderControls({
     let cancelled = false;
 
     async function fetchBlockedProviders() {
+      // The gateway has no readable settings collection (its only settings verb,
+      // `POST /admin/v1/resources`, is write-only), so this operator-authored
+      // blockedProviders list is refused rather than fired into a guaranteed 404. The component
+      // then runs on the empty default it already ran on when the read failed —
+      // a documented default, not a claim about what the operator configured.
+      if (!resolveAisixSurfaceSupport("settings", "read").supported) return;
       try {
         const response = await fetch("/api/settings", { cache: "no-store" });
         if (!response.ok) return;

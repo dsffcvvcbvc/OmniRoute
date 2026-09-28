@@ -10,6 +10,7 @@ import { useTranslations } from "next-intl";
  */
 
 import { useState, useEffect } from "react";
+import { resolveAisixSurfaceSupport } from "@/shared/utils/aisixEndpoints";
 
 // Theme-aware status tokens (`--orch-status-*` in src/app/globals.css) instead of the
 // fixed dark-mode hexes: the badge sits in the header, which is light in light mode.
@@ -24,8 +25,15 @@ export default function TokenHealthBadge() {
   const t = useTranslations("stats");
   const [health, setHealth] = useState(null);
   const [showTooltip, setShowTooltip] = useState(false);
+  // Per-credential health probing is a Next.js scheduler; the core reports
+  // per-MODEL status and holds provider-key documents, but never probes a
+  // credential. So the read is skipped rather than fired into a 404, and the
+  // badge below says why instead of vanishing — an absent header badge reads as
+  // "nothing to report", which is a different claim from "cannot be reported".
+  const healthSupport = resolveAisixSurfaceSupport("credentials", "read");
 
   useEffect(() => {
+    if (!healthSupport.supported) return;
     const fetchHealth = async () => {
       try {
         const res = await fetch("/api/token-health");
@@ -41,11 +49,15 @@ export default function TokenHealthBadge() {
     fetchHealth();
     const interval = setInterval(fetchHealth, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [healthSupport.supported]);
 
-  if (!health || health.total === 0) return null;
+  const status = !healthSupport.supported
+    ? STATUS_MAP.unknown
+    : health && health.total !== 0
+      ? STATUS_MAP[health.status] || STATUS_MAP.unknown
+      : null;
 
-  const status = STATUS_MAP[health.status] || STATUS_MAP.unknown;
+  if (!status) return null;
 
   return (
     <div
@@ -55,12 +67,18 @@ export default function TokenHealthBadge() {
     >
       <button
         className="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-surface/30 transition-colors"
-        title={t(`tokenHealthTooltips.${status.tooltipKey}`)}
+        title={
+          healthSupport.supported
+            ? t(`tokenHealthTooltips.${status.tooltipKey}`)
+            : (healthSupport.reason as string)
+        }
+        data-testid="token-health-badge"
+        data-unsupported={healthSupport.supported ? undefined : "credentials"}
       >
         <span className="material-symbols-outlined text-[18px]" style={{ color: status.color }}>
           {status.icon}
         </span>
-        {health.errored > 0 && (
+        {healthSupport.supported && health && health.errored > 0 && (
           <span className="text-xs font-medium" style={{ color: status.color }}>
             {health.errored}
           </span>

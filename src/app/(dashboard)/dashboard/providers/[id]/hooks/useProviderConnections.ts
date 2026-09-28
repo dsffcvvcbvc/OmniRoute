@@ -34,6 +34,7 @@ import {
   aisixAdminModelsUrl,
   getAisixAdminBase,
   resolveAisixRequestUrl,
+  resolveAisixSurfaceSupport,
 } from "@/shared/utils/aisixEndpoints";
 import { aisixAdminFetch } from "@/shared/utils/aisixAdminAuth";
 import { normalizeCodexLimitPolicy, providerText } from "../providerPageHelpers";
@@ -140,6 +141,14 @@ function isNativeProviderKeysWrite(url: string): boolean {
 
 async function loadProxyConfigData(): Promise<{ config: any } | null> {
   try {
+    // Declared unsupported: the proxy registry is part of the app's SQLite
+    // settings, which the gateway cannot read. The read is skipped rather than
+    // 404ing; the proxy fields then stay at their documented defaults, which is
+    // the same state a failed read produced and is not a claim that a proxy is
+    // configured.
+    if (!resolveAisixSurfaceSupport("settings", "read").supported) {
+      return;
+    }
     const res = await fetch(resolveAisixRequestUrl("/api/settings/proxy"), { cache: "no-store" });
     if (res.ok) return { config: await res.json() };
     return { config: null };

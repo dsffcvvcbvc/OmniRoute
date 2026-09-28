@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { matchesSearch } from "@/shared/utils/turkishText";
+import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
 import FeatureFlagCard from "./FeatureFlagCard";
 
 // Type for flag data from API
@@ -217,7 +218,9 @@ export default function FeatureFlagsGrid() {
       // Server is going down — wait for it to come back, then reload.
       const stillUp = async () => {
         try {
-          const r = await fetch("/api/health/ping", { cache: "no-store" });
+          // Repointed at the core's own `/livez` in the static SPA export —
+          // see MaintenanceBanner for why the legacy route cannot answer here.
+          const r = await fetch(resolveAisixRequestUrl("/api/health/ping"), { cache: "no-store" });
           return r.ok;
         } catch {
           return false;
