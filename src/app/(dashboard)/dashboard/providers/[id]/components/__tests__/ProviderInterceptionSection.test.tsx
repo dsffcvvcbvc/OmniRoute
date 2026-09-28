@@ -47,13 +47,6 @@ function renderComponent(node: React.ReactElement) {
   return container;
 }
 
-async function flush() {
-  await act(async () => {
-    await Promise.resolve();
-    await Promise.resolve();
-  });
-}
-
 /**
  * Waits for the card's bounded read to reach a terminal state.
  *
@@ -70,6 +63,27 @@ async function settleBoundedRead(timeoutMs = 4000) {
   while (notifyError.mock.calls.length === 0 && Date.now() < deadline) {
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+  }
+}
+
+/**
+ * Waits for the card to leave its loading skeleton.
+ *
+ * `settleBoundedRead` waits for a toast, which a SUCCESSFUL read never raises —
+ * using it on the happy path would either spin out its whole timeout or, worse,
+ * pass while the card was still loading. The skeleton is the loading state
+ * (`InterceptionSectionSkeleton` is the only render that carries
+ * `.animate-pulse`), so its absence is the terminal state either way: the
+ * toggles on a read that worked, the refusal on one that did not.
+ */
+async function settleToTerminalState(container: HTMLElement, timeoutMs = 4000) {
+  const deadline = Date.now() + timeoutMs;
+  while (container.querySelector(".animate-pulse") && Date.now() < deadline) {
+    const { promise, resolve } = Promise.withResolvers<void>();
+    setTimeout(resolve, 20);
+    await act(async () => {
+      await promise;
     });
   }
 }
@@ -110,25 +124,49 @@ describe("ProviderInterceptionSection (#12072)", () => {
     expect(message).not.toContain("SyntaxError");
   });
 
-  it("loads toggles normally when GET returns a valid JSON body", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve({ interceptSearch: true, interceptFetch: false }),
-        } as unknown as Response)
-      )
+  it("renders the loaded toggles when GET returns a valid JSON body", async () => {
+    // The response has to be a RESPONSE, not an object that happens to have
+    // `ok`, `status` and `json()`. The card reads through `fetchAisixJson`,
+    // which asks the response for its `content-type` header before it will
+    // trust the body; a fake without `headers` throws there, the throw is
+    // swallowed into `{ok:false, status:0}`, and `status:0` classifies as
+    // TRANSIENT — so the card settles into a 250 ms retry loop and this test's
+    // assertions (0 toasts, 1 fetch) were being made against a card that was
+    // failing. With a JSON content type, one read really is one settled read.
+    const fetchMock = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        status: 200,
+        headers: new Headers({ "content-type": "application/json" }),
+        json: () => Promise.resolve({ interceptSearch: true, interceptFetch: false }),
+      } as unknown as Response)
     );
+    vi.stubGlobal("fetch", fetchMock);
 
-    renderComponent(<ProviderInterceptionSection providerId="openai" />);
-    await flush();
+    const container = renderComponent(<ProviderInterceptionSection providerId="openai" />);
+    await settleToTerminalState(container);
+
+    // The success path, stated as what the operator sees: the two switches are
+    // on the states the payload said, and the card is not a refusal.
+    const switches = [...container.querySelectorAll('[role="switch"]')] as HTMLElement[];
+    expect(
+      switches.map((el) => el.getAttribute("aria-checked")),
+      `the toggles were not rendered from the payload (body: ${container.textContent?.slice(0, 200)})`
+    ).toEqual(["true", "false"]);
+    expect(
+      container.querySelector('[data-testid="interception-rules-unavailable-banner"]'),
+      "a successful read rendered the unsupported-surface refusal. The JSON body was not " +
+        "understood as data, so the card told the operator this deployment has no interception " +
+        "surface at all."
+    ).toBeNull();
 
     expect(notifyError).not.toHaveBeenCalled();
     // A healthy read must not be re-issued: a card that re-reads on every render
     // is the same defect as one that re-reads on every failure, only quieter.
-    expect(vi.mocked(globalThis.fetch).mock.calls.length).toBe(1);
+    expect(
+      fetchMock.mock.calls.length,
+      "a successful read settled without a toast but still re-issued the request"
+    ).toBe(1);
   });
 
   it("retries a 500 inside the hard ceiling, and only inside it", async () => {

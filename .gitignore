@@ -114,6 +114,9 @@ blob-report/
 # The AISIX dashboard-SPA suite's own scrubbed JSON evidence. It describes a
 # live deployment, so it is a run artefact, never a tracked file.
 aisix-spa-evidence/
+# The same suite's CI JSON reporter output (playwright.aisix-spa.config.ts).
+# A run artefact in exactly the same sense as the evidence directory above.
+aisix-spa-results.json
 /cloud/
 .tmp/
 

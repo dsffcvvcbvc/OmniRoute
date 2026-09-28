@@ -29,14 +29,37 @@ import type { BrowserContext, Page, Request, Response } from "@playwright/test";
 export const BASE_URL = process.env.AISIX_SPA_BASE_URL || "http://127.0.0.1:3001";
 export const ADMIN_KEY = process.env.AISIX_SPA_ADMIN_KEY || "";
 
+// The admin key is optional, and the keyless run is a real, supported mode:
+// the signed-out assertions are made without one on purpose. But it is a mode
+// that changes what this suite can conclude, and it used to change it silently
+// — `scrub()` shredded every evidence file when the key was unset, so the run
+// that had least to go on also lost its record. So the state is stated once, out
+// loud, at the moment it is decided.
+if (!ADMIN_KEY) {
+  console.warn(
+    "[aisix-spa-e2e] AISIX_SPA_ADMIN_KEY is not set. Signed-in assertions (07, the C6 control) " +
+      "will FAIL with instructions rather than skip, and evidence is still scrubbed of bearer " +
+      "tokens and credential query parameters — there is simply no admin key in it to redact."
+  );
+}
+
 const EVIDENCE_DIR = process.env.AISIX_SPA_EVIDENCE_DIR || "aisix-spa-evidence";
 
-/** Remove anything that could be a credential from a string about to be persisted. */
-export function scrub(value: string): string {
+/**
+ * Remove anything that could be a credential from a string about to be persisted.
+ *
+ * `key` is a parameter and not only the module constant, so that BOTH states —
+ * key set and key unset — are reachable from one test process and the unset
+ * case cannot rot unnoticed. It is not a corner: `AISIX_SPA_ADMIN_KEY` is
+ * documented as optional, and `"abc".split("")` is `["a","b","c"]`, so an
+ * unguarded `split(ADMIN_KEY)` interleaves the marker between every character
+ * of every evidence file the run writes — destroying the only failure record
+ * in precisely the keyless run, where the operator has least to go on.
+ */
+export function scrub(value: string, key: string = ADMIN_KEY): string {
   if (!value) return value;
-  return value
-    .split(ADMIN_KEY)
-    .join("<admin-key>")
+  const withoutKey = key ? value.split(key).join("<admin-key>") : value;
+  return withoutKey
     .replace(/(Bearer\s+)[A-Za-z0-9._~+/-]{8,}=*/g, "$1<redacted>")
     .replace(/([?&](?:key|api_key|apikey|token|secret|password)=)[^&\s]+/gi, "$1<redacted>");
 }
@@ -45,7 +68,14 @@ export function evidencePath(name: string): string {
   return path.join(EVIDENCE_DIR, name);
 }
 
-/** Write scrubbed evidence next to the test run. Never throws. */
+/**
+ * Write scrubbed evidence next to the test run.
+ *
+ * Never throws — a suite must not fail because a directory is not writable —
+ * but it does not swallow the reason either: the run that needs its evidence
+ * most is the red one, and a write that silently did not happen is
+ * indistinguishable from one that did. The reason goes to stderr.
+ */
 export function writeEvidence(name: string, payload: unknown): void {
   try {
     fs.mkdirSync(EVIDENCE_DIR, { recursive: true });
@@ -53,10 +83,32 @@ export function writeEvidence(name: string, payload: unknown): void {
       evidencePath(name),
       typeof payload === "string" ? scrub(payload) : scrub(JSON.stringify(payload, null, 2))
     );
-  } catch {
-    // Evidence is a convenience. A suite must never fail because a directory
-    // is not writable.
+  } catch (error) {
+    console.error(`[harness] evidence ${name} was NOT written: ${String(error)}`);
   }
+}
+
+/**
+ * The request-budget ceiling, stated once.
+ *
+ * It lives here and not in `08-request-budget.spec.ts` because the negative
+ * control has to judge an INJECTED storm against the same number the
+ * production assertion judges the real page against. A control that quotes its
+ * own copy of the ceiling proves only that its own copy is what it is.
+ */
+export const REQUEST_BUDGET_WINDOW_MS = 5000;
+export const MAX_REPEATS_PER_URL_PER_WINDOW = 5;
+
+/**
+ * The verdict `08-request-budget` is made of, extracted so a control can
+ * require it to REJECT a storm. `peak.count <= 5` written twice, in two files,
+ * is one assertion and a copy; this is one function and a control.
+ */
+export function isOverRequestBudget(
+  peak: { key: string; count: number },
+  max: number = MAX_REPEATS_PER_URL_PER_WINDOW
+): boolean {
+  return peak.count > max;
 }
 
 /**
@@ -102,6 +154,13 @@ export type RecordedResponse = {
   method: string;
   status: number;
   resourceType: string;
+  /**
+   * The response's own `content-type`, lowercased, or `""` when it sent none.
+   * A status code cannot see a wrong content type: the RSC payloads the client
+   * validates, and the fonts/images it trusts, all answer 2xx whether or not
+   * they are what they claim to be.
+   */
+  contentType: string;
   at: number;
 };
 
@@ -142,6 +201,7 @@ export class PageWatch {
         status: response.status(),
         resourceType: request.resourceType(),
         at: Date.now() - this.start,
+        contentType: (response.headers()["content-type"] ?? "").toLowerCase(),
       });
     });
     page.on("requestfailed", (request: Request) => {
@@ -234,10 +294,67 @@ export class PageWatch {
   }
 }
 
-/** Attach the admin key the way an ingress in front of the admin port would. */
+/**
+ * The ONE origin the admin key may be sent to: the origin the gateway's admin
+ * plane answers on. Everything else the browser fetches — and the dashboard
+ * does fetch third-party things, e.g. `CountryFlag` renders
+ * `<img src="https://flagcdn.com/w40/us.png">` in the language selector the
+ * header paints unconditionally — must go out with no credential.
+ */
+export function adminOrigin(): string {
+  return new URL(BASE_URL).origin;
+}
+
+/**
+ * Whether a request URL is the admin plane's own origin.
+ *
+ * Compared on the PARSED origin, never on a string prefix: `startsWith` on a
+ * base URL would accept `http://127.0.0.1:3001.evil.example`, which is a
+ * different origin an attacker could point anywhere.
+ */
+export function isAdminOrigin(url: string | URL): boolean {
+  try {
+    return new URL(String(url)).origin === adminOrigin();
+  } catch {
+    // Not a URL we can parse (a `data:`/`about:` frame, a relative form the
+    // browser already resolved). It is certainly not the admin origin.
+    return false;
+  }
+}
+
+/**
+ * Attach the admin key the way an ingress in front of the admin port would —
+ * and ONLY to that ingress.
+ *
+ * It used to be `context.setExtraHTTPHeaders({ Authorization: … })`, which is
+ * context-wide and origin-agnostic: Chromium attaches those headers to every
+ * request the context issues, so a test that authenticated and then visited
+ * any dashboard page handed the real gateway's admin key to
+ * `https://flagcdn.com` in an `Authorization` header. Nothing in the suite
+ * could see it — `PageWatch` records URLs, not headers, and `scrub()` only
+ * cleans what the suite itself writes to disk — so running this against a real
+ * gateway published that key to a public CDN with no signal that it happened.
+ *
+ * A route handler scoped to `isAdminOrigin` puts the header on the same
+ * requests and no others, and it is the mechanism `context.route` already
+ * gives us rather than a wrapper the callers would each have to remember:
+ * every existing call site keeps working unchanged.
+ *
+ * Cost, stated because it is real: an intercepted request takes a round trip
+ * through the Playwright driver, so admin-origin requests in a test that
+ * authenticates are marginally slower. `08-request-budget.spec.ts` measures
+ * timings and deliberately never calls `authenticate`, so it is unaffected.
+ */
 export async function authenticate(context: BrowserContext, key = ADMIN_KEY): Promise<boolean> {
   if (!key) return false;
-  await context.setExtraHTTPHeaders({ Authorization: `Bearer ${key}` });
+  await context.route(
+    (url) => isAdminOrigin(url),
+    async (route) => {
+      await route.continue({
+        headers: { ...route.request().headers(), Authorization: `Bearer ${key}` },
+      });
+    }
+  );
   return true;
 }
 
@@ -508,6 +625,108 @@ export async function readNativeCatalog(): Promise<NativeCatalogSnapshot> {
 }
 
 /**
+ * The gateway's ENTIRE `RuntimeStatus` vocabulary, as the state it means.
+ *
+ * Read off the core itself — `aisix-proxy/src/health.rs`, `RuntimeStatus` with
+ * `#[serde(rename_all = "snake_case")]` — which is four tokens, and mirrored in
+ * the dashboard's own `HEALTHY_STATES` / `DEGRADED_STATES` / `DOWN_STATES`
+ * (`src/shared/utils/aisixHealth.ts`):
+ *
+ *   healthy           the model is in rotation and answering
+ *   not_applicable    a VIRTUAL router — `kind: routing | ensemble |
+ *                     semantic`, which is every combo, because a combo is a
+ *                     routing model. It has no upstream of its own, so the core
+ *                     reports no runtime health for it; the health that matters
+ *                     lives on the direct models it dispatches to, which are in
+ *                     the same payload. Not applicable is not a fault.
+ *   cooldown          out of rotation until `cooldown_until`, expected to lapse
+ *   unhealthy         the background check marked it; the core itself puts it
+ *                     in `DeploymentState::Down` — out of rotation
+ *
+ * This is an ALLOW-list on purpose. The oracle used to deny-list three
+ * spellings and count everything else as degraded, so `not_applicable` —
+ * every virtual router, that is, every combo on the gateway — was counted as a
+ * fault: the e2e oracle agreed with the exact bug it exists to catch. A
+ * deny-list also fails in the direction that hides things: a token the gateway
+ * adds tomorrow is counted as degraded by default. A token this table does not
+ * know is therefore reported as `unrecognisedStatusTokens` and asserted empty
+ * by the spec, rather than being folded into a count.
+ *
+ * Scope, stated exactly: this is the wire vocabulary of `GET :9090/status/models`
+ * — the core's `RuntimeStatus` enum, whose four tokens are all here — plus the
+ * handful of adjacent spellings this core family is known to emit
+ * (`ok`, `degraded`, `half_open`, `down`, `unavailable`). It is deliberately
+ * NOT the dashboard's whole `toAisixProviderState` vocabulary: that one accepts
+ * `warn`, `open`, `error` and a dozen more, and every token it accepts that the
+ * core cannot emit is a token this oracle would then have to call
+ * "recognised" — which is the silence the allow-list exists to remove.
+ *
+ * The tokens are kept as literal strings rather than imported from
+ * `aisixHealth.ts`. An oracle that imports the code under audit agrees with it
+ * by construction, which is the failure mode this table replaces.
+ */
+// Exported so the unit test can hold it against an INDEPENDENTLY anchored
+// list — the core's own four-token enum — rather than against itself.
+export const RUNTIME_STATUS_STATES: Record<string, "healthy" | "degraded" | "down"> = {
+  healthy: "healthy",
+  ok: "healthy",
+  not_applicable: "healthy",
+  notapplicable: "healthy",
+  cooldown: "degraded",
+  degraded: "degraded",
+  half_open: "degraded",
+  unhealthy: "down",
+  down: "down",
+  unavailable: "down",
+};
+
+export type NativeModelStatusSummary = {
+  modelCount: number;
+  healthyCount: number;
+  degradedCount: number;
+  downCount: number;
+  /** Every status token the payload carried, counted. */
+  statusTokens: Record<string, number>;
+  /**
+   * Tokens this harness does not know. Not an error state on its own — it is
+   * a vocabulary gap between the gateway and the dashboard, and it is loud:
+   * the spec asserts this list is empty, because a token nobody classified is
+   * one the operator is not being told about.
+   */
+  unrecognisedStatusTokens: string[];
+};
+
+/** Classify a `GET :9090/status/models` payload. Pure, so it is unit-tested. */
+export function summarizeNativeModelStatus(body: unknown): NativeModelStatusSummary {
+  const rows = Array.isArray(body) ? body : [];
+  const summary: NativeModelStatusSummary = {
+    modelCount: rows.length,
+    healthyCount: 0,
+    degradedCount: 0,
+    downCount: 0,
+    statusTokens: {},
+    unrecognisedStatusTokens: [],
+  };
+  for (const row of rows) {
+    const token = String((row as { status?: unknown })?.status ?? "")
+      .trim()
+      .toLowerCase();
+    summary.statusTokens[token] = (summary.statusTokens[token] ?? 0) + 1;
+    const state = RUNTIME_STATUS_STATES[token];
+    if (state === "healthy") summary.healthyCount += 1;
+    else if (state === "degraded") summary.degradedCount += 1;
+    else if (state === "down") summary.downCount += 1;
+    // A row with NO status token is not counted either way: the core omits it
+    // for rows that predate the field, and inventing a fault there is how a
+    // healthy gateway reads as a broken one.
+    else if (token && !summary.unrecognisedStatusTokens.includes(token)) {
+      summary.unrecognisedStatusTokens.push(token);
+    }
+  }
+  return summary;
+}
+
+/**
  * What the REAL gateway's UNAUTHENTICATED health surface holds, read over HTTP.
  *
  * Deliberately the METRICS-plane `/status/models` and the root `/livez`, not the
@@ -515,17 +734,16 @@ export async function readNativeCatalog(): Promise<NativeCatalogSnapshot> {
  * because an admin-plane 401 flips the dashboard's global signed-out state, which
  * a header badge must not be able to do to a visitor carrying no admin key.
  */
-export async function readNativeHealth(metricsPort = 9090): Promise<{
-  statusModelsReachable: boolean;
-  statusModelCount: number;
-  degradedCount: number;
-  livezStatus: number | null;
-}> {
+export async function readNativeHealth(metricsPort = 9090): Promise<
+  NativeModelStatusSummary & {
+    statusModelsReachable: boolean;
+    livezStatus: number | null;
+  }
+> {
   const result = {
     statusModelsReachable: false,
-    statusModelCount: 0,
-    degradedCount: 0,
     livezStatus: null as number | null,
+    ...summarizeNativeModelStatus([]),
   };
   const origin = new URL(BASE_URL);
   try {
@@ -534,11 +752,7 @@ export async function readNativeHealth(metricsPort = 9090): Promise<{
       const body = (await status.json()) as unknown;
       if (Array.isArray(body)) {
         result.statusModelsReachable = true;
-        result.statusModelCount = body.length;
-        result.degradedCount = body.filter((row) => {
-          const token = String((row as { status?: unknown })?.status ?? "").toLowerCase();
-          return token !== "" && token !== "healthy" && token !== "ok";
-        }).length;
+        Object.assign(result, summarizeNativeModelStatus(body));
       }
     }
   } catch {
