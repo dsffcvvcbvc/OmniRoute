@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
-import { parseAisixModelCatalogByProvider } from "@/shared/utils/aisixNativeCatalog";
 import type { LiveModelsByProviderId } from "../providerPageUtils";
 
 /**
@@ -13,26 +11,34 @@ import type { LiveModelsByProviderId } from "../providerPageUtils";
  * kilocode, ...) declare a single-entry static placeholder, so a
  * search for a real model name never matched and silently hid the provider.
  *
- * On the AISIX static export the legacy route does not exist, so the read is
- * repointed at the core's own `GET /admin/v1/models` — which IS the same
- * provider↔model relation — and reshaped by `parseAisixModelCatalogByProvider`.
- * That turns a guaranteed 404 into real catalog data for the filter to match
- * against, which is what this hook is for.
+ * NOT REPOINTED, deliberately — the one read in this branch's classification left
+ * on its legacy route, and the reason is worth stating because it reads like an
+ * oversight.
  *
- * Fails soft — an unreadable core leaves the map empty, and callers fall back to
- * the static registry only. Empty is the honest reading there: no catalog, no
- * extra matches, and the curated registry still matches.
+ * `GET /admin/v1/models` IS the same provider↔model relation, and repointing it
+ * here was tried and reverted. The providers index then carries a FOURTH
+ * admin-plane 401 (the other three are provider keys, models status and preset
+ * providers), and on that page an admin-plane 401 is not a local failure: the
+ * shared admin transport flips the dashboard's GLOBAL signed-out store, which
+ * opens the "Sign in to the gateway" dialog and unmounts the provider cards
+ * themselves. 03-client-navigation's "Providers → OpenAI" leg is the proof — the
+ * same three 401s on both builds, but the card is present on 69c9c0c1e4 and gone
+ * once the fourth is added.
+ *
+ * Fails soft — a fetch error leaves the map empty, and callers fall back to
+ * the static registry only.
  */
 export function useSyncedModelsByProvider(): LiveModelsByProviderId {
   const [models, setModels] = useState<LiveModelsByProviderId>({});
 
   useEffect(() => {
     let cancelled = false;
-    fetch(resolveAisixRequestUrl("/api/synced-available-models"))
+    fetch("/api/synced-available-models")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (cancelled || !data || typeof data !== "object") return;
-        setModels(parseAisixModelCatalogByProvider(data));
+        if (!cancelled && data && typeof data === "object") {
+          setModels(data as LiveModelsByProviderId);
+        }
       })
       .catch(() => {});
     return () => {
