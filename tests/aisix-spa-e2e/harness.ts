@@ -507,30 +507,42 @@ export async function readNativeCatalog(): Promise<NativeCatalogSnapshot> {
   }
 }
 
-/** Same question for the core's health snapshot, and for the unauthenticated liveness probe. */
-export async function readNativeHealth(): Promise<{
-  healthReachable: boolean;
-  healthStatus: string | null;
-  healthModelCount: number;
+/**
+ * What the REAL gateway's UNAUTHENTICATED health surface holds, read over HTTP.
+ *
+ * Deliberately the METRICS-plane `/status/models` and the root `/livez`, not the
+ * admin plane: the two shell reads under test live on those planes precisely
+ * because an admin-plane 401 flips the dashboard's global signed-out state, which
+ * a header badge must not be able to do to a visitor carrying no admin key.
+ */
+export async function readNativeHealth(metricsPort = 9090): Promise<{
+  statusModelsReachable: boolean;
+  statusModelCount: number;
+  degradedCount: number;
   livezStatus: number | null;
 }> {
-  const headers = ADMIN_KEY ? { Authorization: `Bearer ${ADMIN_KEY}` } : {};
   const result = {
-    healthReachable: false,
-    healthStatus: null,
-    healthModelCount: 0,
-    livezStatus: null,
+    statusModelsReachable: false,
+    statusModelCount: 0,
+    degradedCount: 0,
+    livezStatus: null as number | null,
   };
+  const origin = new URL(BASE_URL);
   try {
-    const health = await fetch(`${BASE_URL}/admin/v1/health`, { headers });
-    if (health.ok) {
-      const body = (await health.json()) as { status?: unknown; models?: unknown };
-      result.healthReachable = true;
-      result.healthStatus = typeof body.status === "string" ? body.status : null;
-      result.healthModelCount = Array.isArray(body.models) ? body.models.length : 0;
+    const status = await fetch(`http://${origin.hostname}:${metricsPort}/status/models`);
+    if (status.ok) {
+      const body = (await status.json()) as unknown;
+      if (Array.isArray(body)) {
+        result.statusModelsReachable = true;
+        result.statusModelCount = body.length;
+        result.degradedCount = body.filter((row) => {
+          const token = String((row as { status?: unknown })?.status ?? "").toLowerCase();
+          return token !== "" && token !== "healthy" && token !== "ok";
+        }).length;
+      }
     }
   } catch {
-    // leave healthReachable false — the assertion says so
+    // leave statusModelsReachable false — the assertion says so
   }
   try {
     const livez = await fetch(`${BASE_URL}/livez`);

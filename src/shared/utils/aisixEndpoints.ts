@@ -87,17 +87,6 @@ export function aisixReadyzUrl(): string {
 }
 
 /**
- * Core health snapshot — native replacement for `/api/health/degradation`.
- *
- * Answers `{ status, models: [{ id, name, health }] }` where `status` is the
- * core's own verdict and `health` is a per-model counter. `adaptAisixCoreHealth`
- * in `aisixHealth.ts` turns that into the boolean the degradation badge wants.
- */
-export function aisixCoreHealthUrl(): string {
-  return `${getAisixAdminBase()}/admin/v1/health`;
-}
-
-/**
  * OmniRoute's OWN inbound consumer API keys — native replacement for `/api/keys`.
  *
  * Deliberately NOT `aisixProviderKeysUrl`: `/admin/v1/provider_keys` holds
@@ -191,8 +180,18 @@ export function resolveAisixRequestUrl(legacyUrl: string): string {
   if (path === "/api/health/ping") {
     return aisixLivezUrl();
   }
+  // Degradation is a METRICS-plane read, not an admin-plane one, and the
+  // difference is load-bearing rather than cosmetic: `aisixAdminFetch` treats ANY
+  // admin-plane 401 as "the operator's session ended" and flips the global
+  // signed-out store (see `useAisixSignedOut`). A header badge that runs on every
+  // page must therefore never touch the authenticated plane — on a static host
+  // where an operator has not entered a key yet, one 401 from this badge signs
+  // the whole dashboard out and the provider index stops rendering its cards at
+  // all. `:9090/status/models` is unauthenticated, answers a real per-model
+  // verdict, and is already the native target of the two sibling shell health
+  // reads mapped just below.
   if (path === "/api/health/degradation" || path.startsWith("/api/health/degradation?")) {
-    return aisixCoreHealthUrl();
+    return aisixStatusModelsUrl(suffix);
   }
   if (path === "/api/monitoring/health" || path.startsWith("/api/providers/health")) {
     return aisixStatusModelsUrl(suffix);

@@ -255,40 +255,6 @@ const STATE_TO_CIRCUIT: Record<AisixProviderState, "CLOSED" | "DEGRADED" | "OPEN
   down: "OPEN",
 };
 
-/**
- * Native core degradation, for the header badge that used to read
- * `GET /api/health/degradation?summary=true` and its `data.isDegraded`.
- *
- * `GET /admin/v1/health` answers `{ status, models: [{ id, name, health }] }`:
- * `status` is the core's own verdict and `health` is a PER-MODEL counter (0 is
- * clean). Two independent signals, and the badge shows on either:
- *
- *   - `status` present and not a healthy token — the core says it is not ok;
- *   - any model reporting a non-zero `health` — something is wrong even while
- *     the process answers.
- *
- * `null` — "not reported" — is returned for a payload that carries neither, so a
- * caller can distinguish "the core reported it is fine" from "the core said
- * nothing and the badge must not claim either". `isDegraded` is the boolean the
- * badge actually branches on, and it is `false` only when the core really
- * reported health.
- */
-export function adaptAisixCoreHealth(payload: unknown): { isDegraded: boolean; reported: boolean } {
-  if (!isRecord(payload)) return { isDegraded: false, reported: false };
-  const status = toStringOrNull(payload.status);
-  if (status !== null) {
-    const state = toAisixProviderState(status);
-    if (state !== "healthy") return { isDegraded: true, reported: true };
-  }
-  const models = Array.isArray(payload.models) ? payload.models : [];
-  const unhealthy = models.some((entry) => {
-    const health = toFiniteNumber(isRecord(entry) ? entry.health : null);
-    return health !== null && health !== 0;
-  });
-  if (unhealthy) return { isDegraded: true, reported: true };
-  return { isDegraded: false, reported: status !== null || models.length > 0 };
-}
-
 export function normalizeAisixHealthSnapshot(payload: unknown): AisixHealthSnapshot {
   const providerStatuses = parseAisixProviderStatuses(payload);
   const providerHealth: AisixHealthSnapshot["providerHealth"] = {};

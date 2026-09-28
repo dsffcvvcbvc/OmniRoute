@@ -47,8 +47,9 @@ const {
   resolveAisixRequestUrl,
   aisixLivezUrl,
   aisixReadyzUrl,
-  aisixCoreHealthUrl,
   aisixApiKeysUrl,
+  aisixStatusModelsUrl,
+  aisixProviderKeysUrl,
   aisixAdminModelsUrl,
   aisixCombosUrl,
   aisixUnsupportedRead,
@@ -64,7 +65,7 @@ const {
   parseAisixOpenAiModelList,
   toAisixCatalogBuckets,
 } = catalog;
-const { adaptAisixCoreHealth } = health;
+const { parseAisixProviderStatuses, resolveAisixHealthVerdict } = health;
 
 /** The live core's document envelope, verbatim in shape. */
 const NATIVE_MODEL = {
@@ -83,11 +84,11 @@ const NATIVE_MODELS = [NATIVE_MODEL];
 // ─── R1: repointed reads land on a route the gateway actually registers ──────
 
 test("R1 every repointed legacy read resolves to a native admin/root route", () => {
-  const admin = aisixCoreHealthUrl().replace(/\/admin\/v1\/health$/, "");
+  // The admin base, derived from a builder that certainly points at :3001.
+  const admin = aisixProviderKeysUrl().replace(/\/admin\/v1\/provider_keys$/, "");
   const cases: Array<[string, RegExp]> = [
     // The six shell reads a static host 404'd.
     ["/api/health/ping", /\/livez$/],
-    ["/api/health/degradation?summary=true", /\/admin\/v1\/health$/],
     // The providers-index reads.
     ["/api/synced-available-models", /\/admin\/v1\/models$/],
     ["/api/provider-models?provider=openai", /\/admin\/v1\/models\?provider=openai$/],
@@ -112,10 +113,33 @@ test("R1 every repointed legacy read resolves to a native admin/root route", () 
   }
 });
 
+test("R1 the shell's degradation read is UNAUTHENTICATED, and that is the whole point", () => {
+  // Regression shape with teeth: `aisixAdminFetch` flips the GLOBAL signed-out
+  // store on any admin-plane 401, so a header badge — which runs on every page —
+  // must not read the admin plane. Point it at `/admin/v1/health` and a visitor
+  // who has not entered a key yet gets the whole dashboard signed out of them,
+  // cards and all.
+  const resolved = resolveAisixRequestUrl("/api/health/degradation?summary=true");
+  assert.equal(
+    resolved,
+    aisixStatusModelsUrl("?summary=true"),
+    "the degradation read must land on the metrics plane, same as /api/monitoring/health"
+  );
+  assert.ok(
+    !resolved.includes("/admin/v1/"),
+    `a shell control must not read the authenticated admin plane, got ${resolved}`
+  );
+  // Same target as the two sibling shell health reads — one rule, not three.
+  assert.equal(
+    resolveAisixRequestUrl("/api/health/degradation?summary=true").replace(/\?.*$/, ""),
+    resolveAisixRequestUrl("/api/monitoring/health").replace(/\?.*$/, "")
+  );
+});
+
 test("R1 the native URL builders address routes that exist in lib.rs", () => {
   assert.match(aisixLivezUrl(), /\/livez$/);
   assert.match(aisixReadyzUrl(), /\/readyz$/);
-  assert.match(aisixCoreHealthUrl(), /\/admin\/v1\/health$/);
+  assert.match(aisixStatusModelsUrl(), /\/status\/models$/);
   assert.match(aisixApiKeysUrl(), /\/admin\/v1\/api_keys$/);
   assert.match(aisixApiKeysUrl("?x=1"), /\/admin\/v1\/api_keys\?x=1$/);
   assert.match(aisixAdminModelsUrl(), /\/admin\/v1\/models$/);
@@ -128,12 +152,15 @@ test("R1 the native URL builders address routes that exist in lib.rs", () => {
 });
 
 test("R1 /api/health/ping must not be answered by the authenticated health snapshot", () => {
-  // Regression shape, not a style rule: mapping the maintenance banner onto
-  // /admin/v1/health would turn "is my core up" into "is my admin key valid",
-  // so an unauthenticated visitor would see a maintenance banner on a healthy
-  // gateway. /livez is unauthenticated precisely so it can answer that.
-  assert.notEqual(resolveAisixRequestUrl("/api/health/ping"), aisixCoreHealthUrl());
-  assert.match(resolveAisixRequestUrl("/api/health/ping"), /\/livez$/);
+  // Regression shape, not a style rule: mapping the maintenance banner onto an
+  // admin-plane route would turn "is my core up" into "is my admin key valid",
+  // and — because of the global signed-out store — would sign an unauthenticated
+  // visitor out of the whole dashboard. /livez is unauthenticated precisely so it
+  // can answer that.
+  const ping = resolveAisixRequestUrl("/api/health/ping");
+  assert.notEqual(ping, aisixStatusModelsUrl());
+  assert.match(ping, /\/livez$/);
+  assert.ok(!ping.includes("/admin/v1/"));
 });
 
 // ─── R2: unmapped paths pass through so the caller can refuse ────────────────
@@ -377,57 +404,82 @@ test("R5 a flattened bare (unwrapped) document is still understood", () => {
   assert.equal(rows[0].documentId, "doc");
 });
 
-// ─── R6: the health adapter distinguishes reported-ok from reported-nothing ──
+// ─── R6: the degradation verdict, through the helpers the badge actually uses ──
 
-test("R6 the live /admin/v1/health payload is read as healthy", () => {
-  assert.deepEqual(
-    adaptAisixCoreHealth({ status: "ok", models: [{ id: "a", name: "m", health: 0 }] }),
-    {
-      isDegraded: false,
-      reported: true,
-    }
-  );
+/** The live `:9090/status/models` document shape, verbatim. */
+const NATIVE_STATUS_MODELS = [
+  {
+    id: "6b29b278-0e45-541c-b5c7-b2db0ab4d895",
+    display_name: "m-dahl",
+    kind: "direct",
+    status: "healthy",
+  },
+  {
+    id: "2a972f85-e897-5a42-a39a-8625787e029e",
+    display_name: "m-pioneer",
+    kind: "direct",
+    status: "healthy",
+  },
+];
+
+const verdictOf = (payload: unknown) =>
+  resolveAisixHealthVerdict(parseAisixProviderStatuses(payload));
+
+test("R6 the live /status/models payload reads as healthy", () => {
+  assert.equal(verdictOf(NATIVE_STATUS_MODELS), "healthy");
 });
 
-test("R6 a non-ok status token is degradation", () => {
-  for (const status of ["degraded", "error", "down", "starting"]) {
-    const result = adaptAisixCoreHealth({ status, models: [] });
-    assert.equal(result.isDegraded, true, `status "${status}" must read as degraded`);
-    assert.equal(result.reported, true);
+test("R6 a degraded model token is degradation", () => {
+  for (const status of ["degraded", "half_open", "cooling", "warn"]) {
+    const verdict = verdictOf([...NATIVE_STATUS_MODELS, { id: "x", status }]);
+    assert.notEqual(verdict, "healthy", `status "${status}" must not read as healthy`);
   }
 });
 
-test("R6 a non-zero per-model counter is degradation even while status says ok", () => {
-  const result = adaptAisixCoreHealth({
-    status: "ok",
-    models: [
-      { id: "a", name: "m-ok", health: 0 },
-      { id: "b", name: "m-bad", health: 3 },
-    ],
-  });
-  assert.equal(result.isDegraded, true, "one unhealthy model must raise the badge");
-  assert.equal(result.reported, true);
+test("R6 a down model is action_required, not merely cooling", () => {
+  assert.equal(
+    verdictOf([...NATIVE_STATUS_MODELS, { id: "x", status: "open" }]),
+    "action_required"
+  );
 });
 
-test("R6 a payload with nothing in it is 'not reported', not 'healthy'", () => {
-  // The distinction the badge depends on: it must not show "all clear" on the
-  // strength of a response that said nothing.
+test("R6 a payload with nothing in it is not reported as healthy", () => {
+  // The distinction the badge depends on: it must not conclude "all clear" from a
+  // response that said nothing. `resolveAisixHealthVerdict` maps an empty list to
+  // "healthy" by its own documented rule, so the badge's own guard is what has to
+  // hold here — which is why this asserts the PARSER saw nothing, not the verdict.
   for (const payload of [null, undefined, "not json", {}, { models: [] }]) {
     assert.deepEqual(
-      adaptAisixCoreHealth(payload),
-      { isDegraded: false, reported: false },
-      `payload ${JSON.stringify(payload)} must not be reported as healthy`
+      parseAisixProviderStatuses(payload),
+      [],
+      `payload ${JSON.stringify(payload)} must yield no provider statuses`
+    );
+  }
+  // And the pre-existing verdict helper keeps its own documented behaviour.
+  assert.equal(verdictOf([]), "healthy");
+  assert.equal(verdictOf([{ id: "a", status: "healthy" }]), "healthy");
+});
+
+test("R6 an unrecognised status token is DEGRADED, never silently healthy", () => {
+  // The conservative default, and the one the badge's correctness rests on: a
+  // token the adapter has never heard of must raise the banner, not lower it.
+  // Defaulting it to "healthy" would let a core invent a new state name and the
+  // dashboard would go quiet about it.
+  for (const status of ["weird-new-state", "PARTIALLY_MELTED", "42"]) {
+    assert.notEqual(
+      verdictOf([...NATIVE_STATUS_MODELS, { id: "x", status }]),
+      "healthy",
+      `unknown token "${status}" must not read as healthy`
     );
   }
 });
 
-test("R6 a string health counter is coerced, a non-numeric one ignored", () => {
-  assert.equal(
-    adaptAisixCoreHealth({ status: "ok", models: [{ id: "a", health: "2" }] }).isDegraded,
-    true
-  );
-  assert.equal(
-    adaptAisixCoreHealth({ status: "ok", models: [{ id: "a", health: "n/a" }] }).isDegraded,
-    false
-  );
+test("R6 the badge's boolean is exactly 'verdict is not healthy'", () => {
+  // The two lines the badge runs, asserted as a pair so a change to either is
+  // caught here rather than as a badge that is silently always-on or always-off.
+  const badgeSaysDegraded = (payload: unknown) =>
+    resolveAisixHealthVerdict(parseAisixProviderStatuses(payload)) !== "healthy";
+  assert.equal(badgeSaysDegraded(NATIVE_STATUS_MODELS), false);
+  assert.equal(badgeSaysDegraded([{ id: "a", status: "degraded" }]), true);
+  assert.equal(badgeSaysDegraded([]), false, "no report is not a degradation claim");
 });

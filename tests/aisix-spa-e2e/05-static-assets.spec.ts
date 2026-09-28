@@ -250,6 +250,9 @@ test.describe("static assets", () => {
  */
 const PROVIDER_DETAIL = "/dashboard/providers/openai";
 
+/** The gateway's metrics plane, as `start-aisix-spa-gateway.mjs` maps it. */
+const METRICS_PORT = Number(process.env.AISIX_SPA_METRICS_PORT || 3003);
+
 /** Legacy paths the shell used to ask for and must now never ask for. */
 const RETIRED_SHELL_READS = [
   "/api/auth/csrf",
@@ -365,61 +368,72 @@ test.describe("the /api surface is classified, not just silenced", () => {
     ).toEqual([]);
   });
 
-  test("the repointed health read hits /admin/v1/health and sees the core's real verdict", async ({
+  test("the repointed health read hits the core's own status surface, unauthenticated", async ({
     page,
-    context,
   }) => {
-    // The native reads are on the authenticated admin plane, so the test supplies the
-    // gateway credential the way an ingress in front of the admin port does — the same
-    // contract `authenticate` is used for in 07. Without it every repointed read is a 401
-    // and these assertions would be measuring the credential, not the repoint.
-    await authenticate(context);
+    // Deliberately run WITHOUT an admin key. The degradation badge is a header
+    // control that renders on every page, so it must be answerable by a visitor
+    // who has not signed in — and the badge sits on the metrics plane rather than
+    // the admin plane precisely because an admin-plane 401 flips the dashboard's
+    // global signed-out state (see `useAisixSignedOut`). So this test guards two
+    // things at once: that the read is repointed, and that it is not the reason an
+    // anonymous visitor got signed out.
     const watch = new PageWatch(page);
     await page.goto("/dashboard", { waitUntil: "load", timeout: 90_000 });
     await readContent(page, { minLength: 400, timeoutMs: 60_000 });
     await page.waitForTimeout(4000);
 
-    const native = await readNativeHealth();
-    const healthReads = watch.responses.filter(
-      (r) => new URL(r.url).pathname === "/admin/v1/health"
-    );
+    const native = await readNativeHealth(METRICS_PORT);
+    const statusReads = watch.responses.filter((r) => new URL(r.url).pathname === "/status/models");
     const degradationReads = watch.responses.filter(
       (r) => new URL(r.url).pathname === "/api/health/degradation"
     );
+    const adminPlaneReads = watch.responses.filter((r) => r.url.includes("/admin/v1/"));
+    const signedOutBanner = await page
+      .locator("body")
+      .innerText()
+      .then((text) => /session ended|sign in to the gateway/i.test(text))
+      .catch(() => false);
     writeEvidence("05-health-repoint.json", {
       gateway: native,
-      browserAdminHealth: healthReads.map((r) => `${r.status} ${new URL(r.url).pathname}`),
+      browserStatusModels: statusReads.map(
+        (r) => `${r.status} :${new URL(r.url).port}${new URL(r.url).pathname}`
+      ),
       legacyDegradationReads: degradationReads.length,
+      adminPlaneReads: adminPlaneReads.map((r) => `${r.status} ${new URL(r.url).pathname}`),
+      signedOutBanner,
     });
 
     expect(
-      native.healthReachable,
-      "the gateway's /admin/v1/health did not answer, so the repointed read cannot be verified " +
+      native.statusModelsReachable,
+      "the gateway's /status/models did not answer, so the repointed read cannot be verified " +
         "against the server truth"
     ).toBe(true);
 
-    // The core's own snapshot is non-empty on any configured gateway, and a
-    // response of 0 models would mean the comparison below is vacuous.
+    // A 0-model snapshot would make the comparison below vacuous.
     expect(
-      native.healthModelCount,
-      "the core reported no models in /admin/v1/health, so this gateway cannot distinguish a " +
+      native.statusModelCount,
+      "the core reported no models in /status/models, so this gateway cannot distinguish a " +
         "repointed read from an empty one"
     ).toBeGreaterThan(0);
 
     expect(
-      healthReads.length,
-      "the browser never asked /admin/v1/health. The degradation badge is repointed there; " +
-        "without it the badge is reading a route that does not exist here and reporting " +
+      statusReads.length,
+      "the browser never asked the core's /status/models. The degradation badge is repointed " +
+        "there; without it the badge is reading a route that does not exist here and reporting " +
         '"not degraded" from a 404.'
     ).toBeGreaterThan(0);
-    expect(
-      healthReads.filter((r) => r.status >= 400).map((r) => `${r.status} ${r.url}`),
-      "the browser's /admin/v1/health read was refused even though a direct read answers"
-    ).toEqual([]);
     expect(
       degradationReads.length,
       "the browser still asked the legacy /api/health/degradation route"
     ).toEqual(0);
+
+    expect(
+      signedOutBanner,
+      "loading the shell with NO admin key produced a signed-out state. Some shell read went " +
+        "to the authenticated admin plane, and a 401 there signs the whole dashboard out — which " +
+        "is how the provider index stopped rendering its cards for a signed-out visitor."
+    ).toBe(false);
   });
 
   test("the provider detail page asks none of the three unsupported per-provider reads", async ({

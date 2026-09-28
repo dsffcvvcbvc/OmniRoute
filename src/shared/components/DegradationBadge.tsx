@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
-import { adaptAisixCoreHealth } from "@/shared/utils/aisixHealth";
+import { parseAisixProviderStatuses, resolveAisixHealthVerdict } from "@/shared/utils/aisixHealth";
 
 export default function DegradationBadge() {
   const [isDegraded, setDegraded] = useState(false);
@@ -13,16 +13,22 @@ export default function DegradationBadge() {
   useEffect(() => {
     const checkDegradation = async () => {
       try {
-        // Repointed at `GET /admin/v1/health` in the static SPA export. The
+        // Repointed at the core's UNAUTHENTICATED `:9090/status/models` in the
+        // static SPA export — the same native target the two sibling shell health
+        // reads use, and the same payload the health page already parses. The
         // legacy `/api/health/degradation` route is a Next.js-only read of the
-        // SQLite degradation table, so on a static host it 404'd — and because
-        // the badge only ever acted on `res.ok`, a 404 read as "not degraded".
-        // The core DOES report degradation, so the answer was available and the
-        // badge was discarding it.
+        // SQLite degradation table, so on a static host it 404'd, and because the
+        // badge acted only on `res.ok` a 404 read as "not degraded" for a core
+        // that had plenty to report.
+        //
+        // Deliberately NOT `/admin/v1/health`: that plane is authenticated, and a
+        // 401 from any admin-plane read signs the whole dashboard out. A badge
+        // that runs on every page cannot be allowed to do that to a visitor who
+        // has not entered a key yet.
         const res = await fetch(resolveAisixRequestUrl("/api/health/degradation?summary=true"));
         if (res.ok) {
           const data = await res.json();
-          setDegraded(adaptAisixCoreHealth(data).isDegraded);
+          setDegraded(resolveAisixHealthVerdict(parseAisixProviderStatuses(data)) !== "healthy");
         }
       } catch (err) {
         // Ignore error
