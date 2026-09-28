@@ -48,6 +48,7 @@ import {
   aisixProviderKeysUrl,
   isAisixMissingEndpointStatus,
 } from "@/shared/utils/aisixEndpoints";
+import { readComboList, readNamedCombos } from "@/shared/utils/aisixCombos";
 import { useNotificationStore } from "@/store/notificationStore";
 
 // Constants for validation
@@ -380,10 +381,10 @@ export default function ApiManagerPageClient() {
       if (fallbackRes.ok) {
         const [fallbackData, combosData] = await Promise.all([
           fallbackRes.json(),
-          combosRes.ok ? combosRes.json() : Promise.resolve({ combos: [] }),
+          combosRes.ok ? combosRes.json() : Promise.resolve([]),
         ]);
         const fallbackModels = Array.isArray(fallbackData.models) ? fallbackData.models : [];
-        const comboModels = (Array.isArray(combosData.combos) ? combosData.combos : [])
+        const comboModels = readComboList(combosData)
           .filter(
             (combo: any) =>
               combo?.isActive !== false &&
@@ -429,11 +430,7 @@ export default function ApiManagerPageClient() {
     try {
       const res = await fetch(resolveAisixRequestUrl("/api/combos"));
       if (res.ok) {
-        const data = await res.json();
-        const combos = Array.isArray(data.combos) ? data.combos : [];
-        setAllCombos(
-          combos.filter((combo: any) => typeof combo?.name === "string" && combo.name.trim())
-        );
+        setAllCombos(readNamedCombos(await res.json()));
         setCombosLoadError(false);
       } else {
         setCombosLoadError(true);

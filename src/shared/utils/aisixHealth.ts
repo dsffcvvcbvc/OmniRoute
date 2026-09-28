@@ -71,7 +71,30 @@ function toEpochMs(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-const HEALTHY_STATES = new Set(["closed", "healthy", "ok", "up", "ready", "available", "active"]);
+// The core's ENTIRE `RuntimeStatus` vocabulary, read off
+// `aisix-proxy/src/health.rs` (`#[serde(rename_all = "snake_case")]`): exactly
+// four tokens — `healthy`, `unhealthy`, `cooldown`, `not_applicable`. All four
+// are named below, so no token the gateway can emit can fall through to the
+// conservative default. The sets also accept the spellings a caller may hand
+// us from other surfaces (breaker states, HTTP-ish tokens).
+const HEALTHY_STATES = new Set([
+  "closed",
+  "healthy",
+  "ok",
+  "up",
+  "ready",
+  "available",
+  "active",
+  // Virtual routers — `kind: routing | ensemble | semantic`, which is EVERY
+  // combo, because a combo is a routing model. They have no upstream of their
+  // own, so the core reports runtime health as not applicable and the real
+  // health lives on the direct models they dispatch to (which are in the same
+  // payload and are classified on their own merits). Not applicable is not a
+  // fault: reading it as degradation pinned an amber "degraded" chip on the
+  // header of every page of a healthy gateway that had a single combo.
+  "not_applicable",
+  "notapplicable",
+]);
 const DEGRADED_STATES = new Set([
   "half_open",
   "halfopen",
@@ -80,11 +103,19 @@ const DEGRADED_STATES = new Set([
   "warn",
   "warning",
   "cooling",
+  // The core's own cooldown token: the model is out of rotation until
+  // `cooldown_until`, but the failure is expected to lapse on its own.
   "cooldown",
   "throttled",
   "limited",
 ]);
 const DOWN_STATES = new Set([
+  // The core's own unhealthy token. `RuntimeEntry::deployment_state` puts a
+  // model the background check marked unhealthy into `DeploymentState::Down`
+  // — "out of rotation" — so the core itself treats it as Down, not as a
+  // degradation band. Unclassified, it fell through to the conservative
+  // default and under-reported a dead model as merely cooling.
+  "unhealthy",
   "open",
   "down",
   "error",

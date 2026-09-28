@@ -23,12 +23,14 @@
  *     single largest source of 404s in the SPA. They are no longer mapped.
  *     Callers of a nonexistent collection must render an explicit empty state
  *     (see `loadProviderPageData` in the providers dashboard).
- *   - Combos, keys, settings, telemetry-summaries, DB health and the
- *     `*_call-logs` surfaces are Next.js-only. Legacy URLs for them fall
- *     through unchanged so the call site keeps an honest "this data does not
- *     exist natively" signal instead of a misleading native URL. For those
- *     families `aisixUnsupportedRead` / `aisixUnsupportedWrite` return the
- *     operator-facing refusal the page must render.
+ *   - Combos DO have a native collection (`GET /admin/v1/combos`, a bare
+ *     array), so `/api/combos` is mapped; its write verbs are not. Keys,
+ *     settings, telemetry-summaries, DB health and the `*_call-logs` surfaces
+ *     are Next.js-only. Their legacy URLs fall through unchanged so the call
+ *     site keeps an honest "this data does not exist natively" signal instead
+ *     of a misleading native URL. For those families `aisixUnsupportedRead` /
+ *     `aisixUnsupportedWrite` return the operator-facing refusal the page must
+ *     render.
  */
 
 import { fetchWithTimeout } from "@/shared/utils/fetchTimeout";
@@ -81,30 +83,6 @@ export function aisixLivezUrl(): string {
   return `${getAisixAdminBase()}/livez`;
 }
 
-/** Readiness — the stricter sibling of `livez`, for callers that want dependencies up. */
-export function aisixReadyzUrl(): string {
-  return `${getAisixAdminBase()}/readyz`;
-}
-
-/**
- * OmniRoute's OWN inbound consumer API keys — native replacement for `/api/keys`.
- *
- * Deliberately NOT `aisixProviderKeysUrl`: `/admin/v1/provider_keys` holds
- * upstream provider credentials (what the core SENDS), while this holds the
- * consumer keys clients PRESENT. The two are different resources and the native
- * core keeps them at different paths for exactly that reason.
- *
- * LIMITATION, and the reason `resolveAisixRequestUrl` does not map `/api/keys`
- * onto it: the native document carries `key_hash`, never the plaintext. A caller
- * that needs a usable key (the playground's credential picker) cannot be served
- * from here, and handing it a hash would be worse than refusing — so `keys`
- * stays in `AisixUnsupportedDomain`. Read-only key INVENTORY callers may use this
- * URL and must render the hash as a hash.
- */
-export function aisixApiKeysUrl(query = ""): string {
-  return `${getAisixAdminBase()}/admin/v1/api_keys${query}`;
-}
-
 /** Preset-provider catalog — backing store for the providers-page preset grid. */
 export function aisixPresetProvidersUrl(): string {
   return `${getAisixAdminBase()}/admin/v1/preset_providers`;
@@ -112,10 +90,15 @@ export function aisixPresetProvidersUrl(): string {
 
 /**
  * Native combos collection/item (`POST` create, `PUT`/`PATCH` update,
- * `DELETE` remove). The legacy `/api/combos*` paths intentionally stay
- * unmapped (pass-through): when this native base answers 2xx the combos page
- * uses it, otherwise the page shows an explicit "core without combos-write"
- * banner instead of firing requests into a 404.
+ * `DELETE` remove) — and the read target `/api/combos` now resolves to, so
+ * that one legacy collection read reaches real data instead of 404ing.
+ *
+ * The response is a BARE JSON ARRAY of `{id, name, strategy?, models}` — the
+ * core has no `{combos: […]}` wrapper, so a reader written against the Next
+ * route's envelope must accept both shapes (see `parseCombos`). The other
+ * legacy `/api/combos*` verbs (`/reorder`, `/test`, `/builder/options`,
+ * `/{id}`) stay unmapped: the core exposes `POST /admin/v1/resources` for
+ * writes, not per-combo verbs.
  */
 export function aisixCombosUrl(suffix = ""): string {
   return `${getAisixAdminBase()}/admin/v1/combos${suffix}`;
@@ -140,11 +123,6 @@ export function aisixMetricsUrl(query = ""): string {
   return `${getAisixMetricsBase()}/metrics${query}`;
 }
 
-/** Absolute chat-completions URL on the data plane (`:3000`). */
-export function aisixChatCompletionsUrl(): string {
-  return `${getAisixDataBase()}/v1/chat/completions`;
-}
-
 /** Absolute data-plane URL for any `/v1/*` path. */
 export function aisixDataPlaneUrl(path: string): string {
   const normalized = path.startsWith("/") ? path : `/${path}`;
@@ -164,9 +142,19 @@ function splitQuery(url: string): { path: string; suffix: string } {
  * for "no native equivalent exists", so callers must handle it as an explicit
  * empty state rather than retrying with a guessed path. Method/body semantics
  * are the caller's — only the host/path prefix changes.
+ *
+ * REPOINTING IS BUILD-GATED. A normal Next.js deployment has no Rust core on
+ * `:3001`/`:9090`/`:3000` at all, and every rule below would aim a working
+ * `/api/*` route at a host that is not there: the maintenance banner would
+ * report a healthy gateway as unreachable, and the API-key editor's combo
+ * dropdown would read a cross-origin failure as an empty list. So outside the
+ * static export this is the identity function and the legacy Next routes
+ * answer, exactly as before the repointing existed. Same question, same answer
+ * as `resolveAisixSurfaceSupport` and `isDashboardCsrfInterceptorNeeded`.
  */
 export function resolveAisixRequestUrl(legacyUrl: string): string {
   if (/^https?:\/\//i.test(legacyUrl)) return legacyUrl;
+  if (!isAisixSpaExport()) return legacyUrl;
   const { path, suffix } = splitQuery(legacyUrl);
 
   // Metrics first: `/api/combos/metrics` must hit `:9090/metrics`.
@@ -269,12 +257,13 @@ export function resolveAisixRequestUrl(legacyUrl: string): string {
  *   - `logs`   — call-log rows, log export, request-history purge.
  *   - `relay`  — relay proxy tokens.
  *   - `keys`   — OmniRoute's own inbound API keys. The core DOES keep this
- *                resource (`GET /admin/v1/api_keys`, see `aisixApiKeysUrl`) but
- *                exposes only `key_hash`, never the plaintext a caller would
- *                have to present, so a read that needs a usable credential has
- *                no honest native source. `provider_keys` is a different
- *                resource entirely (upstream credentials) and must never stand
- *                in for it.
+ *                resource (`GET :3001/admin/v1/api_keys`, plus its `apikeys`
+ *                alias) but exposes only `key_hash`, never the plaintext a
+ *                caller would have to present, so a read that needs a usable
+ *                credential has no honest native source — which is why no URL
+ *                builder for it is exported and `/api/keys` is not mapped.
+ *                `provider_keys` is a different resource entirely (upstream
+ *                credentials) and must never stand in for it.
  *   - `providerRules` — the same three Next-only SQLite tables as
  *                `providerExtras` below, read at the *card* layer: the three
  *                per-provider sections declare their own domain so each can
@@ -365,6 +354,17 @@ const AISIX_UNSUPPORTED_REASON: Record<AisixUnsupportedDomain, string> = {
   deprecated:
     "Список устаревших провайдеров не входит в AISIX-шлюз: это метаданные Next.js без соответствия в ядре.",
 };
+
+/**
+ * Every domain the gateway refuses, DERIVED from the record above rather than
+ * transcribed beside it. A hand-kept list is a list that goes stale: the 16th
+ * domain would ship with a refusal no test ever asked about, which is exactly
+ * how `providerRules` reached a live page unannounced. `Record<AisixUnsupportedDomain, …>`
+ * already pins the keys to the union, so this export cannot drift from either.
+ */
+export const AISIX_UNSUPPORTED_DOMAINS = Object.keys(
+  AISIX_UNSUPPORTED_REASON
+) as readonly AisixUnsupportedDomain[];
 
 /**
  * A read on `domain` has no native AISIX counterpart. Callers render an

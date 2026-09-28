@@ -21,9 +21,11 @@
  *   - Never invent a model the core did not report. A provider with no
  *     documents is ABSENT from the result, which is not the same as "this
  *     provider has no models" — callers keep their static registry for those.
- *   - `display_name` is the operator's label and `model_name` is the id a
- *     request must carry; they are not interchangeable, so each is used for the
- *     field it actually means and never substituted for the other.
+ *   - `display_name` is BOTH the operator's label and the id a request must
+ *     carry — the core routes on the name shard, so they are the same string,
+ *     not two swappable ones. `model_name` is the UPSTREAM vendor identifier
+ *     the core substitutes when it dispatches; it is never routable and is
+ *     never what this adapter puts in `id`.
  *   - `isAuthoritative: true` is returned only when the core actually answered
  *     with at least one document. A 404, an HTML error page or an empty list
  *     must not be reported as "the core says this provider has no models".
@@ -33,7 +35,20 @@
 
 /** One catalog row as the dashboard's model pickers consume it. */
 export interface AisixCatalogModelRow {
-  /** The id a request must carry (`value.model_name`). */
+  /**
+   * The id a request must carry — `value.display_name`.
+   *
+   * NOT `model_name`. `display_name` is what the core routes on: it is what
+   * `Resource::name()` returns, what `filesource` registers the `models`
+   * collection's `IdentityField` on, what surfaces on `/v1/models` and in
+   * `req.model`, and what `model_resolve::resolve_model` looks up
+   * (`snapshot.models.get_by_name(requested)`). `model_name` is the UPSTREAM
+   * vendor identifier the core itself substitutes when it dispatches — it is
+   * never something a client may send. On a Next build the two usually
+   * coincide, so the inversion is invisible until an operator gives a model a
+   * label of its own, at which point every id the playground picker offers is
+   * unroutable and `get_by_name` returns `None`.
+   */
   id: string;
   /** The operator-facing label, when the core carries one. */
   name?: string;
@@ -68,7 +83,7 @@ function readValueDocument(entry: unknown): Record<string, unknown> | null {
 }
 
 /**
- * Every catalog row the core reported, in the order it reported them.
+ * Every catalog row the core reported, in the order it reported it.
  * Entries that carry no usable provider or no usable model id are dropped —
  * a row with neither cannot answer "which models does this provider have".
  */
@@ -80,7 +95,20 @@ export function parseAisixModelCatalog(payload: unknown): AisixCatalogModelRow[]
     const document = readValueDocument(entry);
     if (!document) continue;
     const provider = readString(document.provider);
-    const id = readString(document.model_name) ?? readString(document.id);
+    // `display_name` is the routable name. A ROUTING/ensemble model (a combo)
+    // leaves `model_name` UNSET — it has no upstream to dispatch to — so
+    // reading `model_name` first gave every combo a row whose id was its own
+    // resource UUID, or none at all. `model_name` is the fallback for a
+    // document that somehow lacks a label, never the primary.
+    // `document.id`, not `entry.id`: in the native `{id, value}` envelope the
+    // resource id is a UUID no request can name, so a WRAPPED document with
+    // neither `display_name` nor `model_name` must be dropped, not given a
+    // bogus id. For a BARE (unwrapped) document `document === entry`, and its
+    // `id` IS its name — which is exactly the case that fallback exists for.
+    const id =
+      readString(document.display_name) ??
+      readString(document.model_name) ??
+      readString(document.id);
     if (!provider || !id) continue;
     const row: AisixCatalogModelRow = {
       id,
