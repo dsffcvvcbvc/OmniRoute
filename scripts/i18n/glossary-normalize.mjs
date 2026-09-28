@@ -8,6 +8,14 @@
  *   - scripts/i18n/run-translation.mjs        (active docs pipeline)
  *   - scripts/i18n/generate-multilang.mjs     (deprecated legacy generator)
  *   - scripts/i18n/check-glossary-consistency.mjs (drift gate)
+ *   - scripts/i18n/check-translation-ratio.mjs  (real-translation ratchet:
+ *     a value that is nothing but protected vocabulary is not untranslated
+ *     debt, so the ratchet subtracts it)
+ *
+ * The vocabulary readers live here for the same reason the replacement rules
+ * do: `protected-terms.json` and `glossary/<locale>.json` have exactly one
+ * reader each. A second parser is how the glossary gate and the ratio gate
+ * start disagreeing about what a protected term is.
  *
  * Why `blockedPrefixes` exists: a synonym is matched as a plain substring, and
  * Chinese compounds have no word separators, so a synonym can appear inside an
@@ -25,6 +33,7 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const GLOSSARY_DIR = path.join(SCRIPT_DIR, "glossary");
 
 const cache = new Map();
+const protectedCache = { terms: null, vocabulary: new Map() };
 
 /**
  * @param {string} haystack
@@ -68,6 +77,78 @@ export function buildReplacements(glossary) {
 }
 
 /**
+ * Parse scripts/i18n/glossary/<locale>.json. Strict — a locale the glossary
+ * gate was asked to check has a glossary, and a missing or corrupt one is a
+ * broken gate, not a locale with nothing to enforce. Callers for whom the
+ * glossary is optional catch and fall back ({@link loadReplacements},
+ * {@link loadProtectedVocabulary}).
+ *
+ * Shared so the glossary gate and the ratio gate cannot disagree about a
+ * locale's canonical terms.
+ *
+ * @param {string} locale
+ * @returns {object}
+ */
+export function loadGlossary(locale) {
+  return JSON.parse(readFileSync(path.join(GLOSSARY_DIR, `${locale}.json`), "utf8"));
+}
+
+/**
+ * The shared protected-term list (scripts/i18n/glossary/protected-terms.json)
+ * — product/provider/protocol/CLI/env identifiers that must appear verbatim
+ * in any localized string. Strict for the same reason as loadGlossary: no gate
+ * can know what is protected if the file is unreadable, and answering
+ * "nothing is protected" would quietly un-exempt whatever the gates exempt.
+ *
+ * @returns {string[]}
+ */
+export function loadProtectedTerms() {
+  if (!protectedCache.terms) {
+    const parsed = JSON.parse(
+      readFileSync(path.join(GLOSSARY_DIR, "protected-terms.json"), "utf8")
+    );
+    protectedCache.terms = Array.isArray(parsed.terms) ? parsed.terms : [];
+  }
+  return protectedCache.terms;
+}
+
+
+/**
+ * The vocabulary a locale's catalog is REQUIRED to keep verbatim: the shared
+ * protected terms plus that locale's own canonical renderings from
+ * glossary/<locale>.json (ru's 15 Law-6 terms, ko's, zh-CN's, zh-TW's).
+ *
+ * Returned lowercased so callers compare case-insensitively; deciding what a
+ * match means is the caller's job.
+ *
+ * @param {string} locale
+ * @returns {Set<string>}
+ */
+export function loadProtectedVocabulary(locale) {
+  if (protectedCache.vocabulary.has(locale)) return protectedCache.vocabulary.get(locale);
+  const vocabulary = new Set();
+  for (const term of loadProtectedTerms()) {
+    if (typeof term === "string" && term) vocabulary.add(term.toLowerCase());
+  }
+  // Only ko, ru, zh-CN and zh-TW ship a glossary; every other locale simply
+  // has no extra canonical renderings beyond the shared list. A missing
+  // glossary is normal here, so it degrades instead of throwing.
+  let glossary = {};
+  try {
+    glossary = loadGlossary(locale);
+  } catch {
+    // No glossary for this locale — nothing extra is protected.
+  }
+  for (const def of Object.values(glossary.terms ?? {})) {
+    if (def && typeof def.canonical === "string" && def.canonical) {
+      vocabulary.add(def.canonical.toLowerCase());
+    }
+  }
+  protectedCache.vocabulary.set(locale, vocabulary);
+  return vocabulary;
+}
+
+/**
  * @param {string} locale
  * @returns {Array<{synonym: string, canonical: string, blockedPrefixes: string[]}>}
  */
@@ -75,8 +156,7 @@ export function loadReplacements(locale) {
   if (cache.has(locale)) return cache.get(locale);
   let replacements = [];
   try {
-    const raw = readFileSync(path.join(GLOSSARY_DIR, `${locale}.json`), "utf8");
-    replacements = buildReplacements(JSON.parse(raw));
+    replacements = buildReplacements(loadGlossary(locale));
   } catch {
     // No glossary for this locale (or unreadable) — normalization is optional.
     replacements = [];
