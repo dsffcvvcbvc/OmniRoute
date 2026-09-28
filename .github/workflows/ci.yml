@@ -468,6 +468,13 @@ jobs:
       # the run only retranslates the `## ` sections whose text changed, so it is cheap.
       - name: i18n docs drift (sources changed since their translation)
         run: node scripts/i18n/check-translation-drift.mjs
+      # The Default cell of the env table is a value, not prose: `true`/`false`/`0`/`1`
+      # in any of the 66 mirrors must equal the English source's. The drift gate above
+      # cannot catch a missed one — it compares hashes, so a mirror nobody edited
+      # hash-matches and reads PASS. Commit 432765efeb hand-edited 61 of 66 for one
+      # flag and 0 of 66 for another; this is the check that would have said so.
+      - name: i18n env-table default cells (mirrors vs English source)
+        run: npm run i18n:check-env-cells
 
   docs-lint:
     name: Docs Lint (prose — advisory)
