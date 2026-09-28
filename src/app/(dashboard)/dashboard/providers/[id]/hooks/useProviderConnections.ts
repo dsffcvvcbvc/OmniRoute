@@ -1,3 +1,7 @@
+// NOTE: the per-connection PROXY concerns (proxyConfig, connProxyMap, the
+// proxyEnabled/perKeyProxyEnabled PUTs and `handleDistributeProxies`) live in
+// `./useConnectionProxies`; only their names are re-exported from here so the
+// page's call site and the hook-shape tests keep the same surface.
 "use client";
 
 /**
@@ -8,20 +12,20 @@
  *  - connections / providerNode / loading state
  *  - fetchConnections (with compatible-node retry logic)
  *  - batch activate / deactivate / retest / delete (with MAX_BULK_IDS chunking)
- *  - single-connection handlers: delete, update status, proxy toggles,
- *    rate-limit, claude extra-usage, codex limit, cpa mode,
- *    retest, clear-cooldown, token refresh, swap priority
+ *  - single-connection handlers: delete, update status, rate-limit,
+ *    claude extra-usage, codex limit, cpa mode, retest, clear-cooldown,
+ *    token refresh, swap priority
  *  - selection state: selectedIds, handleToggleSelectOne/All, batchDeleteConfirmOpen
  *  - batch-test runner (runBatchTest / handleBatchTestAll / handleBatchRetest)
  *  - health/pagination filters (healthFilter, page)
- *  - proxy/distribution helpers (loadConnProxies, handleDistributeProxies,
- *    toggleProxyEnabled, togglePerKeyProxyEnabled)
+ *  - the UPSTREAM routing mode (native / CLIProxyAPI / Dario / fallback), a
+ *    provider-level decision read from `/api/upstream-proxy/[providerId]`
  *
  * The hook is cycle-safe: it imports only from leaf modules (@/store, @/shared,
  * providers constants) — never from ProviderDetailPageClient.
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useNotificationStore } from "@/store/notificationStore";
 import { isClaudeCodeCompatibleProvider } from "@/shared/constants/providers";
@@ -29,17 +33,18 @@ import type { ConnectionRowConnection } from "../components/ConnectionRow";
 import {
   connectionBelongsToProviderPage,
   getProviderConnectionsRequestUrl,
+  readNativeList,
 } from "../../providerPageUtils";
 import {
   aisixAdminModelsUrl,
   getAisixAdminBase,
   resolveAisixRequestUrl,
-  resolveAisixSurfaceSupport,
 } from "@/shared/utils/aisixEndpoints";
 import { aisixAdminFetch } from "@/shared/utils/aisixAdminAuth";
 import { normalizeCodexLimitPolicy, providerText } from "../providerPageHelpers";
 import { useProviderQuotaVisibility } from "./useProviderQuotaVisibility";
 import { useReorderByAvailability } from "./useReorderByAvailability";
+import { useConnectionProxies, type ConnectionProxyAssignment } from "./useConnectionProxies";
 import {
   useConnectionDeleteConfirm,
   type ConnectionDeleteConfirmState,
@@ -59,24 +64,6 @@ interface ProviderConnectionsFetchResult {
   connections: ConnectionRowConnection[] | null;
   node: any;
   nodeResolved: boolean;
-}
-
-/**
- * The native admin plane has shipped more than one envelope for these two
- * collections (`{connections:[…]}`, `{data:[…]}`, `{keys:[…]}` /
- * `{nodes:[…]}`, `{models:[…]}`). Reading only one key is how a reachable
- * admin plane ends up rendering as "0 connections" — mirror the tolerant
- * shape resolution in `loadProviderPageData` so both dashboards agree.
- */
-function readNativeList(payload: unknown, fields: readonly string[]): any[] {
-  if (Array.isArray(payload)) return payload;
-  if (!payload || typeof payload !== "object") return [];
-  const record = payload as Record<string, unknown>;
-  for (const field of fields) {
-    const candidate = record[field];
-    if (Array.isArray(candidate)) return candidate;
-  }
-  return [];
 }
 
 async function loadProviderConnectionsData(
@@ -139,58 +126,6 @@ function isNativeProviderKeysWrite(url: string): boolean {
     .startsWith(`${getAisixAdminBase().toLowerCase()}/admin/v1/provider_keys`);
 }
 
-async function loadProxyConfigData(): Promise<{ config: any } | null> {
-  try {
-    // Declared unsupported: the proxy registry is part of the app's SQLite
-    // settings, which the gateway cannot read. The read is skipped rather than
-    // 404ing; the proxy fields then stay at their documented defaults, which is
-    // the same state a failed read produced and is not a claim that a proxy is
-    // configured.
-    if (!resolveAisixSurfaceSupport("settings", "read").supported) {
-      return;
-    }
-    const res = await fetch(resolveAisixRequestUrl("/api/settings/proxy"), { cache: "no-store" });
-    if (res.ok) return { config: await res.json() };
-    return { config: null };
-  } catch {
-    // Proxy indicators are best-effort — keep whatever is currently shown.
-    return null;
-  }
-}
-
-/**
- * Build the per-connection proxy badge map from ONE `/api/settings/proxy`
- * read.
- *
- * Why: the old implementation issued one `?resolve=<connectionId>` request per
- * connection. On the native transport that path resolves to a resources
- * sub-path that does not exist (and on the Next build it is an N+1 request
- * storm), so every badge silently fell back to "no proxy" through a swallowed
- * `.catch`. The collection response already carries the assignments; resolve
- * them client-side.
- */
-function resolveConnectionProxies(
-  conns: { id?: string }[],
-  config: unknown
-): Record<string, { proxy: any; level: string } | null> | null {
-  const assignments = readNativeList(config, ["assignments", "proxies", "items", "data"]);
-  const byScopeId = new Map<string, { proxy: any; level: string }>();
-  for (const assignment of assignments) {
-    const scopeId = typeof assignment?.scopeId === "string" ? assignment.scopeId : null;
-    if (!scopeId || !assignment?.proxy) continue;
-    byScopeId.set(scopeId, {
-      proxy: assignment.proxy,
-      level: typeof assignment.level === "string" ? assignment.level : "account",
-    });
-  }
-  const map: Record<string, { proxy: any; level: string } | null> = {};
-  for (const conn of conns) {
-    if (!conn.id) continue;
-    map[conn.id] = byScopeId.get(conn.id) ?? null;
-  }
-  return map;
-}
-
 // ──── types ─────────────────────────────────────────────────────────────────
 
 /**
@@ -229,7 +164,7 @@ export interface UseProviderConnectionsReturn {
   accountSearch: string;
   distributingProxies: boolean;
   proxyConfig: any;
-  connProxyMap: Record<string, { proxy: any; level: string } | null>;
+  connProxyMap: Record<string, ConnectionProxyAssignment>;
   cpaProviderEnabled: boolean;
   upstreamProxyMode: UpstreamProxyMode;
   upstreamProxyFallbackBackend: UpstreamProxyFallbackBackend;
@@ -347,20 +282,6 @@ export function useProviderConnections(
     setPage(0);
   }, []);
 
-  // ── proxy state ─────────────────────────────────────────────────────────
-  const [distributingProxies, setDistributingProxies] = useState(false);
-  const [proxyConfig, setProxyConfig] = useState<any>(null);
-  const [connProxyMap, setConnProxyMap] = useState<
-    Record<string, { proxy: any; level: string } | null>
-  >({});
-
-  // Latest connections, readable from a stable callback without making that
-  // callback (and every consumer prop depending on it) change every fetch.
-  const connectionsRef = useRef<ConnectionRowConnection[]>(connections);
-  useEffect(() => {
-    connectionsRef.current = connections;
-  }, [connections]);
-
   // ── Upstream proxy routing state (native / CLIProxyAPI / Dario / fallback) ─
   const [upstreamProxyMode, setUpstreamProxyModeState] = useState<UpstreamProxyMode>("native");
   const [upstreamProxyFallbackBackend, setUpstreamProxyFallbackBackendState] =
@@ -377,34 +298,6 @@ export function useProviderConnections(
   // Fetch helpers
   // ────────────────────────────────────────────────────────────────────────
 
-  const fetchProxyConfig = useCallback(async () => {
-    const result = await loadProxyConfigData();
-    if (result) setProxyConfig(result.config);
-  }, []);
-
-  /**
-   * Refresh every proxy view the page renders after a proxy assignment is
-   * written elsewhere (ProxyConfigModal saves/clears through
-   * `/api/settings/proxies/assignments`).
-   *
-   * Two independent sources back those views and BOTH must be re-read:
-   *  - `proxyConfig`   ← GET /api/settings/proxy  (provider-level chip AND the
-   *    per-connection badge assignments, resolved client-side from that single
-   *    response)
-   *  - `connProxyMap`  ← derived from the same payload
-   *
-   * The `connProxyMap` effect below is keyed on [loading, connections], and a
-   * proxy save changes neither, so without this callback the account-row
-   * badges keep showing pre-save state until a manual reload.
-   */
-  const refreshProxyState = useCallback(async () => {
-    const [configResult] = await Promise.all([loadProxyConfigData()]);
-    if (!configResult) return;
-    setProxyConfig(configResult.config);
-    const map = resolveConnectionProxies(connectionsRef.current, configResult.config);
-    if (map) setConnProxyMap(map);
-  }, []);
-
   const fetchConnections = useCallback(async () => {
     const result = await loadProviderConnectionsData(providerId, isCompatible);
     if (result) {
@@ -413,6 +306,30 @@ export function useProviderConnections(
     }
     setLoading(false);
   }, [providerId, isCompatible]);
+
+  // ── proxy state + every proxy handler ───────────────────────────────────
+  // Extracted to ./useConnectionProxies. Called after `fetchConnections`
+  // because the distribute action re-reads the list through it, and React
+  // requires the argument to exist before the call, not merely before the
+  // effect that uses it.
+  const {
+    proxyConfig,
+    connProxyMap,
+    distributingProxies,
+    fetchProxyConfig,
+    refreshProxyState,
+    handleToggleProxyEnabled,
+    handleTogglePerKeyProxyEnabled,
+    handleDistributeProxies,
+  } = useConnectionProxies({
+    providerId,
+    connections,
+    setConnections,
+    loading,
+    fetchConnections,
+    notify,
+    t,
+  });
 
   // ── effects ──────────────────────────────────────────────────────────────
   // The async work is defined INSIDE each effect (a component-scope loader
@@ -429,24 +346,7 @@ export function useProviderConnections(
       setLoading(false);
     };
     void run();
-    const runProxyConfig = async () => {
-      const result = await loadProxyConfigData();
-      if (result) setProxyConfig(result.config);
-    };
-    void runProxyConfig();
   }, [providerId, isCompatible]);
-
-  // Per-connection proxy badges, derived from the same /api/settings/proxy read.
-  useEffect(() => {
-    if (loading || connections.length === 0) return;
-    const run = async () => {
-      const result = await loadProxyConfigData();
-      if (!result) return;
-      const map = resolveConnectionProxies(connections, result.config);
-      if (map) setConnProxyMap(map);
-    };
-    void run();
-  }, [loading, connections]);
 
   // Upstream proxy routing config (native / CLIProxyAPI / Dario / fallback)
   useEffect(() => {
@@ -759,63 +659,6 @@ export function useProviderConnections(
   // expected handler functions" hook test) keep working unchanged.
   const handleToggleCliproxyapiMode = async (_connectionId: string, enabled: boolean) => {
     await handleSetUpstreamProxyMode(enabled ? "cliproxyapi" : "native");
-  };
-
-  const handleToggleProxyEnabled = async (connectionId: string, proxyEnabled: boolean) => {
-    try {
-      const res = await fetch(`/api/providers/${connectionId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ proxyEnabled }),
-      });
-      if (res.ok) {
-        setConnections((prev: any[]) =>
-          prev.map((c) => (c.id === connectionId ? { ...c, proxyEnabled } : c))
-        );
-      } else {
-        const data = await res.json().catch(() => ({}));
-        notify.error(
-          (typeof data?.error === "string" && data.error) ||
-            data?.error?.message ||
-            providerText(t, "failedToggleProxy", "Failed to toggle proxy for this connection")
-        );
-      }
-    } catch (error) {
-      console.error("Error toggling proxy enabled:", error);
-      notify.error(
-        providerText(t, "failedToggleProxy", "Failed to toggle proxy for this connection")
-      );
-    }
-  };
-
-  const handleTogglePerKeyProxyEnabled = async (
-    connectionId: string,
-    perKeyProxyEnabled: boolean
-  ) => {
-    try {
-      const res = await fetch(`/api/providers/${connectionId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ perKeyProxyEnabled }),
-      });
-      if (res.ok) {
-        setConnections((prev: any[]) =>
-          prev.map((c) => (c.id === connectionId ? { ...c, perKeyProxyEnabled } : c))
-        );
-      } else {
-        const data = await res.json().catch(() => ({}));
-        notify.error(
-          (typeof data?.error === "string" && data.error) ||
-            data?.error?.message ||
-            providerText(t, "failedToggleProxy", "Failed to toggle proxy for this connection")
-        );
-      }
-    } catch (error) {
-      console.error("Error toggling per-key proxy enabled:", error);
-      notify.error(
-        providerText(t, "failedToggleProxy", "Failed to toggle proxy for this connection")
-      );
-    }
   };
 
   const handleRetestConnection = async (connectionId: string) => {
@@ -1159,113 +1002,6 @@ export function useProviderConnections(
   };
 
   // ────────────────────────────────────────────────────────────────────────
-  // Proxy distribution
-  // ────────────────────────────────────────────────────────────────────────
-
-  const handleDistributeProxies = async (tagFilter?: string) => {
-    const targetConnections = tagFilter
-      ? (connections as any[]).filter(
-          (c: any) => (c.providerSpecificData?.tag as string | undefined)?.trim() === tagFilter
-        )
-      : connections;
-    if ((targetConnections as any[]).length === 0) return;
-    setDistributingProxies(true);
-    try {
-      const proxiesRes = await fetch(resolveAisixRequestUrl("/api/settings/proxies"));
-      if (!proxiesRes.ok) throw new Error("Failed to fetch proxies");
-      const proxiesData = await proxiesRes.json();
-      const savedProxies = (proxiesData?.items || []).filter((p: any) => p.status === "active");
-      if (savedProxies.length === 0) {
-        notify.error(
-          providerText(
-            t,
-            "noSavedProxies",
-            "No saved proxies found. Add proxies in Settings → Proxy first."
-          )
-        );
-        return;
-      }
-
-      let assigned = 0;
-      let failed = 0;
-      const sorted = [...(targetConnections as any[])].sort(
-        (a: any, b: any) => (a.priority || 0) - (b.priority || 0)
-      );
-
-      for (let i = 0; i < sorted.length; i++) {
-        const conn = sorted[i] as any;
-        const proxy = savedProxies[i % savedProxies.length];
-
-        try {
-          await fetch(resolveAisixRequestUrl("/api/settings/proxies/assignments"), {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ scope: "account", scopeId: conn.id, proxyId: null }),
-          });
-        } catch {
-          /* clear old assignment */
-        }
-
-        const patchRes = await fetch(`/api/providers/${conn.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ proxyEnabled: true, perKeyProxyEnabled: true }),
-        });
-
-        if (!patchRes.ok) {
-          console.error(`Failed to update connection ${conn.id}`);
-          failed++;
-          continue;
-        }
-
-        const assignRes = await fetch(resolveAisixRequestUrl("/api/settings/proxies/assignments"), {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ scope: "account", scopeId: conn.id, proxyId: proxy.id }),
-        });
-
-        if (!assignRes.ok) {
-          console.error(`Failed to assign proxy to ${conn.id}`);
-          failed++;
-          continue;
-        }
-
-        assigned++;
-      }
-
-      await fetchConnections();
-      if (failed > 0 && assigned === 0) {
-        notify.error(providerText(t, "failedDistributeProxies", "Failed to distribute proxies."));
-        return;
-      }
-      const tagLabel = tagFilter ? `"${tagFilter}" ` : "";
-      notify.success(
-        providerText(
-          t,
-          "proxiesDistributed",
-          "Distributed {assigned} proxy assignment(s) across {tagLabel}{total} connection(s).",
-          { assigned, tagLabel, total: sorted.length }
-        )
-      );
-      if (failed > 0) {
-        notify.warning(
-          providerText(
-            t,
-            "proxiesDistributedPartial",
-            "{failed} connection(s) could not be updated.",
-            { failed }
-          )
-        );
-      }
-    } catch (err) {
-      console.error("Error distributing proxies:", err);
-      notify.error(providerText(t, "failedDistributeProxies", "Failed to distribute proxies."));
-    } finally {
-      setDistributingProxies(false);
-    }
-  };
-
-  // ────────────────────────────────────────────────────────────────────────
 
   return {
     // State
@@ -1336,7 +1072,7 @@ export function useProviderConnections(
     handleToggleSelectOne,
     handleToggleSelectAll,
 
-    // Proxy distribution
+    // Proxy distribution (owned by ./useConnectionProxies)
     handleDistributeProxies,
 
     // Helpers
