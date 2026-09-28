@@ -12,13 +12,6 @@ import {
 } from "@/shared/constants/providers";
 import { partitionNoAuthEntriesByBlocked } from "@/shared/utils/noAuthProviders";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getErrorCode, getRelativeTime } from "@/shared/utils";
-import {
-  isProviderConnectionConnected,
-  isProviderConnectionErrored,
-} from "@/shared/utils/providerConnectionStatus";
-import { pickDisplayValue } from "@/shared/utils/maskEmail";
-import useEmailPrivacyStore from "@/store/emailPrivacyStore";
 import { useNotificationStore } from "@/store/notificationStore";
 import { useTranslations } from "next-intl";
 import { useSyncedModelsByProvider } from "./hooks/useSyncedModelsByProvider";
@@ -36,6 +29,9 @@ import {
   readConnectionCount,
 } from "./providerPageUtils";
 import type { ProviderEntry, OpenRouterProviderStatsEntry } from "./providerPageUtils";
+import { createProviderStatsReader } from "./providerPageStats";
+import ProviderTestResultsView from "./components/ProviderTestResultsView";
+import { providerText } from "./[id]/providerCredentialText";
 import { OpenRouterProviderStatsProvider } from "./context/openRouterProviderStatsContext";
 import {
   shouldSyncProviderDisplayMode,
@@ -43,7 +39,6 @@ import {
   type ProviderDisplayMode,
 } from "./providerPageStorage";
 import {
-  getCodexEffectiveServiceTier,
   getCodexGlobalServiceMode,
   type CodexGlobalServiceMode,
 } from "@/lib/providers/codexFastTier";
@@ -117,96 +112,6 @@ function dedupeProviderEntries(entries: DashboardProviderEntry[]): DashboardProv
 
 function providerEntryHasFree(entry: DashboardProviderEntry): boolean {
   return entry.provider.hasFree === true;
-}
-
-type ProviderMessageTranslator = ((key: string, values?: Record<string, unknown>) => string) & {
-  has?: (key: string) => boolean;
-};
-
-function providerText(
-  t: ProviderMessageTranslator,
-  key: string,
-  fallback: string,
-  values?: Record<string, unknown>
-): string {
-  if (typeof t.has === "function" && t.has(key)) {
-    return t(key, values);
-  }
-  if (values) {
-    return Object.entries(values).reduce(
-      (acc, [name, value]) => acc.replaceAll(`{${name}}`, String(value)),
-      fallback
-    );
-  }
-  return fallback;
-}
-
-type ProviderBatchTestResult = {
-  connectionId?: string;
-  connectionName?: string;
-  provider?: string;
-  valid?: boolean;
-  latencyMs?: number;
-  diagnosis?: { type?: string };
-};
-
-type ProviderBatchTestResults = {
-  mode?: string;
-  results?: ProviderBatchTestResult[];
-  summary?: {
-    total?: number;
-    passed?: number;
-    failed?: number;
-  };
-  error?: string | { message?: string };
-};
-
-function getConnectionErrorTag(connection, t: ProviderMessageTranslator) {
-  if (!connection) return null;
-
-  const explicitType = connection.lastErrorType;
-  if (explicitType === "runtime_error") return providerText(t, "errorTypeRuntime", "Runtime");
-  if (
-    explicitType === "upstream_auth_error" ||
-    explicitType === "auth_missing" ||
-    explicitType === "token_refresh_failed" ||
-    explicitType === "token_expired"
-  ) {
-    return providerText(t, "errorTypeUpstreamAuth", "Auth");
-  }
-  if (explicitType === "upstream_rate_limited") {
-    return providerText(t, "errorTypeRateLimited", "Rate limited");
-  }
-  if (explicitType === "upstream_unavailable") {
-    return providerText(t, "errorTypeUpstreamUnavailable", "Server error");
-  }
-  if (explicitType === "network_error") {
-    return providerText(t, "errorTypeNetworkError", "Network");
-  }
-
-  const numericCode = Number(connection.errorCode);
-  if (Number.isFinite(numericCode) && numericCode >= 400) {
-    return String(numericCode);
-  }
-
-  const fromMessage = getErrorCode(connection.lastError);
-  if (fromMessage === "401" || fromMessage === "403") {
-    return providerText(t, "errorTypeUpstreamAuth", "Auth");
-  }
-  if (fromMessage && fromMessage !== "ERR") return fromMessage;
-
-  const msg = (connection.lastError || "").toLowerCase();
-  if (msg.includes("runtime") || msg.includes("not runnable") || msg.includes("not installed"))
-    return providerText(t, "errorTypeRuntime", "Runtime");
-  if (
-    msg.includes("invalid api key") ||
-    msg.includes("token invalid") ||
-    msg.includes("revoked") ||
-    msg.includes("unauthorized")
-  )
-    return providerText(t, "errorTypeUpstreamAuth", "Auth");
-
-  return "ERR";
 }
 
 // OAuth-env repair status fetch, extracted so the callback below only sets
@@ -419,101 +324,12 @@ function ProvidersPageContent() {
     }
   };
 
-  const getProviderStats = (providerId, authType) => {
-    const providerConnections = connections.filter((c) =>
-      connectionMatchesProviderCard(c, providerId, authType)
-    );
-
-    const connected = providerConnections.filter((connection) =>
-      isProviderConnectionConnected(connection)
-    ).length;
-
-    const errorConns = providerConnections.filter((connection) =>
-      isProviderConnectionErrored(connection)
-    );
-
-    const error = errorConns.length;
-    const total = providerConnections.length;
-
-    // Check if all connections are manually disabled
-    const allDisabled = total > 0 && providerConnections.every((c) => c.isActive === false);
-
-    // Get latest error info
-    const latestError = errorConns.sort(
-      (a: any, b: any) =>
-        (new Date(b.lastErrorAt || 0) as any) - (new Date(a.lastErrorAt || 0) as any)
-    )[0];
-    const errorCode = latestError ? getConnectionErrorTag(latestError, t) : null;
-    const errorTime = latestError?.lastErrorAt ? getRelativeTime(latestError.lastErrorAt) : null;
-
-    // Check expirations
-    const providerExpirations =
-      expirations?.list?.filter((e: any) => e.provider === providerId) || [];
-    const hasExpired = providerExpirations.some((e: any) => e.status === "expired");
-    const hasExpiringSoon = providerExpirations.some((e: any) => e.status === "expiring_soon");
-    let expiryStatus = null;
-    if (hasExpired) expiryStatus = "expired";
-    else if (hasExpiringSoon) expiryStatus = "expiring_soon";
-
-    const codexConnectionServiceTiers = [
-      ...new Set(
-        providerConnections
-          .map((connection) =>
-            getCodexEffectiveServiceTier(connection.providerSpecificData, "none")
-          )
-          .filter((tier) => tier !== "default")
-      ),
-    ];
-    const codexServiceTier =
-      providerId === "codex"
-        ? codexGlobalServiceMode !== "none"
-          ? codexGlobalServiceMode
-          : codexConnectionServiceTiers.length === 1
-            ? codexConnectionServiceTiers[0]
-            : null
-        : null;
-
-    // Count API keys in "warning" state across all connections, and (#10261)
-    // aggregate a SANITIZED reasons summary (max failure count + most recent
-    // failure time — never the raw upstream error text) so the warning badge
-    // can expose why connections are flagged instead of a bare count.
-    let warningMaxFailures = 0;
-    let warningLatestFailureAt: string | null = null;
-    const warning = providerConnections.reduce((warnCount, conn) => {
-      const health = (conn as any).providerSpecificData?.apiKeyHealth as
-        | Record<string, { status: string; failures?: number; lastFailure?: string | null }>
-        | undefined;
-      if (!health) return warnCount;
-      const warningEntries = Object.values(health).filter((h) => h.status === "warning");
-      for (const entry of warningEntries) {
-        warningMaxFailures = Math.max(warningMaxFailures, entry.failures ?? 0);
-        if (
-          entry.lastFailure &&
-          (!warningLatestFailureAt || entry.lastFailure > warningLatestFailureAt)
-        ) {
-          warningLatestFailureAt = entry.lastFailure;
-        }
-      }
-      return warnCount + warningEntries.length;
-    }, 0);
-    const warningLastFailureRelative = warningLatestFailureAt
-      ? getRelativeTime(warningLatestFailureAt)
-      : null;
-
-    return {
-      connected,
-      error,
-      warning,
-      warningMaxFailures,
-      warningLastFailureRelative,
-      total,
-      errorCode,
-      errorTime,
-      allDisabled,
-      expiryStatus,
-      codexServiceTier,
-    };
-  };
+  const getProviderStats = createProviderStatsReader({
+    connections,
+    expirations,
+    codexGlobalServiceMode,
+    t,
+  });
 
   // Toggle all connections for a provider on/off
   const handleToggleProvider = async (providerId: string, authType: string, newActive: boolean) => {
@@ -2084,107 +1900,5 @@ export default function ProvidersPage() {
     <Suspense fallback={null}>
       <ProvidersPageContent />
     </Suspense>
-  );
-}
-
-// ─── Provider Test Results View (mirrors combo TestResultsView) ──────────────
-
-function ProviderTestResultsView({ results }: { results: ProviderBatchTestResults }) {
-  const t = useTranslations("providers");
-  const tc = useTranslations("common");
-  const emailsVisible = useEmailPrivacyStore((s) => s.emailsVisible);
-
-  // Guard: never crash on malformed/null results (would trigger error boundary)
-  if (!results || typeof results !== "object") {
-    return null;
-  }
-
-  if (results.error && (!results.results || results.results.length === 0)) {
-    return (
-      <div className="text-center py-6">
-        <span className="material-symbols-outlined text-red-500 text-[32px] mb-2 block">error</span>
-        <p className="text-sm text-red-400">
-          {typeof results.error === "object"
-            ? results.error?.message || JSON.stringify(results.error)
-            : String(results.error)}
-        </p>
-      </div>
-    );
-  }
-
-  const summary = results.summary ?? null;
-  const mode = results.mode ?? "";
-  const items = Array.isArray(results.results) ? results.results : [];
-
-  const modeLabel =
-    {
-      oauth: t("oauthLabel"),
-      free: tc("free"),
-      apikey: t("apiKeyLabel"),
-      compatible: t("compatibleLabel"),
-      provider: t("providerLabel"),
-      all: tc("all"),
-    }[mode] || mode;
-
-  return (
-    <div className="flex flex-col gap-3">
-      {/* Summary header */}
-      {summary && (
-        <div className="flex items-center gap-3 text-xs mb-1">
-          <span className="text-text-muted">{t("modeTest", { mode: modeLabel })}</span>
-          <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-medium">
-            {t("passedCount", { count: summary.passed })}
-          </span>
-          {summary.failed > 0 && (
-            <span className="px-2 py-0.5 rounded bg-red-500/15 text-red-400 font-medium">
-              {t("failedCount", { count: summary.failed })}
-            </span>
-          )}
-          <span className="text-text-muted ml-auto">
-            {t("testedCount", { count: summary.total })}
-          </span>
-        </div>
-      )}
-
-      {/* Individual results */}
-      {items.map((r, i) => (
-        <div
-          key={r.connectionId || i}
-          className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-black/[0.03] dark:bg-white/[0.03]"
-        >
-          <span
-            className={`material-symbols-outlined text-[16px] ${
-              r.valid ? "text-emerald-500" : "text-red-500"
-            }`}
-          >
-            {r.valid ? "check_circle" : "error"}
-          </span>
-          <div className="flex-1 min-w-0">
-            <span className="font-medium">
-              {pickDisplayValue([r.connectionName], emailsVisible, r.connectionName)}
-            </span>
-            <span className="text-text-muted ml-1.5">({r.provider})</span>
-          </div>
-          {r.latencyMs !== undefined && (
-            <span className="text-text-muted font-mono tabular-nums">
-              {t("millisecondsAbbr", { value: r.latencyMs })}
-            </span>
-          )}
-          <span
-            className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${
-              r.valid ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"
-            }`}
-          >
-            {r.valid ? t("okShort") : r.diagnosis?.type || t("errorShort")}
-          </span>
-        </div>
-      ))}
-
-      {items.length === 0 && (
-        <div className="text-center py-4 text-text-muted text-sm">
-          {t("noActiveConnectionsInGroup")}
-        </div>
-      )}
-    </div>
   );
 }

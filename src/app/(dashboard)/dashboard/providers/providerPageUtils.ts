@@ -256,6 +256,28 @@ export function connectionBelongsToProviderPage(
   return getProviderConnectionFamilyIds(providerId).includes(connectionProvider);
 }
 
+/**
+ * The native admin plane has shipped more than one envelope for these two
+ * collections (`{connections:[…]}`, `{data:[…]}`, `{keys:[…]}` /
+ * `{nodes:[…]}`, `{models:[…]}`). Reading only one key is how a reachable
+ * admin plane ends up rendering as "0 connections" — mirror the tolerant
+ * shape resolution in `loadProviderPageData` so both dashboards agree.
+ *
+ * Lives here rather than in the detail-page hook because the connection read
+ * and the proxy-assignment read both resolve their own field lists through it,
+ * and a second copy would be free to drift from the first.
+ */
+export function readNativeList(payload: unknown, fields: readonly string[]): any[] {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+  const record = payload as Record<string, unknown>;
+  for (const field of fields) {
+    const candidate = record[field];
+    if (Array.isArray(candidate)) return candidate;
+  }
+  return [];
+}
+
 export function resolveProviderOAuthBackendId(
   providerId: string,
   provider: { oauthProviderId?: unknown } | null | undefined
