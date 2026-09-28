@@ -78,7 +78,7 @@ function fail(message) {
   console.error(`[docs-sync] FAIL - ${message}`);
 }
 
-function checkI18nMirrorFile(fileName, sourcePath) {
+function checkI18nMirrorFile(fileName, sourcePath, fixHint) {
   if (!fs.existsSync(i18nDocsPath)) {
     fail("docs/i18n directory is missing");
     return;
@@ -106,7 +106,7 @@ function checkI18nMirrorFile(fileName, sourcePath) {
     }
 
     if (normalizeMirrorBody(body) !== sourceBody) {
-      fail(`docs/i18n/${locale}/${fileName} differs from root ${fileName}`);
+      fail(`docs/i18n/${locale}/${fileName} differs from root ${fileName}${fixHint}`);
       continue;
     }
 
@@ -243,8 +243,10 @@ try {
     }
   }
 
-  // llm.txt mirrors must be exact copies (no translation)
-  checkI18nMirrorFile("llm.txt", llmPath);
+  // llm.txt mirrors must be exact copies (no translation). The hint is the point:
+  // a red gate that does not name its fix is the trap. The mirrors are
+  // regenerated, never hand-edited — the pre-commit hook now does it for you.
+  checkI18nMirrorFile("llm.txt", llmPath, " — run `npm run i18n:sync-llm-mirrors`");
   // CHANGELOG.md mirrors are translations — check version sections and size, not exact content
   checkI18nChangelogFile(changelogPath);
 

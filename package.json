@@ -172,6 +172,7 @@
     "i18n:check-ratio": "node scripts/i18n/check-translation-ratio.mjs",
     "i18n:check-ratio:update": "node scripts/i18n/check-translation-ratio.mjs --update",
     "i18n:sync-bars": "node scripts/i18n/sync-language-bars.mjs",
+    "i18n:sync-llm-mirrors": "node scripts/i18n/sync-llm-mirrors.mjs",
     "i18n:add-locale": "node scripts/i18n/add-locale.mjs",
     "check:native-deps": "node scripts/check/check-native-deps.mjs",
     "check:node-runtime": "node --import tsx scripts/check/check-supported-node-runtime.ts",
