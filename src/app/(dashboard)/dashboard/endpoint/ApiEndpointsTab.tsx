@@ -344,7 +344,7 @@ export default function ApiEndpointsTab() {
             </div>
             <div className="flex items-center gap-2">
               <a
-                href="/docs/openapi.yaml"
+                href="/openapi.yaml"
                 download
                 className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg
                            bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
