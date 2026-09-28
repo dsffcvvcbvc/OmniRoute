@@ -18,6 +18,39 @@ export interface ApiKeyShape {
   modelAccessMode?: "all" | "restricted" | null;
 }
 
+export const MAX_KEY_NAME_LENGTH = 200;
+
+// Sanitize user input to prevent XSS
+export function sanitizeInput(input: string): string {
+  return input
+    .replace(/[<>]/g, "")
+    .replace(/"/g, "")
+    .replace(/'/g, "")
+    .trim()
+    .slice(0, MAX_KEY_NAME_LENGTH);
+}
+
+// Validate key name
+export function validateKeyName(
+  name: string,
+  t: (key: string, values?: Record<string, unknown>) => string
+): { valid: boolean; error?: string } {
+  if (!name || !name.trim()) {
+    return { valid: false, error: t("keyNameRequired") };
+  }
+  if (name.length > MAX_KEY_NAME_LENGTH) {
+    return { valid: false, error: t("keyNameTooLong", { max: MAX_KEY_NAME_LENGTH }) };
+  }
+  // Allow Unicode letters (accented chars), numbers, spaces, hyphens, underscores
+  if (!/^[\p{L}\p{N}_\-\s]+$/u.test(name)) {
+    return {
+      valid: false,
+      error: t("keyNameInvalid"),
+    };
+  }
+  return { valid: true };
+}
+
 export function isKeyActive(k: ApiKeyShape): boolean {
   if (k.isBanned === true) return false;
   if (k.isActive === false) return false;

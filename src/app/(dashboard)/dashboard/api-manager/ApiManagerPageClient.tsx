@@ -20,6 +20,9 @@ import {
   restoreProviderScopeSelection,
   toLocalDateTimeInputValue,
   toggleKeyVisibility,
+  MAX_KEY_NAME_LENGTH,
+  sanitizeInput,
+  validateKeyName,
 } from "./apiManagerPageUtils";
 import type { KeyStatus, KeyType } from "./apiManagerPageUtils";
 import { readActiveOnlyPreference, writeActiveOnlyPreference } from "./apiManagerPageStorage";
@@ -27,6 +30,7 @@ import { buildApiKeyCreateScopes, mergeApiKeyPermissionScopes } from "./apiManag
 import { SELF_ACCOUNT_QUOTA_SCOPE, SELF_USAGE_SCOPE } from "@/shared/constants/selfServiceScopes";
 import { extractApiErrorMessage } from "@/shared/http/apiErrorMessage";
 import { hasProviderQuotaBypassScope } from "@/shared/constants/apiKeyPolicyScopes";
+import { AddApiKeyModal } from "./components/AddApiKeyModal";
 import { UsageLimitSettings } from "./components/UsageLimitSettings";
 import { ChaosModeAccessToggle } from "./components/ChaosModeAccessToggle";
 import { BypassProviderQuotaToggle } from "./components/BypassProviderQuotaToggle";
@@ -51,8 +55,6 @@ import {
 import { readComboList, readNamedCombos } from "@/shared/utils/aisixCombos";
 import { useNotificationStore } from "@/store/notificationStore";
 
-// Constants for validation
-const MAX_KEY_NAME_LENGTH = 200;
 const MAX_SELECTED_MODELS = 500;
 const CLAUDE_CODE_DEFAULT_MODEL_ID = "cc/*";
 const CLAUDE_CODE_DEFAULT_MODEL_NAME = "Claude Code default";
@@ -85,37 +87,6 @@ function useDebouncedValue<T>(value: T, delay: number): T {
   }, [value, delay]);
 
   return debouncedValue;
-}
-
-// Sanitize user input to prevent XSS
-function sanitizeInput(input: string): string {
-  return input
-    .replace(/[<>]/g, "")
-    .replace(/"/g, "")
-    .replace(/'/g, "")
-    .trim()
-    .slice(0, MAX_KEY_NAME_LENGTH);
-}
-
-// Validate key name
-function validateKeyName(
-  name: string,
-  t: (key: string, values?: Record<string, unknown>) => string
-): { valid: boolean; error?: string } {
-  if (!name || !name.trim()) {
-    return { valid: false, error: t("keyNameRequired") };
-  }
-  if (name.length > MAX_KEY_NAME_LENGTH) {
-    return { valid: false, error: t("keyNameTooLong", { max: MAX_KEY_NAME_LENGTH }) };
-  }
-  // Allow Unicode letters (accented chars), numbers, spaces, hyphens, underscores
-  if (!/^[\p{L}\p{N}_\-\s]+$/u.test(name)) {
-    return {
-      valid: false,
-      error: t("keyNameInvalid"),
-    };
-  }
-  return { valid: true };
 }
 
 interface AccessSchedule {
@@ -711,6 +682,34 @@ export default function ApiManagerPageClient() {
     setActiveOnly(false);
     setStatusFilter(null);
     setTypeFilter(null);
+  };
+
+  // The create-key form holds no state of its own; these three handlers are the
+  // draft's contract with the modal, kept here so the refs above (which the
+  // validation-failure scroll effect needs) stay in one scope.
+  const resetAddKeyForm = () => {
+    setShowAddModal(false);
+    setNewKeyName("");
+    setNewKeyManageEnabled(false);
+    setNewKeySelfUsageEnabled(true);
+    setNewKeyAccountQuotaEnabled(false);
+    setNewKeyAllowUsageCommand(false);
+    setNameError(null);
+    setCreateError(null);
+  };
+
+  const handleNewKeyNameChange = (value: string) => {
+    setNewKeyName(value);
+    setNameError(null);
+  };
+
+  // Account-quota visibility is meaningless without own-usage visibility, so
+  // turning own-usage off drops it rather than leaving an unreachable grant.
+  const handleNewKeySelfUsageToggle = () => {
+    setNewKeySelfUsageEnabled((prev) => {
+      if (prev) setNewKeyAccountQuotaEnabled(false);
+      return !prev;
+    });
   };
 
   const handleCreateKey = async () => {
@@ -1622,166 +1621,27 @@ export default function ApiManagerPageClient() {
       </Card>
 
       {/* Add Key Modal */}
-      <Modal
+      <AddApiKeyModal
         isOpen={showAddModal}
-        title={t("createKey")}
-        bodyClassName="p-6 max-h-[calc(100vh-150px)] overflow-y-auto"
-        onClose={() => {
-          setShowAddModal(false);
-          setNewKeyName("");
-          setNewKeyManageEnabled(false);
-          setNewKeySelfUsageEnabled(true);
-          setNewKeyAccountQuotaEnabled(false);
-          setNewKeyAllowUsageCommand(false);
-          setNameError(null);
-          setCreateError(null);
-        }}
-      >
-        <div ref={createKeyFormRef} className="flex flex-col gap-4">
-          <div ref={createKeyNameFieldRef}>
-            <label className="text-sm font-medium text-text-main mb-1.5 block">
-              {t("keyName")}
-            </label>
-            <Input
-              id={newKeyNameInputId}
-              value={newKeyName}
-              onChange={(e) => {
-                setNewKeyName(e.target.value);
-                setNameError(null);
-              }}
-              placeholder={t("keyNamePlaceholder")}
-              maxLength={MAX_KEY_NAME_LENGTH}
-              error={nameError}
-              autoFocus
-            />
-            <p className="text-xs text-text-muted mt-1.5">{t("keyNameDesc")}</p>
-          </div>
-          <div className="flex items-start justify-between gap-3 p-3 rounded-lg border border-border bg-surface/40">
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium text-text-main">{t("managementAccess")}</p>
-              <p className="text-xs text-text-muted">{t("managementAccessDesc")}</p>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={newKeyManageEnabled}
-              onClick={() => setNewKeyManageEnabled((prev) => !prev)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors shrink-0 ${
-                newKeyManageEnabled
-                  ? "bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
-                  : "bg-black/5 dark:bg-white/5 text-text-muted border border-border"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[14px]">admin_panel_settings</span>
-              {newKeyManageEnabled ? tc("enabled") : tc("disabled")}
-            </button>
-          </div>
-          <div className="flex flex-col gap-3 p-3 rounded-lg border border-border bg-surface/40">
-            <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium text-text-main">{t("selfServiceVisibility")}</p>
-              <p className="text-xs text-text-muted">{t("selfServiceVisibilityDesc")}</p>
-            </div>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex flex-col gap-1">
-                <p className="text-sm text-text-main">{t("ownUsageVisibility")}</p>
-                <p className="text-xs text-text-muted">{t("ownUsageVisibilityDesc")}</p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={newKeySelfUsageEnabled}
-                onClick={() =>
-                  setNewKeySelfUsageEnabled((prev) => {
-                    if (prev) setNewKeyAccountQuotaEnabled(false);
-                    return !prev;
-                  })
-                }
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors shrink-0 ${
-                  newKeySelfUsageEnabled
-                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
-                    : "bg-black/5 dark:bg-white/5 text-text-muted border border-border"
-                }`}
-              >
-                <span className="material-symbols-outlined text-[14px]">query_stats</span>
-                {newKeySelfUsageEnabled ? tc("enabled") : tc("disabled")}
-              </button>
-            </div>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex flex-col gap-1">
-                <p className="text-sm text-text-main">{t("sharedAccountQuotaVisibility")}</p>
-                <p className="text-xs text-text-muted">{t("sharedAccountQuotaVisibilityDesc")}</p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={newKeyAccountQuotaEnabled}
-                disabled={!newKeySelfUsageEnabled}
-                onClick={() => setNewKeyAccountQuotaEnabled((prev) => !prev)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors shrink-0 ${
-                  newKeyAccountQuotaEnabled
-                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30"
-                    : "bg-black/5 dark:bg-white/5 text-text-muted border border-border"
-                } ${!newKeySelfUsageEnabled ? "opacity-50 cursor-not-allowed" : ""}`}
-              >
-                <span className="material-symbols-outlined text-[14px]">account_balance</span>
-                {newKeyAccountQuotaEnabled ? tc("enabled") : tc("disabled")}
-              </button>
-            </div>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex flex-col gap-1">
-                <p className="text-sm text-text-main">{t("localUsageCommand")}</p>
-                <p className="text-xs text-text-muted">{t("localUsageCommandDesc")}</p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={newKeyAllowUsageCommand}
-                onClick={() => setNewKeyAllowUsageCommand((prev) => !prev)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors shrink-0 ${
-                  newKeyAllowUsageCommand
-                    ? "bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30"
-                    : "bg-black/5 dark:bg-white/5 text-text-muted border border-border"
-                }`}
-              >
-                <span className="material-symbols-outlined text-[14px]">terminal</span>
-                {newKeyAllowUsageCommand ? tc("enabled") : tc("disabled")}
-              </button>
-            </div>
-          </div>
-          {createError && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30">
-              <span className="material-symbols-outlined text-red-500 text-sm">error</span>
-              <p className="text-sm text-red-700 dark:text-red-300 flex-1">{createError}</p>
-            </div>
-          )}
-          <div className="flex gap-2">
-            <Button
-              onClick={() => {
-                setShowAddModal(false);
-                setNewKeyName("");
-                setNewKeyManageEnabled(false);
-                setNewKeySelfUsageEnabled(true);
-                setNewKeyAccountQuotaEnabled(false);
-                setNewKeyAllowUsageCommand(false);
-                setNameError(null);
-                setCreateError(null);
-              }}
-              variant="ghost"
-              fullWidth
-            >
-              {tc("cancel")}
-            </Button>
-            <Button
-              onClick={handleCreateKey}
-              fullWidth
-              disabled={!newKeyName.trim()}
-              loading={isSubmitting}
-            >
-              {t("createKey")}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        isSubmitting={isSubmitting}
+        name={newKeyName}
+        nameError={nameError}
+        createError={createError}
+        manageEnabled={newKeyManageEnabled}
+        selfUsageEnabled={newKeySelfUsageEnabled}
+        accountQuotaEnabled={newKeyAccountQuotaEnabled}
+        usageCommandEnabled={newKeyAllowUsageCommand}
+        nameInputId={newKeyNameInputId}
+        formRef={createKeyFormRef}
+        nameFieldRef={createKeyNameFieldRef}
+        onClose={resetAddKeyForm}
+        onNameChange={handleNewKeyNameChange}
+        onManageToggle={() => setNewKeyManageEnabled((prev) => !prev)}
+        onSelfUsageToggle={handleNewKeySelfUsageToggle}
+        onAccountQuotaToggle={() => setNewKeyAccountQuotaEnabled((prev) => !prev)}
+        onUsageCommandToggle={() => setNewKeyAllowUsageCommand((prev) => !prev)}
+        onSubmit={handleCreateKey}
+      />
 
       {/* Created Key Modal */}
       <Modal isOpen={!!createdKey} title={t("keyCreated")} onClose={() => setCreatedKey(null)}>
