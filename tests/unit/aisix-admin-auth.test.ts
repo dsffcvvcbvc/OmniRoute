@@ -17,6 +17,7 @@ import {
   classifyAisixAdminStatus,
   exchangeAdminKeyForSession,
   getAisixSessionEpoch,
+  getAisixSessionState,
   isAisixAdminUrl,
   isAisixSignedOut,
   noteAisixAdminStatus,
@@ -34,9 +35,10 @@ interface Recorded {
   init: RequestInit;
 }
 
-function stubFetch(
-  handler: (url: string, init: RequestInit) => Response | Promise<Response>
-): { calls: Recorded[]; restore: () => void } {
+function stubFetch(handler: (url: string, init: RequestInit) => Response | Promise<Response>): {
+  calls: Recorded[];
+  restore: () => void;
+} {
   const calls: Recorded[] = [];
   const original = globalThis.fetch;
   globalThis.fetch = (async (input: RequestInfo | URL, init: RequestInit = {}) => {
@@ -44,7 +46,12 @@ function stubFetch(
     calls.push({ url, init });
     return handler(url, init);
   }) as unknown as typeof fetch;
-  return { calls, restore: () => { globalThis.fetch = original; } };
+  return {
+    calls,
+    restore: () => {
+      globalThis.fetch = original;
+    },
+  };
 }
 
 function json(body: unknown, status = 200, headers: Record<string, string> = {}): Response {
@@ -315,7 +322,6 @@ describe("exchangeAdminKeyForSession — the 204/401/400/403 contract", () => {
     const wire = stub.calls[0].init.body;
     const body: unknown = JSON.parse(typeof wire === "string" ? wire : String(wire));
     assert.deepEqual(Object.keys(body as Record<string, unknown>), ["admin_key"]);
-
   });
 
   test("401 is 'unauthorized' and carries the server's own message", async () => {
@@ -479,5 +485,129 @@ describe("requestAdminLogin — the per-surface action", () => {
     // The 401 state belongs to the surface that observed the 401; a button press
     // is not evidence of anything about the credential.
     assert.equal(isAisixSignedOut(), false);
+  });
+});
+
+/**
+ * The three-valued session state.
+ *
+ * `signedOut` alone cannot separate "this browser never had a credential" from
+ * "this browser's credential stopped working", and the dashboard told the first
+ * one that their session had ended. These cases pin the evidence each state
+ * requires, so the two cannot be collapsed again without a test going red.
+ */
+describe("getAisixSessionState — never-signed-in is not an ended session", () => {
+  test("a page load that has only ever been refused is anonymous, not ended", async () => {
+    const stub = stubFetch(() => json({ error_msg: "unauthorized" }, 401));
+    try {
+      await aisixAdminFetch(MODELS_URL);
+    } finally {
+      stub.restore();
+    }
+    // `isAisixSignedOut()` is true — and that is still correct: there is no
+    // usable session. What must not follow is a claim that one existed.
+    assert.equal(isAisixSignedOut(), true);
+    assert.equal(getAisixSessionState(), "anonymous");
+  });
+
+  test("a 2xx admin read is what turns anonymous into active", async () => {
+    const stub = stubFetch(() => json({ models: [] }));
+    try {
+      await aisixAdminFetch(MODELS_URL);
+    } finally {
+      stub.restore();
+    }
+    assert.equal(getAisixSessionState(), "active");
+  });
+
+  test("a 401 AFTER a successful read is an ended session", async () => {
+    // The reload case: the exchange that set the cookie is history, and the
+    // cookie is HttpOnly, so a successful read is the only surviving evidence
+    // that a session existed. Without it this lands on "anonymous" and the
+    // operator is never told their real session lapsed.
+    const ok = stubFetch(() => json({ models: [] }));
+    try {
+      await aisixAdminFetch(MODELS_URL);
+    } finally {
+      ok.restore();
+    }
+    const refused = stubFetch(() => json({ error_msg: "unauthorized" }, 401));
+    try {
+      await aisixAdminFetch(MODELS_URL);
+    } finally {
+      refused.restore();
+    }
+    assert.equal(getAisixSessionState(), "ended");
+  });
+
+  test("an explicit sign-out is ended, because it proves a session existed", async () => {
+    const stub = stubFetch(() => noContent(204));
+    try {
+      await revokeAdminSession();
+    } finally {
+      stub.restore();
+    }
+    assert.equal(getAisixSessionState(), "ended");
+  });
+
+  test("a successful exchange is active", async () => {
+    const stub = stubFetch((url) => (url === SESSION_URL ? noContent(204) : json({ models: [] })));
+    try {
+      const outcome = await exchangeAdminKeyForSession("key");
+      assert.equal(outcome.ok, true);
+    } finally {
+      stub.restore();
+    }
+    assert.equal(getAisixSessionState(), "active");
+  });
+
+  test("an UNAUTHENTICATED endpoint cannot invent a session", async () => {
+    // /livez and /readyz sit on the admin base but answer 200 to anyone. If a
+    // 200 from them counted as proof of a credential, every dashboard would
+    // read as `active` and the next 401 would be reported as a lost session for
+    // an operator who never had one — the exact bug, reintroduced one layer down.
+    const stub = stubFetch(() => noContent(200));
+    try {
+      await aisixAdminFetch(`${ADMIN}/livez`);
+    } finally {
+      stub.restore();
+    }
+    assert.equal(getAisixSessionState(), "anonymous");
+  });
+
+  test("a 5xx does not create or end a session", async () => {
+    const stub = stubFetch(() => json({ error_msg: "boom" }, 500));
+    try {
+      await aisixAdminFetch(MODELS_URL);
+    } finally {
+      stub.restore();
+    }
+    // An unhealthy gateway is neither a credential nor its absence; classifying
+    // it either way sends the operator to the wrong fix.
+    assert.equal(getAisixSessionState(), "anonymous");
+  });
+
+  test("re-signing in after an ended session returns to active", async () => {
+    const first = stubFetch(() => json({ models: [] }));
+    try {
+      await aisixAdminFetch(MODELS_URL);
+    } finally {
+      first.restore();
+    }
+    const refused = stubFetch(() => json({ error_msg: "unauthorized" }, 401));
+    try {
+      await aisixAdminFetch(MODELS_URL);
+    } finally {
+      refused.restore();
+    }
+    assert.equal(getAisixSessionState(), "ended");
+
+    const again = stubFetch((url) => (url === SESSION_URL ? noContent(204) : json({ models: [] })));
+    try {
+      await exchangeAdminKeyForSession("key");
+    } finally {
+      again.restore();
+    }
+    assert.equal(getAisixSessionState(), "active");
   });
 });

@@ -10,7 +10,13 @@ type ProviderMessageTranslator = ((key: string, values?: Record<string, unknown>
 };
 
 type SummaryStat = {
-  configured: number;
+  /**
+   * Connections configured in this category, or `null` when the admin plane
+   * refused the read. `null` renders as a dash: the category filter chips must
+   * not claim an operator has configured nothing just because the page was not
+   * allowed to look.
+   */
+  configured: number | null;
   total: number;
 };
 
@@ -270,7 +276,7 @@ export default function ProviderSummaryCard({
                 {cat.color && <CategoryDot color={cat.color} label={cat.label} />}
                 <span>{cat.label}</span>
                 <span className={`text-[11px] ${isActive ? "text-white/80" : "text-text-muted"}`}>
-                  {cat.stat.configured}
+                  {cat.stat.configured === null ? "—" : cat.stat.configured}
                   <span className="opacity-70">/{cat.stat.total}</span>
                 </span>
               </button>

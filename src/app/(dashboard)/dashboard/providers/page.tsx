@@ -86,9 +86,21 @@ type DashboardProviderInfo = {
 
 type DashboardProviderEntry = ProviderEntry<DashboardProviderInfo>;
 
-function countConfigured<T>(entries: ProviderEntry<T>[]) {
+/**
+ * "How many of these providers are configured" — or `null` when that was never
+ * answered.
+ *
+ * The number is a count of CONNECTIONS, and connections are only knowable from
+ * the admin plane. When the admin plane refuses, the count is not zero: it is
+ * unknown, and `0` would assert that the operator configured nothing on a
+ * gateway whose configuration the page was not allowed to read. `null` is what
+ * lets the badge say "—/N" instead of making that claim.
+ */
+function countConfigured<T>(entries: ProviderEntry<T>[], withheld: boolean) {
   return {
-    configured: entries.filter((entry) => Number(entry.stats?.total || 0) > 0).length,
+    configured: withheld
+      ? null
+      : entries.filter((entry) => Number(entry.stats?.total || 0) > 0).length,
     total: entries.length,
   };
 }
@@ -886,20 +898,20 @@ function ProvidersPageContent() {
   });
 
   const summaryStats = {
-    all: countConfigured(dashboardProviderEntriesAll),
-    free: countConfigured(freeSectionEntriesAll),
-    noauth: countConfigured(noAuthEntriesAll),
-    oauth: countConfigured(oauthOnlyEntriesAll),
-    apikey: countConfigured(apiKeyProviderEntriesAll),
-    compatible: countConfigured(compatibleProviderEntriesAll),
-    webcookie: countConfigured(webCookieProviderEntriesAll),
-    search: countConfigured(searchProviderEntriesAll),
-    audio: countConfigured(audioProviderEntriesAll),
-    local: countConfigured(localProviderEntriesAll),
-    upstreamproxy: countConfigured(upstreamProxyEntriesAll),
-    cloudagent: countConfigured(cloudAgentProviderEntriesAll),
-    ide: countConfigured(ideProviderEntriesAll),
-    webfetch: countConfigured(webFetchEntriesAll),
+    all: countConfigured(dashboardProviderEntriesAll, adminDenied),
+    free: countConfigured(freeSectionEntriesAll, adminDenied),
+    noauth: countConfigured(noAuthEntriesAll, adminDenied),
+    oauth: countConfigured(oauthOnlyEntriesAll, adminDenied),
+    apikey: countConfigured(apiKeyProviderEntriesAll, adminDenied),
+    compatible: countConfigured(compatibleProviderEntriesAll, adminDenied),
+    webcookie: countConfigured(webCookieProviderEntriesAll, adminDenied),
+    search: countConfigured(searchProviderEntriesAll, adminDenied),
+    audio: countConfigured(audioProviderEntriesAll, adminDenied),
+    local: countConfigured(localProviderEntriesAll, adminDenied),
+    upstreamproxy: countConfigured(upstreamProxyEntriesAll, adminDenied),
+    cloudagent: countConfigured(cloudAgentProviderEntriesAll, adminDenied),
+    ide: countConfigured(ideProviderEntriesAll, adminDenied),
+    webfetch: countConfigured(webFetchEntriesAll, adminDenied),
   };
   if (loading) {
     return (
@@ -910,8 +922,15 @@ function ProvidersPageContent() {
     );
   }
 
+  // "Add your first provider" is a statement about the operator's configuration,
+  // and it is derived from the connection count. With the admin plane refusing
+  // there is no count to derive it from, so the hint is suppressed rather than
+  // shown on top of a page that is also saying "we could not read your
+  // configuration" — two claims, one of which is now known to be unverified.
   const showFirstProviderHint =
-    shouldShowFirstProviderHint(connections.length, searchQuery) && !showAllProviders;
+    !adminDenied &&
+    shouldShowFirstProviderHint(connections.length, searchQuery) &&
+    !showAllProviders;
 
   return (
     <OpenRouterProviderStatsProvider entries={openRouterProviderStats ?? []}>
@@ -1038,35 +1057,40 @@ function ProvidersPageContent() {
               <span>{providerText(t, "noProvidersMatch", "No providers match your search.")}</span>
             </div>
           )
-        ) : adminDenied ? (
-          /* The admin plane answered 401/403. Rendering the sections below would
-             draw "this gateway has no providers", which is a claim about the
-             operator's configuration that a refused read cannot support. */
-          <div
-            className="flex flex-wrap items-center gap-3 py-6 px-4 border border-dashed border-amber-500/40 rounded-xl text-sm"
-            data-testid="providers-admin-denied"
-            role="status"
-          >
-            <span className="material-symbols-outlined text-[18px] text-amber-500">lock</span>
-            <span className="text-text-main flex-1 min-w-[240px]">
-              {providerText(
-                t,
-                "aisixAdminKeyRequired",
-                "The gateway answered 401: this list needs an admin session. The providers below are withheld, not empty."
-              )}
-            </span>
-            <Button
-              size="sm"
-              variant="primary"
-              icon="login"
-              onClick={requestAdminLogin}
-              data-testid="providers-sign-in"
-            >
-              {providerText(t, "adminAuthSignIn", "Sign in")}
-            </Button>
-          </div>
         ) : (
           <>
+            {/* The admin plane answered 401/403. This banner is ADDITIVE, not a
+                replacement: the catalog below is a static registry that needs no
+                session, so withholding it would hide state the refusal does not
+                contradict. What the refusal actually withholds is the
+                CONNECTIONS data — the configured counts — and those are drawn as
+                "—" for exactly that reason. (Compact mode already worked this
+                way, which is why this only ever aligned the two.) */}
+            {adminDenied && (
+              <div
+                className="flex flex-wrap items-center gap-3 py-6 px-4 border border-dashed border-amber-500/40 rounded-xl text-sm"
+                data-testid="providers-admin-denied"
+                role="status"
+              >
+                <span className="material-symbols-outlined text-[18px] text-amber-500">lock</span>
+                <span className="text-text-main flex-1 min-w-[240px]">
+                  {providerText(
+                    t,
+                    "aisixAdminKeyRequired",
+                    "The gateway answered 401: this list needs an admin session. The providers below are withheld, not empty."
+                  )}
+                </span>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  icon="login"
+                  onClick={requestAdminLogin}
+                  data-testid="providers-sign-in"
+                >
+                  {providerText(t, "adminAuthSignIn", "Sign in")}
+                </Button>
+              </div>
+            )}
             {/* API Key Compatible Providers — dynamic (OpenAI/Anthropic compatible) */}
             {showSection("compatible") && (
               <div className="flex flex-col gap-4">
@@ -1077,7 +1101,9 @@ function ProvidersPageContent() {
                       className="size-2.5 rounded-full bg-orange-500"
                       title={t("compatibleLabel")}
                     />
-                    <ProviderCountBadge {...countConfigured(compatibleProviderEntriesAll)} />
+                    <ProviderCountBadge
+                      {...countConfigured(compatibleProviderEntriesAll, adminDenied)}
+                    />
                   </h2>
                   <div className="flex flex-wrap gap-2">
                     {(compatibleProviders.length > 0 ||
@@ -1160,7 +1186,8 @@ function ProvidersPageContent() {
                     <span className="size-2.5 rounded-full bg-blue-500" title={t("oauthLabel")} />
                     <ProviderCountBadge
                       {...countConfigured(
-                        oauthProviderEntriesAll.filter((e) => !IDE_PROVIDER_IDS.has(e.providerId))
+                        oauthProviderEntriesAll.filter((e) => !IDE_PROVIDER_IDS.has(e.providerId)),
+                        adminDenied
                       )}
                     />
                   </h2>
@@ -1233,7 +1260,7 @@ function ProvidersPageContent() {
                       className="size-2.5 rounded-full bg-cyan-500"
                       title={t("ideProviders") || "IDE Providers"}
                     />
-                    <ProviderCountBadge {...countConfigured(ideProviderEntriesAll)} />
+                    <ProviderCountBadge {...countConfigured(ideProviderEntriesAll, adminDenied)} />
                   </h2>
                   <button
                     onClick={() => handleBatchTest("ide")}
@@ -1293,7 +1320,9 @@ function ProvidersPageContent() {
                       className="size-2.5 rounded-full bg-purple-500"
                       title={t("webCookieProviders")}
                     />
-                    <ProviderCountBadge {...countConfigured(webCookieProviderEntriesAll)} />
+                    <ProviderCountBadge
+                      {...countConfigured(webCookieProviderEntriesAll, adminDenied)}
+                    />
                   </h2>
                   <button
                     onClick={() => handleBatchTest("web-cookie")}
@@ -1341,7 +1370,9 @@ function ProvidersPageContent() {
                     <h2 className="text-xl font-semibold flex items-center gap-2">
                       {t("freeTierProviders")}
                       <CategoryDot color="bg-green-500" label={t("freeTierLabel")} />
-                      <ProviderCountBadge {...countConfigured(freeSectionEntriesAll)} />
+                      <ProviderCountBadge
+                        {...countConfigured(freeSectionEntriesAll, adminDenied)}
+                      />
                     </h2>
                     <p className="text-sm text-text-muted mt-1">{t("freeAggregated")}</p>
                   </div>
@@ -1389,7 +1420,9 @@ function ProvidersPageContent() {
                   <h2 className="text-xl font-semibold flex items-center gap-2 flex-1 min-w-0">
                     {t("apiKeyProviders")}{" "}
                     <span className="size-2.5 rounded-full bg-amber-500" title={t("apiKeyLabel")} />
-                    <ProviderCountBadge {...countConfigured(apiKeyProviderEntriesAll)} />
+                    <ProviderCountBadge
+                      {...countConfigured(apiKeyProviderEntriesAll, adminDenied)}
+                    />
                   </h2>
                   <button
                     onClick={() => handleBatchTest("apikey")}
@@ -1443,7 +1476,7 @@ function ProvidersPageContent() {
               (noAuthEntriesAll.length > 0 || blockedNoAuthEntries.length > 0) && (
                 <NoAuthProvidersSection
                   visibleEntries={noAuthEntries}
-                  count={countConfigured(noAuthEntriesAll)}
+                  count={countConfigured(noAuthEntriesAll, adminDenied)}
                   blockedEntries={blockedNoAuthEntries}
                   blockedProviders={blockedProviders}
                   onBlockedChange={setBlockedProviders}
@@ -1464,7 +1497,9 @@ function ProvidersPageContent() {
                       className="size-2.5 rounded-full bg-indigo-500"
                       title={t("upstreamProxyProviders")}
                     />
-                    <ProviderCountBadge {...countConfigured(upstreamProxyEntriesAll)} />
+                    <ProviderCountBadge
+                      {...countConfigured(upstreamProxyEntriesAll, adminDenied)}
+                    />
                   </h2>
                   <button
                     onClick={() => handleBatchTest("upstream-proxy")}
@@ -1512,7 +1547,7 @@ function ProvidersPageContent() {
                       className="size-2.5 rounded-full bg-orange-500"
                       title={t("webFetchTooltip")}
                     />
-                    <ProviderCountBadge {...countConfigured(webFetchEntriesAll)} />
+                    <ProviderCountBadge {...countConfigured(webFetchEntriesAll, adminDenied)} />
                   </h2>
                 </div>
                 <p className="text-sm text-text-muted -mt-2">{t("webFetchProvidersDesc")}</p>
@@ -1545,7 +1580,9 @@ function ProvidersPageContent() {
                       className="size-2.5 rounded-full bg-amber-500"
                       title={t("aggregatorsGateways")}
                     />
-                    <ProviderCountBadge {...countConfigured(aggregatorProviderEntriesAll)} />
+                    <ProviderCountBadge
+                      {...countConfigured(aggregatorProviderEntriesAll, adminDenied)}
+                    />
                   </h2>
                 </div>
                 <p className="text-sm text-text-muted -mt-2">{t("aggregatorsGatewaysDesc")}</p>
@@ -1578,7 +1615,9 @@ function ProvidersPageContent() {
                       className="size-2.5 rounded-full bg-amber-500"
                       title={t("enterpriseCloud")}
                     />
-                    <ProviderCountBadge {...countConfigured(enterpriseProviderEntriesAll)} />
+                    <ProviderCountBadge
+                      {...countConfigured(enterpriseProviderEntriesAll, adminDenied)}
+                    />
                   </h2>
                 </div>
                 <p className="text-sm text-text-muted -mt-2">{t("enterpriseCloudDesc")}</p>
@@ -1611,7 +1650,9 @@ function ProvidersPageContent() {
                       className="size-2.5 rounded-full bg-violet-500"
                       title={t("cloudAgentProviders")}
                     />
-                    <ProviderCountBadge {...countConfigured(cloudAgentProviderEntriesAll)} />
+                    <ProviderCountBadge
+                      {...countConfigured(cloudAgentProviderEntriesAll, adminDenied)}
+                    />
                   </h2>
                   <button
                     onClick={() => handleBatchTest("cloud-agent")}
@@ -1661,7 +1702,9 @@ function ProvidersPageContent() {
                       className="size-2.5 rounded-full bg-emerald-500"
                       title={t("localProviders")}
                     />
-                    <ProviderCountBadge {...countConfigured(localProviderEntriesAll)} />
+                    <ProviderCountBadge
+                      {...countConfigured(localProviderEntriesAll, adminDenied)}
+                    />
                   </h2>
                   <button
                     onClick={() => handleBatchTest("local")}
@@ -1709,7 +1752,9 @@ function ProvidersPageContent() {
                       className="size-2.5 rounded-full bg-teal-500"
                       title={t("searchProvidersHeading")}
                     />
-                    <ProviderCountBadge {...countConfigured(searchProviderEntriesAll)} />
+                    <ProviderCountBadge
+                      {...countConfigured(searchProviderEntriesAll, adminDenied)}
+                    />
                   </h2>
                   <button
                     onClick={() => handleBatchTest("search")}
@@ -1757,7 +1802,9 @@ function ProvidersPageContent() {
                       className="size-2.5 rounded-full bg-amber-500"
                       title={t("embeddingRerankProviders")}
                     />
-                    <ProviderCountBadge {...countConfigured(embeddingRerankProviderEntriesAll)} />
+                    <ProviderCountBadge
+                      {...countConfigured(embeddingRerankProviderEntriesAll, adminDenied)}
+                    />
                   </h2>
                 </div>
                 <p className="text-sm text-text-muted -mt-2">{t("embeddingRerankProvidersDesc")}</p>
@@ -1790,7 +1837,9 @@ function ProvidersPageContent() {
                       className="size-2.5 rounded-full bg-amber-500"
                       title={t("imageProviders")}
                     />
-                    <ProviderCountBadge {...countConfigured(imageProviderEntriesAll)} />
+                    <ProviderCountBadge
+                      {...countConfigured(imageProviderEntriesAll, adminDenied)}
+                    />
                   </h2>
                 </div>
                 <p className="text-sm text-text-muted -mt-2">{t("imageProvidersDesc")}</p>
@@ -1823,7 +1872,9 @@ function ProvidersPageContent() {
                       className="size-2.5 rounded-full bg-rose-500"
                       title={t("audioProvidersHeading")}
                     />
-                    <ProviderCountBadge {...countConfigured(audioProviderEntriesAll)} />
+                    <ProviderCountBadge
+                      {...countConfigured(audioProviderEntriesAll, adminDenied)}
+                    />
                   </h2>
                   <button
                     onClick={() => handleBatchTest("audio")}
@@ -1871,7 +1922,9 @@ function ProvidersPageContent() {
                       className="size-2.5 rounded-full bg-amber-500"
                       title={t("videoProviders")}
                     />
-                    <ProviderCountBadge {...countConfigured(videoProviderEntriesAll)} />
+                    <ProviderCountBadge
+                      {...countConfigured(videoProviderEntriesAll, adminDenied)}
+                    />
                   </h2>
                 </div>
                 <p className="text-sm text-text-muted -mt-2">{t("videoProvidersDesc")}</p>

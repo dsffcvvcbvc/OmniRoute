@@ -5,7 +5,11 @@ import { useTranslations } from "next-intl";
 
 import Button from "./Button";
 import Modal from "./Modal";
-import { useAisixSessionEpoch, useAisixSignedOut } from "@/shared/hooks/useAisixAdminSession";
+import {
+  useAisixSessionEpoch,
+  useAisixSessionState,
+  useAisixSignedOut,
+} from "@/shared/hooks/useAisixAdminSession";
 import { isAisixSpaExport } from "@/shared/utils/aisixEndpoints";
 import {
   exchangeAdminKeyForSession,
@@ -96,6 +100,7 @@ export default function AdminSessionGate() {
   );
 
   const signedOut = useAisixSignedOut();
+  const sessionState = useAisixSessionState();
   const sessionEpoch = useAisixSessionEpoch();
   const [open, setOpen] = useState(false);
   const [key, setKey] = useState("");
@@ -111,11 +116,18 @@ export default function AdminSessionGate() {
 
   // The one global signal → one prompt. The per-surface banners keep their own
   // honest "withheld" state; this is the shared way out of it.
+  //
+  // Only `ended` opens it automatically. A browser that has never held a
+  // credential is `anonymous`, and its 401 is the expected answer rather than a
+  // lost session: opening "Your session ended" there would be a claim about an
+  // event that did not happen. That operator still has a way in — the per-surface
+  // "Sign in" buttons request the prompt explicitly, which is the honest
+  // affordance for "you have not signed in yet".
   useEffect(() => {
-    if (!signedOut || dismissedRef.current) return;
+    if (sessionState !== "ended" || dismissedRef.current) return;
     setJustSignedOut(true);
     setOpen(true);
-  }, [signedOut]);
+  }, [sessionState]);
 
   // The per-surface "Sign in" buttons ask for the prompt explicitly.
   useEffect(
@@ -184,12 +196,13 @@ export default function AdminSessionGate() {
           data-testid="admin-session-strip"
           className="flex flex-wrap items-center gap-2 rounded-lg border border-black/8 dark:border-white/8 bg-black/[0.02] dark:bg-white/[0.02] px-3 py-2 text-[11px] text-text-muted"
         >
-          <span className="material-symbols-outlined text-[15px] text-green-600 shrink-0" aria-hidden="true">
+          <span
+            className="material-symbols-outlined text-[15px] text-green-600 shrink-0"
+            aria-hidden="true"
+          >
             verified_user
           </span>
-          <span className="font-medium text-text-main">
-            {text("signedIn", TEXT.signedIn)}
-          </span>
+          <span className="font-medium text-text-main">{text("signedIn", TEXT.signedIn)}</span>
           <span className="flex-1 min-w-[200px]">{text("lifetimeNote", TEXT.lifetimeNote)}</span>
           <Button
             size="sm"
@@ -273,11 +286,7 @@ export default function AdminSessionGate() {
             >
               {text("cancel", TEXT.cancel)}
             </Button>
-            <Button
-              type="submit"
-              loading={busy}
-              data-testid="admin-key-submit"
-            >
+            <Button type="submit" loading={busy} data-testid="admin-key-submit">
               {busy ? text("signingIn", TEXT.signingIn) : text("submit", TEXT.submit)}
             </Button>
           </div>

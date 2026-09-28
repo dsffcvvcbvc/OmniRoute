@@ -661,11 +661,16 @@ export interface ProviderPageData {
   /**
    * The admin plane refused to answer (401/403) — there is no usable session.
    *
-   * Distinct from `connections: []`, and it has to be: an empty array reads on
-   * this page as "this gateway has no providers configured", which is a claim
-   * about the operator's gateway that a 401 cannot support. The caller renders
-   * a withheld state instead of an empty list, so the truth stays "not
-   * answered" rather than becoming "none".
+   * It withholds exactly ONE thing: the connections. `connections: []` and
+   * "not answered" must stay distinct, because an empty array reads on this page
+   * as "this gateway has no providers configured" — a claim about the operator's
+   * gateway that a 401 cannot support.
+   *
+   * It does NOT withhold the catalog. The sections render from a static provider
+   * registry, so a refused key read says nothing about which providers exist and
+   * hiding them would destroy state the failure does not contradict. The page
+   * therefore shows the banner AND the sections, and expresses the refusal where
+   * it actually bites: the configured counts, drawn as "—" rather than 0.
    */
   adminDenied: boolean;
 }
@@ -734,7 +739,12 @@ export async function loadProviderPageData(
         // 401/403 on an admin read is a missing session, not an empty
         // collection. Recorded here so the page can withhold the list instead of
         // drawing it as empty.
-        if (isAisixAdminUrl(url) && classifyAisixAdminStatus(res.status) !== null && res.status !== 404 && res.status !== 405) {
+        if (
+          isAisixAdminUrl(url) &&
+          classifyAisixAdminStatus(res.status) !== null &&
+          res.status !== 404 &&
+          res.status !== 405
+        ) {
           adminDenied = true;
         }
         return null;
