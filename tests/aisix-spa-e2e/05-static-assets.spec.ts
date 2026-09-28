@@ -568,13 +568,18 @@ test.describe("the /api surface is classified, not just silenced", () => {
         "where its settings used to be."
     ).toBeVisible({ timeout: 60_000 });
 
-    const reason = page.locator('[data-testid="provider-extras-reason"]');
-    await expect(reason, "the refusal card carries no reason").toBeVisible();
-    const reasonText = (await reason.innerText()).trim();
-    writeEvidence("05-provider-extras-reason.json", { reasonText });
+    // The reason is no longer its own node with its own testid: the panel now
+    // renders the shared ProviderSectionRefusal, which puts {reason} inside the
+    // very element that carries the testid above. Reading it off the refusal is
+    // therefore the only locator that is not a guess about internal structure.
+    const reasonText = (await refusal.innerText()).trim();
+    // The shared component's own `block` glyph is the only text in there that
+    // is not the reason, and it leads.
+    const statedReason = reasonText.replace(/^block/, "").trim();
+    writeEvidence("05-provider-extras-reason.json", { reasonText, statedReason });
 
     expect(
-      reasonText.length,
+      statedReason.length,
       "the refusal is empty. A refusal with no text is a blank region wearing a refusal's " +
         "borders — the operator still learns nothing."
     ).toBeGreaterThan(20);

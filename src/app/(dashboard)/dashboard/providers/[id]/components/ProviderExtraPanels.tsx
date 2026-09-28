@@ -36,13 +36,19 @@ import { providerText, type ProviderMessageTranslator } from "../providerPageHel
  *   - the three sections keep their own effects untouched, so this gate shares
  *     no file with any retry/backoff handling inside them.
  *
+ * The refusal is rendered by `ProviderSectionRefusal` — the same component the
+ * three cards use when they refuse individually. An operator who meets an
+ * absent capability at the panel level and an absent one at the card level now
+ * meets ONE visual language instead of two. This file used to hand-roll its own
+ * `<section>` here, which is how a tested shared component ended up unreachable
+ * in the product (R11-02).
+ *
  * `modelCompatOverrides` is deliberately NOT gated: it is read from the model
  * catalog, which IS a native resource (see `aisixNativeCatalog.ts`).
  */
 export default function ProviderExtraPanels({ providerId }: { providerId: string }) {
   const t = useTranslations("providers") as ProviderMessageTranslator;
   const extrasSupport = resolveAisixSurfaceSupport("providerExtras", "read");
-  const text = (key: string, fallback: string) => providerText(t, key, fallback);
 
   return (
     <>
@@ -74,13 +80,15 @@ export default function ProviderExtraPanels({ providerId }: { providerId: string
             >
               cloud_off
             </span>
-            {text(
+            {providerText(
+              t,
               "providerExtrasUnsupportedTitle",
               "Request shaping, tool interception and Claude Code aliases"
             )}
           </h2>
           <p className="mt-2 text-xs leading-relaxed text-text-muted">
-            {text(
+            {providerText(
+              t,
               "providerExtrasUnsupported",
               "The AISIX gateway does not carry these three per-provider settings, so this page " +
                 "does not read them and no value below can be shown or changed."
