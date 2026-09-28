@@ -25,12 +25,11 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { hasUnblockedOccurrence } from "./glossary-normalize.mjs";
+import { hasUnblockedOccurrence, loadGlossary, loadProtectedTerms } from "./glossary-normalize.mjs";
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(SCRIPT_DIR, "..", "..");
 const MESSAGES_DIR = path.join(ROOT, "src", "i18n", "messages");
-const GLOSSARY_DIR = path.join(SCRIPT_DIR, "glossary");
 const LOG_PREFIX = "[i18n-glossary]";
 
 // Legacy zh-CN map of known incorrect renderings for protected terms — newer
@@ -164,15 +163,15 @@ async function main() {
   const opts = parseArgs(process.argv);
 
   const messagesPath = path.join(MESSAGES_DIR, `${opts.locale}.json`);
-  const glossaryPath = path.join(GLOSSARY_DIR, `${opts.locale}.json`);
-  const protectedPath = path.join(GLOSSARY_DIR, "protected-terms.json");
 
-  const [messages, glossary, protectedData] = await Promise.all([
-    loadJson(messagesPath),
-    loadJson(glossaryPath),
-    loadJson(protectedPath),
-  ]);
-  const protectedTerms = Array.isArray(protectedData.terms) ? protectedData.terms : [];
+  // The glossary and the protected-term list go through the shared loader in
+  // glossary-normalize.mjs — the one the translation-ratio gate reads them
+  // with, so the two gates cannot disagree about what is protected. Both
+  // loaders are strict, so a missing or corrupt file still throws and the run
+  // still ends ERROR rather than passing on an empty vocabulary.
+  const messages = await loadJson(messagesPath);
+  const glossary = loadGlossary(opts.locale);
+  const protectedTerms = loadProtectedTerms();
 
   const { violations } = checkGlossaryConsistency(messages, glossary, protectedTerms);
 
