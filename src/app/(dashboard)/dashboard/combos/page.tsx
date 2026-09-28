@@ -3826,12 +3826,17 @@ function ComboFormModal({
                   the labels the template owns while making the unreachable ones
                   impossible to pick. */}
               <p data-testid="combos-strategy-hint" className="text-[10px] text-text-muted mb-1.5">
-                {text("contractStrategyHint", AISIX_COMBO_TEXT.contractStrategyHint)}
+                {getI18nOrFallback(
+                  t,
+                  "contractStrategyHint",
+                  AISIX_COMBO_TEXT.contractStrategyHint
+                )}
               </p>
               <div className="grid grid-cols-3 gap-1 p-0.5 bg-black/5 dark:bg-white/5 rounded-lg">
                 {STRATEGY_OPTIONS.map((s) => {
                   const honoured = isAisixHonouredStrategy(s.value);
-                  const unavailableReason = text(
+                  const unavailableReason = getI18nOrFallback(
+                    t,
                     "contractStrategyUnavailable",
                     AISIX_COMBO_TEXT.contractStrategyUnavailable
                   );

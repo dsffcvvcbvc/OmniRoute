@@ -416,7 +416,7 @@ export default function ProviderKeysSection() {
                           {entry.id}
                         </p>
                       </div>
-                      <Badge size="sm" variant="neutral">
+                      <Badge size="sm" variant="default">
                         {text("providerKeysRevision", "rev {revision}", {
                           revision: entry.revision,
                         })}

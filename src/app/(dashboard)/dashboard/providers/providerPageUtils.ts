@@ -702,6 +702,14 @@ export interface ProviderPageData {
    * them to the wrong fix. Drives the sign-in banner and nothing else.
    */
   adminRefused: boolean;
+  /**
+   * OpenRouter popularity enrichment for the provider cards, or `null` when the
+   * metrics plane did not report a usable `{object:"list", data:[...]}` — the
+   * same "not reported, not empty" contract the other native reads follow. The
+   * page passes it to `OpenRouterProviderStatsProvider`, which treats `null` as
+   * "no rows to rank by" and hides the popularity ordering.
+   */
+  openRouterProviderStats: OpenRouterProviderStatsEntry[] | null;
 }
 
 /** Mirrors ProviderPopularityEntry from src/lib/catalog/openrouterProviderStats.ts (kept local to avoid a server-only import from a client component). */

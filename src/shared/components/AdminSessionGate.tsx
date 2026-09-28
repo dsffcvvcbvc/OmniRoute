@@ -93,7 +93,10 @@ export default function AdminSessionGate() {
       try {
         if (typeof t.has === "function" && !t.has(key)) return fallback;
       } catch {}
-      const out = t(key, fallback);
+      // next-intl's second argument is an interpolation VALUES record, not a
+      // default string; the English sentence is `fallback`, returned above when
+      // the key is absent and below when the translation is empty.
+      const out = t(key);
       return typeof out === "string" && out.length > 0 ? out : fallback;
     },
     [t]
@@ -165,7 +168,11 @@ export default function AdminSessionGate() {
     // and resolves.
     setKey("");
     setBusy(false);
-    if (outcome.ok) {
+    // `=== true`, not a truthiness test: this project compiles with
+    // `strictNullChecks` off, where a plain `if (outcome.ok)` does not narrow
+    // `AdminSessionOutcome` to its failure members and the call below will not
+    // typecheck.
+    if (outcome.ok === true) {
       setOpen(false);
       setJustSignedOut(false);
       dismissedRef.current = false;

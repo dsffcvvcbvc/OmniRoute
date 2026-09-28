@@ -400,9 +400,12 @@ export default function ApiTab(_props: ApiTabProps) {
     const controller = new AbortController();
     abortRef.current = controller;
     const startTime = Date.now();
+    // Read the endpoint path once, before the try: the catch below names it when
+    // the core is unreachable, and a const declared inside the try is not in
+    // scope there.
+    const path = ENDPOINT_PATHS[selectedEndpoint];
 
     try {
-      const path = ENDPOINT_PATHS[selectedEndpoint];
       let res: Response;
 
       if (isTranscriptionEndpoint) {

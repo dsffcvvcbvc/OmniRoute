@@ -266,7 +266,7 @@ async function sendWrite(
   url: string,
   method: string,
   body: unknown,
-  parse: (payload: unknown) => ProviderKeyWriteResult | null = parseWriteResult
+  parse: (payload: unknown) => AisixProviderKeyWriteResult | null = parseWriteResult
 ): Promise<ProviderKeyWriteOutcome> {
   let response: Response;
   try {
