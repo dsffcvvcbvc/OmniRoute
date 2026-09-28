@@ -340,12 +340,103 @@ test("R3 the derived list is the record, not a filtered view of it", () => {
   }
 });
 
-test("R3 the reasons name the gateway so the operator knows WHICH host refused", () => {
-  for (const domain of ["settings", "storage", "providerExtras", "sync"] as const) {
+/**
+ * The phrase that identifies a domain's OWN subject, and appears in no other
+ * domain's reason.
+ *
+ * This table exists because neither the length floor nor the `/AISIX/` sweep
+ * can tell one reason from another: every reason is a long Russian sentence
+ * that names the gateway, so a record collapsed to a single generic sentence
+ * satisfies both (measured: all fifteen reasons replaced with one string and
+ * 34/34 tests still passed), and so does a plain PERMUTATION of the fifteen —
+ * which is the same defect, because the operator then reads "the core has no
+ * SQLite" on the settings card.
+ *
+ * Both halves of each anchor are load-bearing. The occurrence check alone would
+ * be satisfied by any reason that happens to mention every noun in the file;
+ * the cross-domain exclusion is what makes "this sentence belongs to THIS
+ * domain" a claim the record can actually fail.
+ */
+const REASON_SUBJECT_ANCHOR: Record<(typeof AISIX_UNSUPPORTED_DOMAINS)[number], string> = {
+  radar: "каталог бесплатных моделей",
+  quota: "Quota-share",
+  usage: "разбивки по провайдерам, моделям и ключам",
+  logs: "call-log хранилища",
+  relay: "Relay-прокси",
+  keys: "/admin/v1/provider_keys",
+  providerRules: "SQLite за Next.js-маршрутами",
+  settings: "Настройки приложения",
+  storage: "Состояние и обслуживание локальной базы данных",
+  session: "POST /admin/v1/auth/session",
+  sync: "Синхронизация настроек с удалённым хранилищем",
+  credentials: "мастер восстановления окружения",
+  providerExtras: "поверх его SQLite",
+  modelAliases: "Карта алиасов моделей",
+  deprecated: "Список устаревших провайдеров",
+};
+
+test("R3 every reason names the gateway so the operator knows WHICH host refused", () => {
+  // Swept over the DERIVED list, not a hand-picked four: a reason that stopped
+  // naming the host had four chances in fifteen to be noticed before.
+  for (const domain of AISIX_UNSUPPORTED_DOMAINS) {
     assert.match(
       aisixUnsupportedRead(domain).reason as string,
       /AISIX/,
       `${domain} refusal must name the gateway it is refusing on behalf of`
+    );
+  }
+});
+
+test("R3 no two domains share one sentence, so no card can show another's story", () => {
+  // The cheapest form of the copy-paste: `AISIX_UNSUPPORTED_REASON` is a record
+  // literal, and nothing in its type says two entries may hold the same string.
+  const reasons = AISIX_UNSUPPORTED_DOMAINS.map((domain) => aisixUnsupportedRead(domain).reason);
+  assert.equal(
+    new Set(reasons).size,
+    AISIX_UNSUPPORTED_DOMAINS.length,
+    "two domains render one identical sentence, so at least one of them is describing the other"
+  );
+});
+
+test("R3 a reason names the subject of its OWN domain, and of no other", () => {
+  // Fail closed on the key set, in both directions. A sixteenth domain lands
+  // with no anchor and goes red here instead of shipping a reason nobody ever
+  // read against a subject nobody ever named; an anchor for a domain that does
+  // not exist is a copy-paste in the table itself and is just as wrong.
+  assert.deepEqual(
+    Object.keys(REASON_SUBJECT_ANCHOR).sort(),
+    [...AISIX_UNSUPPORTED_DOMAINS].sort(),
+    "every declared domain needs a subject anchor, and no anchor may name a domain that does not exist"
+  );
+  const anchors = Object.values(REASON_SUBJECT_ANCHOR);
+  assert.equal(
+    new Set(anchors).size,
+    anchors.length,
+    "two anchors are the same phrase, so neither of them identifies its own domain"
+  );
+
+  // Half one: the reason attached to a domain is about that domain.
+  for (const domain of AISIX_UNSUPPORTED_DOMAINS) {
+    const reason = aisixUnsupportedRead(domain).reason as string;
+    assert.ok(
+      reason.includes(REASON_SUBJECT_ANCHOR[domain]),
+      `${domain} must name what is missing ("${REASON_SUBJECT_ANCHOR[domain]}"); it says: "${reason}"`
+    );
+  }
+
+  // Half two, and the half that does the real work: the phrase is a DISCRIMINATOR.
+  // A reason pasted onto the wrong domain trips half one (the right anchor is
+  // missing) AND half two (the wrong anchor turned up in a second record), so a
+  // swap cannot be repaired by editing the copy and left undetected.
+  for (const domain of AISIX_UNSUPPORTED_DOMAINS) {
+    const anchor = REASON_SUBJECT_ANCHOR[domain];
+    const intruders = AISIX_UNSUPPORTED_DOMAINS.filter(
+      (other) => other !== domain && (aisixUnsupportedRead(other).reason as string).includes(anchor)
+    );
+    assert.deepEqual(
+      intruders,
+      [],
+      `"${anchor}" identifies ${domain} alone; it also appears in the reason for ${intruders.join(", ")}`
     );
   }
 });
