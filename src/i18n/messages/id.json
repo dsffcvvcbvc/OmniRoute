@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Kunci penyedia dihapus.",
     "providerKeysDeleteTitle": "Hapus kunci penyedia",
     "providerKeysDeleteConfirm": "Hapus kunci penyedia \"{name}\"? Model atau rute passthrough apa pun yang masih merujuknya akan membuat gateway menolak dengan 409.",
-    "adminAuthSignIn": "Masuk"
+    "adminAuthSignIn": "Masuk",
+    "aisixConnectionsUnknown": "Gateway tidak mengonfirmasi penyedia mana yang Anda konfigurasi, sehingga jumlah di bawah ini ditampilkan sebagai —, bukan sebagai angka. Tanda hubung bukan nol: tidak ada di sini yang menyatakan Anda tidak mengonfigurasi satu pun penyedia."
   },
   "settings": {
     "title": "Pengaturan",

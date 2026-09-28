@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Palveluntarjoajan avain poistettiin.",
     "providerKeysDeleteTitle": "Poista palveluntarjoajan avain",
     "providerKeysDeleteConfirm": "Poistetaanko palveluntarrojan avain ”{name}”? Mikä tahansa malli tai läpäisyreitti, joka viittaa siihen yhä, saa yhdyskytkimen hylkäämään sen koodilla 409.",
-    "adminAuthSignIn": "Kirjaudu"
+    "adminAuthSignIn": "Kirjaudu",
+    "aisixConnectionsUnknown": "Yhdysväylä ei vahvistanut, mitkä palveluntarjoajat olet määrittänyt, joten alla olevat lukumäärät näytetään muodissa — eikä numeroina. Viiva ei ole nolla: mikään tässä väitä, ettet ole määrittänyt yhtään palveluntarjoajaa."
   },
   "settings": {
     "title": "Asetukset",

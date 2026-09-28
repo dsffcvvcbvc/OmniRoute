@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Ufunguo wa mtoa umefutwa.",
     "providerKeysDeleteTitle": "Ondoa ufunguo wa mtoa",
     "providerKeysDeleteConfirm": "Ondoa ufunguo wa mtoa \"{name}\"? Mfano wowote au njia ya passthrough bado inarejelea hii itafanya kituo kukataa kwa 409.",
-    "adminAuthSignIn": "Ingia"
+    "adminAuthSignIn": "Ingia",
+    "aisixConnectionsUnknown": "Lango halikujibu ni wale wanaopangwa ulioweka. Kwa hivyo hesabi zilizo hapa chini zinaonyeshwa kama — badala ya kama nambari. Kistahi si sifuri siwezi: hakuna kilichosema hapa kwamba hujasakinisha wasamburaji wowote."
   },
   "settings": {
     "title": "Mipangilio",

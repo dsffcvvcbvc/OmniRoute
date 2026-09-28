@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Teenuse võti kustutati.",
     "providerKeysDeleteTitle": "Kustuta teenuse võti",
     "providerKeysDeleteConfirm": "Kas kustutada teenuse võti „{name}“? Iga mudel või läbipass marsruut, mis sellele endiselt viitab, paneb võrgustiku 409-ga keelduma.",
-    "adminAuthSignIn": "Logi sisse"
+    "adminAuthSignIn": "Logi sisse",
+    "aisixConnectionsUnknown": "Lüüs ei kinnitanud, milliseid pakkujaid olete seadistanud, seega kuvatakse allolevaid arve kujul „—”, mitte arvuna. Kriips pole null: siin ei väidetagi, et te pole ühtegi pakkujat seadistanud."
   },
   "settings": {
     "title": "Seaded",

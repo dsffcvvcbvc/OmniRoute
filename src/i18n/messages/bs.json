@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Ključ dobavljača je obrisan.",
     "providerKeysDeleteTitle": "Obriši ključ dobavljača",
     "providerKeysDeleteConfirm": "Obrisati ključ dobavljača \"{name}\"? Bilo koji model ili passthrough ruta koja ga i dalje referencira natjerat će gateway da odbije sa 409.",
-    "adminAuthSignIn": "Prijavi se"
+    "adminAuthSignIn": "Prijavi se",
+    "aisixConnectionsUnknown": "Gateway nije potvrdio koje ste providere konfigurisali, pa se brojevi ispod prikazuju kao — umjesto kao broj. Crta nije nula: ništa ovdje ne tvrdi da niste konfigurisali nijednog providera."
   },
   "settings": {
     "title": "Postavke",

@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Кључ добављача је обрисао.",
     "providerKeysDeleteTitle": "Обришите кључ добављача",
     "providerKeysDeleteConfirm": "Обрисати кључ добављача „{name}“? Сваки модел или passthrough рута која га још позива примораће мрежни пролаз да одбије са 409.",
-    "adminAuthSignIn": "Пријава"
+    "adminAuthSignIn": "Пријава",
+    "aisixConnectionsUnknown": "Gateway nije potvrdio koje ste providere konfigurisali, pa se brojevi ispod prikazuju kao — umesto kao broj. Crta nije nula: ništa ovde ne tvrdi da niste konfigurisali nijednog provajdera."
   },
   "settings": {
     "title": "Подешавања",

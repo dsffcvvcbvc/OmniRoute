@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Leverantörsnyckeln togs bort.",
     "providerKeysDeleteTitle": "Ta bort leverantörsnyckeln",
     "providerKeysDeleteConfirm": "Ta bort leverantörsnyckeln ”{name}”? Varje modell eller passthrough-rutt som fortfarande hänvisar till den får gatewayen att svara 409.",
-    "adminAuthSignIn": "Logga in"
+    "adminAuthSignIn": "Logga in",
+    "aisixConnectionsUnknown": "Gatewayen bekräftade inte vilka leverantörer du har konfigurerat, så antalen nedan visas som — i stället för som ett tal. Strecken är inte noll: ingenting här påstår att du inte har konfigurerat några leverantörer."
   },
   "settings": {
     "title": "Inställningar",

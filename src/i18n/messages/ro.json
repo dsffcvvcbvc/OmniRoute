@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Cheia furnizorului a fost ștearsă.",
     "providerKeysDeleteTitle": "Șterge cheia furnizorului",
     "providerKeysDeleteConfirm": "Ștergi cheia furnizorului „{name}”? Orice model sau rută de trecere care o referențiază încă va determina poarta să refuze cu 409.",
-    "adminAuthSignIn": "Autentificare"
+    "adminAuthSignIn": "Autentificare",
+    "aisixConnectionsUnknown": "Gateway-ul nu a confirmat ce furnizori ai configurat, așa că numărările de mai jos sunt afișate ca —, nu ca numere. Cratele nu este zero: nimic aici nu afirmă că nu ai configurat niciun furnizor."
   },
   "settings": {
     "title": "Setări",

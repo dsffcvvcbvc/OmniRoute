@@ -6570,6 +6570,7 @@
     "presetCatalogProvision": "Provision",
     "presetCatalogError": "Failed to load the preset catalog. The list is unknown — not empty.",
     "aisixAdminKeyRequired": "The gateway answered 401: this surface needs an admin key. Add one to admin.admin_keys in the gateway config, then reload. The data below is withheld, not empty.",
+    "aisixConnectionsUnknown": "The gateway did not confirm which providers you have configured, so the counts below are shown as — instead of as a number. A dash is not a zero: nothing here claims you have configured nothing.",
     "onboardingPresetAuthHeaderHint": "This vendor expects the key in the {header} header.",
     "onboardingPresetAuthShapeHint": "This vendor authenticates with a {shape} token.",
     "providerKeysTitle": "Upstream provider keys",

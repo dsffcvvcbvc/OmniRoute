@@ -6599,7 +6599,8 @@
     "providerKeysDeleteTitle": "제공업체 키 삭제",
     "providerKeysDeleteConfirm": "제공업체 키 \"{name}\"을(를) 삭제할까요? 아직 이를 참조하는 모델이나 패스스루 경로가 있으면 게이트웨이가 409로 거부합니다.",
     "providerKeysNotPersisted": "메모리에는 적용되었지만 디스크에 기록되지 않았습니다: 리소스 파일에 단일 키 쓰기로 다시 생성할 수 없는 행이 있습니다. 재로드하면 사라집니다 — POST /admin/v1/resources를 사용하세요.",
-    "adminAuthSignIn": "로그인"
+    "adminAuthSignIn": "로그인",
+    "aisixConnectionsUnknown": "게이트웨이는 어떤 공급자를 구성했는지 확인하지 못했습니다. 따라서 아래 개수는 숫자 대신 — 로 표시됩니다. 대시 표시는 0이 아닙니다. 이 페이지는 어떤 공급자도 구성하지 않았다고 주장하지 않습니다."
   },
   "settings": {
     "title": "설정",

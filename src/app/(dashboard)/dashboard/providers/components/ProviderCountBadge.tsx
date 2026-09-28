@@ -22,14 +22,15 @@ export default function ProviderCountBadge({ configured, total }: ProviderCountB
 
   // Unknown reads as a dash, never as a zero. Muted rather than coloured: the
   // three existing colours all mean "this is a count", and none of them is true
-  // here. The existing `configuredCount` key is the honest explanation of the
-  // whole badge in the withheld case — it is already translated in every locale,
-  // and it is the sentence the page is already saying in the banner above.
+  // here. The tooltip is the same sentence the banner above is saying, and it
+  // names no status: the count goes unknown for a 401, a 5xx, a dropped
+  // connection and the fetch timeout alike, so a tooltip that says "401" would
+  // be false on three of those four.
   if (configured === null) {
     return (
       <span
         className="text-xs font-medium text-text-muted"
-        title={t("aisixAdminKeyRequired")}
+        title={t("aisixConnectionsUnknown")}
         data-testid="provider-count-unknown"
       >
         —/{total}

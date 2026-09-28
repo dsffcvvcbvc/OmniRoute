@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Binura ang provider key.",
     "providerKeysDeleteTitle": "Burahin ang provider key",
     "providerKeysDeleteConfirm": "Burahin ang provider key na \"{name}\"? Ang kahit anong modelo o passthrough route na tumutukoy pa rin dito ay gagawing tumanggi ang gateway na may 409.",
-    "adminAuthSignIn": "Mag-log in"
+    "adminAuthSignIn": "Mag-log in",
+    "aisixConnectionsUnknown": "Hindi kinumpirma ng Gateway kung aling mga provider ang n-configure mo, kaya ang mga bilang sa ibaba ay ipinapakita bilang — sa halip na bilang. Hindi zero ang dash: walang sinasabi dito na hindi ka nakatakda ng kahit isang provider."
   },
   "settings": {
     "title": "Mga setting",

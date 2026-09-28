@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Clé de fournisseur supprimée.",
     "providerKeysDeleteTitle": "Supprimer la clé de fournisseur",
     "providerKeysDeleteConfirm": "Supprimer la clé de fournisseur « {name} » ? Tout modèle ou route de passthrough qui la référence encore fera répondre 409 à la passerelle.",
-    "adminAuthSignIn": "Se connecter"
+    "adminAuthSignIn": "Se connecter",
+    "aisixConnectionsUnknown": "La passerelle n'a pas confirmé quels fournisseurs vous avez configurés : les nombres ci-dessous sont donc affichés avec « — » plutôt que comme des chiffres. Le tiret n'est pas un zéro : rien ici n'affirme que vous n'avez configuré aucun fournisseur."
   },
   "settings": {
     "title": "Paramètres",

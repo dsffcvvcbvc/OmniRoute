@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "A szolgáltatókulcs törölve lett.",
     "providerKeysDeleteTitle": "Szolgáltatókulcs törlése",
     "providerKeysDeleteConfirm": "Törli a(z) {name} szolgáltatókulcsot? Ha bármelyik modell vagy passthrough útvonal még rá hivatkozik, az átjáró 409-csal elutasítja.",
-    "adminAuthSignIn": "Bejelentkezés"
+    "adminAuthSignIn": "Bejelentkezés",
+    "aisixConnectionsUnknown": "Az átjáró nem erősítette meg, mely szolgáltatókat konfiguráltad, ezért az alábbi számok — jelöléssel jelennek meg, nem számmal. A kötőjel nem nulla: semmi sem állítja itt, hogy nem konfiguráltál egyetlen szolgáltatót sem."
   },
   "settings": {
     "title": "Beállítások elemre",

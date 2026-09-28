@@ -6599,7 +6599,8 @@
     "providerKeysDeleteTitle": "プロバイダーのキーを削除",
     "providerKeysDeleteConfirm": "プロバイダーのキー「{name}」を削除しますか？ まだ参照しているモデルや passthrough ルートがあると、ゲートウェイは 409 で拒否します。",
     "providerKeysNotPersisted": "メモリには適用されましたがディスクには書き込まれませんでした: リソースファイルには、単一キーの書き込みでは再生成できない行が含まれています。再読み込みで失われます — POST /admin/v1/resources を使ってください。",
-    "adminAuthSignIn": "サインイン"
+    "adminAuthSignIn": "サインイン",
+    "aisixConnectionsUnknown": "ゲートウェイは、どのプロバイダーを設定したかを確認できませんでした。そのため下の件数は数値ではなく — と表示されています。 ダッシュはゼロではありません。このページに「プロバイダーを一つも設定していない」とは書いていません。"
   },
   "settings": {
     "title": "設定",

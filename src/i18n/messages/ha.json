@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "An soke maƙwucin masu saƙaɗo.",
     "providerKeysDeleteTitle": "Ƙara maƙwucin masu saƙaɗo",
     "providerKeysDeleteConfirm": "Ƙara maƙwucin masu saƙaɗo \"{name}\"? Idan ko waniƙo ko passthrough hanya da ke nuna shi kuma, zai saƙaɗo ka karɓi tare da 409.",
-    "adminAuthSignIn": "Shiga"
+    "adminAuthSignIn": "Shiga",
+    "aisixConnectionsUnknown": "Babban bace ba ba tabbatar da mai saita a, saboda haka lambobin da ke kasa an nuna da — maimakon lamba. Alamar dash ba sifiri ba ne: babba wani bai ma ba da yi tsayin ba cikin cewa ba ka saita ko'ina ba."
   },
   "settings": {
     "title": "Saituna",

@@ -175,6 +175,14 @@ export default function AdminSessionGate() {
   }, [key, text]);
 
   const signOut = useCallback(async () => {
+    // A deliberate sign-out is not a LOST session. `revokeAdminSession` ends
+    // with `ended`, because a session did exist — and `ended` is what the
+    // auto-open effect watches, so without this the operator clicks "Sign out"
+    // and is immediately re-prompted for a key they just returned, with a
+    // "Your session ended" note about a session they ended on purpose. The
+    // prompt they opened for that key is closed; this is not one.
+    dismissedRef.current = true;
+    setJustSignedOut(false);
     setBusy(true);
     await revokeAdminSession();
     setBusy(false);

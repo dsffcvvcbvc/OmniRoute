@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Təchizatçı açarı silindi.",
     "providerKeysDeleteTitle": "Təchizatçı açarını sil",
     "providerKeysDeleteConfirm": "\"{name}\" təchizatçı açarı silinsin? Hələ istinad edən model və ya passthrough marşrutu şəbəkəni 409 ilə rəzb etməyə məcbur edər.",
-    "adminAuthSignIn": "Daxil ol"
+    "adminAuthSignIn": "Daxil ol",
+    "aisixConnectionsUnknown": "Gateway hansı provayderləri konfiqurasiya etdiyinizi təsdiq etmədi, ona görə aşağıdakı saylar rəqəm əvəzinə — kimi göstərilir. Tire sıfır deyildir: bu səhifədə heç nə sizin heç bir təchizatçını konfiqurasiya etmədiyinizi iddia etmir."
   },
   "settings": {
     "title": "Parametrlər",

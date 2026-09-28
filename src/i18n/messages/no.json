@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Leverandørnøkkel slettet.",
     "providerKeysDeleteTitle": "Slett leverandørnøkkel",
     "providerKeysDeleteConfirm": "Slette leverandørnøkkelen «{name}»? Alle modeller eller passthrough-ruter som fortsatt viser til den, får gatewayen til å svare 409.",
-    "adminAuthSignIn": "Logg inn"
+    "adminAuthSignIn": "Logg inn",
+    "aisixConnectionsUnknown": "Gatewayen bekreftet ikke hvilke leverandører du har konfigurert, så tellingene nedenfor vises som — i stedet for som et tall. Streken er ikke null: ingenting her påstår at du ikke har konfigurert noen leverandører."
   },
   "settings": {
     "title": "Innstillinger",

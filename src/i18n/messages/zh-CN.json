@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "提供商密钥已删除。",
     "providerKeysDeleteTitle": "删除提供商密钥",
     "providerKeysDeleteConfirm": "要删除提供商密钥“{name}”吗？任何仍引用它的模型或透传路由都会让网关以 409 拒绝。",
-    "adminAuthSignIn": "登录"
+    "adminAuthSignIn": "登录",
+    "aisixConnectionsUnknown": "网关未确认您配置了哪些提供者，因此下面的数量显示为 —，而不是数字。 破折号不是零：本页没有任何地方在说您没有配置任何服务商。"
   },
   "settings": {
     "title": "设置",

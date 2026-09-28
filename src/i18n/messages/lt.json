@@ -6599,7 +6599,8 @@
     "providerKeysDeleteTitle": "Ištrinti tiekėjo raktą",
     "providerKeysDeleteConfirm": "Ištrinti tiekėjo raktą „{name}“? Bet kuris modelis ar passthrough maršrutas, kuris dar jį mini, privalės vartus atsakyti 409.",
     "providerKeysNotPersisted": "Pritaikyta atmintyje, bet NEĮRAŠYTA į diską: išteklių faile yra eilučių, kurių vienos individualaus rakto rašymo operacija negali atkurti. Bus prarasta įkėlus iš naujo — naudokite POST /admin/v1/resources.",
-    "adminAuthSignIn": "Prisijungti"
+    "adminAuthSignIn": "Prisijungti",
+    "aisixConnectionsUnknown": "Vartiklis nepatvirtino, kuriuos tiekėjus sukonfigūravote, todėl žemiau esantys skaičiai rodomi kaip „—”, o ne kaip skaičius. Brūkšnelis nėra nulis: čia niekas nepasako, kad nesukonfigūravote nė vieno teikėjo."
   },
   "settings": {
     "title": "Nustatymai",

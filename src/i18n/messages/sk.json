@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Kľúč poskytovateľa bol odstránený.",
     "providerKeysDeleteTitle": "Odstrániť kľúč poskytovateľa",
     "providerKeysDeleteConfirm": "Odstrániť kľúč poskytovateľa „{name}“? Akýkoľvek model alebo passthrough trasa, ktorá naň stále odkazuje, prinúti bránu odmietnuť s 409.",
-    "adminAuthSignIn": "Prihlásiť sa"
+    "adminAuthSignIn": "Prihlásiť sa",
+    "aisixConnectionsUnknown": "Brána nepotvrdila, ktorých poskytovateľov ste nakonfigurovali, takže počty nižšie sa zobrazujú ako — namiesto ako číslo. Čiarka nie je nula: nič tu netvrdí, že ste nenastavili žiadneho poskytovateľa."
   },
   "settings": {
     "title": "Nastavenia",

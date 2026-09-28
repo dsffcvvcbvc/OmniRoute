@@ -610,4 +610,58 @@ describe("getAisixSessionState — never-signed-in is not an ended session", () 
     }
     assert.equal(getAisixSessionState(), "active");
   });
+  test("an exchange whose cookie was NOT kept is anonymous, not an ended session", async () => {
+    // The `Secure`-cookie-over-plain-HTTP failure: the gateway answers the
+    // exchange with a 204 and the browser drops the cookie, so the confirming
+    // read 401s. The exchange's own 204 is a credentialed-admin 2xx, so the
+    // "any 2xx proves a session" rule used to fire on the exchange itself and
+    // land the operator on `ended` — a session that never existed, described to
+    // them as one that had ended, beside the correct `session_not_kept` error.
+    const stub = stubFetch((url) =>
+      url === SESSION_URL ? noContent(204) : json({ error_msg: "unauthorized" }, 401)
+    );
+    try {
+      const outcome = await exchangeAdminKeyForSession("key");
+      assert.equal(failed(outcome).failure, "session_not_kept");
+    } finally {
+      stub.restore();
+    }
+    // There is no session, so there is no ended one. Reverting the exclusion of
+    // the exchange path from `isCredentialedAdminEndpoint` makes this "ended".
+    assert.equal(getAisixSessionState(), "anonymous");
+  });
+
+  test("a public admin route carrying a credentialed path in its QUERY invents nothing", async () => {
+    // `/livez` and `/readyz` are unauthenticated and answer 200 to anyone. The
+    // proof of a credential was matched by substring over the whole URL, so the
+    // first caller that appends a `returnTo`/`next` parameter reinstates the hole
+    // the comment claims is closed. The check is on the PATH; the query is not
+    // part of the request's identity on the server either.
+    const stub = stubFetch(() => noContent(200));
+    try {
+      await aisixAdminFetch(`${ADMIN}/livez?next=/admin/v1/models`);
+    } finally {
+      stub.restore();
+    }
+    assert.equal(getAisixSessionState(), "anonymous");
+
+    // A fragment cannot reach the server, so it is even more clearly not a path.
+    const fragment = stubFetch(() => noContent(200));
+    try {
+      await aisixAdminFetch(`${ADMIN}/readyz#/admin/v1/models`);
+    } finally {
+      fragment.restore();
+    }
+    assert.equal(getAisixSessionState(), "anonymous");
+
+    // The positive half, so the assertion above is not satisfied by a predicate
+    // that never matches anything: the real path still proves a session.
+    const real = stubFetch(() => json({ models: [] }));
+    try {
+      await aisixAdminFetch(`${ADMIN}/admin/v1/models?limit=1`);
+    } finally {
+      real.restore();
+    }
+    assert.equal(getAisixSessionState(), "active");
+  });
 });

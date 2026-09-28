@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "供應商金鑰已刪除。",
     "providerKeysDeleteTitle": "刪除供應商金鑰",
     "providerKeysDeleteConfirm": "要刪除供應商金鑰「{name}」嗎？任何仍參照它的模型或透傳路由都會讓閘道以 409 拒絕。",
-    "adminAuthSignIn": "登入"
+    "adminAuthSignIn": "登入",
+    "aisixConnectionsUnknown": "閘道未確認您設定了哪些提供者，因此下方的數量顯示為 —，而不是數字。 破折號不是零：本頁沒有任何地方在說您沒有設定任何供應商。"
   },
   "settings": {
     "title": "設定",

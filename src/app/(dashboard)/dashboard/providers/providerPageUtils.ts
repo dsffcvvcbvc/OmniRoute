@@ -78,6 +78,30 @@ export function shouldFilterProviderEntriesForDisplayMode(
   return shouldApplyConfiguredOnlyFilter(displayMode === "configured", connectionCount);
 }
 
+/**
+ * What the page is allowed to say about the operator's connections.
+ *
+ * Four decisions read this — the first-provider hint, the saved display mode,
+ * the in-memory display mode, and the "Configured" chip — and all four used to
+ * be spelled out from `connections.length === 0` independently. That expression
+ * is true when the array is empty because the operator configured nothing AND
+ * when it is empty because the read never came back, and the second case is a
+ * claim the page cannot support. One function, so "unknown" cannot be honoured
+ * in one decision and quietly dropped in another.
+ *
+ * `known` is what licenses a number; `none` is the one claim about the
+ * operator's configuration, and it is made only when the count was read.
+ */
+export function readConnectionCount(
+  connections: unknown[],
+  connectionsUnknown: boolean
+): { known: boolean; none: boolean } {
+  return {
+    known: !connectionsUnknown,
+    none: !connectionsUnknown && connections.length === 0,
+  };
+}
+
 export function shouldShowFirstProviderHint(
   connectionCount: number,
   searchQuery?: string
@@ -652,27 +676,32 @@ export interface ProviderPageData {
   blockedProviders: string[] | null;
   settings: any | null;
   /**
-   * OpenRouter-sourced popularity/identity enrichment. `null` = not reported
-   * natively (`:9090/metrics` is Prometheus text, never the `{data:[…]}`
-   * enrichment shape) — distinct from `[]` ("reported, zero providers"), so
-   * cards render no chip instead of a "loaded, nothing known" state.
+   * The page could not obtain the CONNECTION LIST, so "how many of these
+   * providers are configured" has no answer — not an answer of zero.
+   *
+   * A count the page did not read is not a count. `connections: []` reads on
+   * this page as "this gateway has no providers configured", and that is a claim
+   * about the operator's gateway which a 401, a 500, a reset connection, a
+   * parked route or the 20 s fetch timeout cannot support. Every one of those
+   * sets this flag, so the counts render as "—" and every claim DERIVED from
+   * the count is suppressed instead of being drawn from a default.
+   *
+   * It is deliberately NOT derived from the status of a failed read.
+   * `classifyAisixAdminStatus` answers "what did the gateway refuse", which is a
+   * different question from "did the gateway answer", and only the second one
+   * can license the number. Deriving it from the status left the 5xx and
+   * timeout paths — the ones this loader exists to survive — rendering the very
+   * claim the flag was added to remove.
    */
-  openRouterProviderStats: OpenRouterProviderStatsEntry[] | null;
+  connectionsUnknown: boolean;
   /**
-   * The admin plane refused to answer (401/403) — there is no usable session.
-   *
-   * It withholds exactly ONE thing: the connections. `connections: []` and
-   * "not answered" must stay distinct, because an empty array reads on this page
-   * as "this gateway has no providers configured" — a claim about the operator's
-   * gateway that a 401 cannot support.
-   *
-   * It does NOT withhold the catalog. The sections render from a static provider
-   * registry, so a refused key read says nothing about which providers exist and
-   * hiding them would destroy state the failure does not contradict. The page
-   * therefore shows the banner AND the sections, and expresses the refusal where
-   * it actually bites: the configured counts, drawn as "—" rather than 0.
+   * The admin plane refused the CREDENTIAL (401/403/400) rather than failing to
+   * answer. Narrower than `connectionsUnknown`, because the two answer different
+   * questions and only one of them has a button that fixes it: a 5xx is an
+   * unhealthy gateway, and sending the operator to the key prompt for one sends
+   * them to the wrong fix. Drives the sign-in banner and nothing else.
    */
-  adminDenied: boolean;
+  adminRefused: boolean;
 }
 
 /** Mirrors ProviderPopularityEntry from src/lib/catalog/openrouterProviderStats.ts (kept local to avoid a server-only import from a client component). */
@@ -727,31 +756,48 @@ export async function loadProviderPageData(
   // Admin-plane reads go through the shared transport so their 401 raises the
   // one global signed-out signal; the metrics plane stays on the plain path
   // (it is unauthenticated, and its status says nothing about a session).
-  let adminDenied = false;
+  //
+  // Two facts, deliberately not one. `connectionsUnknown` is the ABSENCE of an
+  // answer and is the only thing the counts may depend on; `adminRefused` is the
+  // narrower "the credential was turned away", which is what the sign-in banner
+  // is about. Deriving the first from the second is the bug this split removes.
+  let connectionsUnknown = false;
+  let adminRefused = false;
 
   const safeJson = async (url: string, init?: RequestInit): Promise<any | null> => {
+    // The admin plane is the only place a connection count can come from, so
+    // this is the only plane whose silence costs the page an answer.
+    const onAdminPlane = isAisixAdminUrl(url);
     try {
       const options = { ...init, timeoutMs, fetchFn: fetchImpl };
-      const res = isAisixAdminUrl(url)
+      const res = onAdminPlane
         ? await aisixAdminFetch(url, options)
         : await fetchWithTimeout(url, options);
       if (!res.ok) {
-        // 401/403 on an admin read is a missing session, not an empty
-        // collection. Recorded here so the page can withhold the list instead of
-        // drawing it as empty.
-        if (
-          isAisixAdminUrl(url) &&
-          classifyAisixAdminStatus(res.status) !== null &&
-          res.status !== 404 &&
-          res.status !== 405
-        ) {
-          adminDenied = true;
+        // No body, so no count — whatever the reason. 401/403 is a missing
+        // session, 5xx an unhealthy gateway, 404/405 a route this build does
+        // not have: three different operator problems, and all three leave the
+        // count unknown. Only the first is a credential problem, and only that
+        // one earns the sign-in banner.
+        if (onAdminPlane) {
+          connectionsUnknown = true;
+          if (
+            classifyAisixAdminStatus(res.status) !== null &&
+            res.status !== 404 &&
+            res.status !== 405
+          ) {
+            adminRefused = true;
+          }
         }
         return null;
       }
       return await res.json();
     } catch {
-      // Timeout/abort/network error → degrade to the default; never hang.
+      // Timeout / abort / connection reset. The body was never obtained either,
+      // so the count is unknown for exactly the same reason a 5xx leaves it
+      // unknown — and this path is the one the loader's own docstring exists
+      // for, so it cannot be the one that draws a number.
+      if (onAdminPlane) connectionsUnknown = true;
       return null;
     }
   };
@@ -792,6 +838,7 @@ export async function loadProviderPageData(
     blockedProviders: null,
     settings: null,
     openRouterProviderStats: openRouterStats,
-    adminDenied,
+    connectionsUnknown,
+    adminRefused,
   };
 }

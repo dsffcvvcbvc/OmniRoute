@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Ključ ponudnika je bil izbrisan.",
     "providerKeysDeleteTitle": "Izbriši ključ ponudnika",
     "providerKeysDeleteConfirm": "Izbriši ključ ponudnika „{name}“? Vsak model ali pot skozi, ki ga še vedno sklicuje, bo prehod odgovoril z 409.",
-    "adminAuthSignIn": "Prijava"
+    "adminAuthSignIn": "Prijava",
+    "aisixConnectionsUnknown": "Prehod ni potrdil, katere ponudnike ste konfigurirali, zato so številke spodaj prikazane kot — namesto kot število. Pomičaj ni nič: tukaj nič ne trdi, da niste konfigurirali nobenega ponudnika."
   },
   "settings": {
     "title": "Nastavitve",

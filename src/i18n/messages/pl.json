@@ -6599,7 +6599,8 @@
     "providerKeysDeleted": "Usunięto klucz dostawcy.",
     "providerKeysDeleteTitle": "Usuń klucz dostawcy",
     "providerKeysDeleteConfirm": "Usunąć klucz dostawcy „{name}”? Każdy model lub trasa passthrough, która nadal go wskazuje, zmusi bramę do odpowiedzi 409.",
-    "adminAuthSignIn": "Zaloguj się"
+    "adminAuthSignIn": "Zaloguj się",
+    "aisixConnectionsUnknown": "Brama nie potwierdziła, których dostawców skonfigurowałeś, więc liczby poniżej są pokazywane jako —, a nie jako liczby. Kreska to nie zero: nic tutaj nie twierdzi, że nie skonfigurowałeś żadnego dostawcy."
   },
   "settings": {
     "title": "Ustawienia",
