@@ -22,6 +22,18 @@ import type { LiveModelsByProviderId } from "../providerPageUtils";
  * Fails soft — an unreadable core leaves the map empty, and callers fall back to
  * the static registry only. Empty is the honest reading there: no catalog, no
  * extra matches, and the curated registry still matches.
+ *
+ * KNOWN INTERACTION, still open — the one thing a reader of this file should not
+ * assume is "harmless". The providers index now issues its admin-plane reads at
+ * different times than it did on 69c9c0c1e4, and on that page an admin-plane 401
+ * raises the dashboard's GLOBAL signed-out signal (`loadProviderPageData` →
+ * `aisixAdminFetch`), which opens the AdminSessionGate dialog and unmounts the
+ * provider cards. Measured on both builds with no admin key: the same three 401s
+ * (provider_keys, models, preset_providers) on each, the openai card present on
+ * 69c9c0c1e4 and absent here, dialog 0 → 1. Reverting this one read did not change
+ * it, so the trigger is the index's other admin reads, not this one. It is a
+ * timing sensitivity in the session/transport layer rather than a wrong path or
+ * payload here, so it is reported rather than speculatively patched from here.
  */
 export function useSyncedModelsByProvider(): LiveModelsByProviderId {
   const [models, setModels] = useState<LiveModelsByProviderId>({});
