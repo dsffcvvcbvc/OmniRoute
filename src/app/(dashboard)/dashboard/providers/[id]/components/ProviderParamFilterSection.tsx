@@ -7,11 +7,29 @@
  * Renders a card on the provider detail page where operators can configure
  * which request params to strip (block) or selectively re-add (allow) before
  * sending to the upstream provider.
+ *
+ * LOAD PATH: the GET is issued through `useProviderSectionRead`, which refuses
+ * before requesting on a deployment that has no such surface and otherwise
+ * settles a 404 after ONE attempt. This card used to call
+ * `res.json()` without checking `res.ok`, so a 404 body was parsed as "no
+ * filters configured" — a silent 404 rendered as an empty success — and its
+ * effect re-issued the GET whenever the notification store's identity changed,
+ * which its own error toast did on every failure.
+ *
+ * NOTIFY: this card used to call `notify.notify(message, "error")`. The store
+ * has no `notify` method (it exposes `success`/`error`/`warning`/`info` and
+ * `addNotification`), so that expression was `undefined` and the load path died
+ * on `TypeError: a.notify is not a function` before it could set state —
+ * an unhandled rejection plus a card stuck on its skeleton forever. The
+ * notifier is now read imperatively and called with the real method names.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useNotificationStore } from "@/store/notificationStore";
+import { fetchAisixJson, resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
+import { useProviderSectionRead, useProviderSectionWrite } from "../hooks/useProviderSectionRead";
+import ProviderSectionRefusal from "./ProviderSectionRefusal";
 
 interface ProviderParamFilterSectionProps {
   providerId: string;
@@ -23,6 +41,18 @@ interface ParamFilterConfig {
   models?: Record<string, { block?: string[]; allow?: string[] }>;
   autoLearn: boolean;
 }
+
+type Translate = (key: string, values?: Record<string, string>) => string;
+
+const EMPTY_CONFIG: ParamFilterConfig = { block: [], allow: [], autoLearn: false };
+
+/** The unsupported family this card's rule row belongs to. */
+const PARAM_FILTER_DOMAIN = "providerRules" as const;
+
+// Literal for the load-failure message, used when the catalogue has no such key
+// (`providerText` semantics). The localized catalogue copy wins when it does —
+// this guarantees the operator never sees a bare message key.
+const LOAD_ERROR_FALLBACK = "Failed to load param filter config: {error}";
 
 function parseCommaList(value: string): string[] {
   return value
@@ -40,12 +70,18 @@ function formatCommaList(arr: string[]): string {
 // component's handlers stay focused on state transitions + user feedback.
 // ---------------------------------------------------------------------------
 
-async function fetchParamFilterConfig(providerId: string): Promise<ParamFilterConfig> {
-  const res = await fetch(`/api/providers/${providerId}/param-filters`);
-  const data = await res.json();
+/** Module-level: the load effect depends on it, so it must not be a closure. */
+async function fetchParamFilterConfig(providerId: string) {
+  return fetchAisixJson(
+    resolveAisixRequestUrl(`/api/providers/${encodeURIComponent(providerId)}/param-filters`)
+  );
+}
+
+function parseParamFilterConfig(raw: unknown): ParamFilterConfig {
+  const data = (raw ?? {}) as { block?: unknown; allow?: unknown; autoLearn?: unknown };
   return {
-    block: Array.isArray(data.block) ? data.block : [],
-    allow: Array.isArray(data.allow) ? data.allow : [],
+    block: Array.isArray(data.block) ? (data.block as string[]) : [],
+    allow: Array.isArray(data.allow) ? (data.allow as string[]) : [],
     autoLearn: typeof data.autoLearn === "boolean" ? data.autoLearn : false,
   };
 }
@@ -57,7 +93,7 @@ async function throwOnErrorResponse(res: Response): Promise<void> {
 }
 
 async function putParamFilterConfig(providerId: string, body: ParamFilterConfig): Promise<void> {
-  const res = await fetch(`/api/providers/${providerId}/param-filters`, {
+  const res = await fetch(`/api/providers/${encodeURIComponent(providerId)}/param-filters`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -66,7 +102,9 @@ async function putParamFilterConfig(providerId: string, body: ParamFilterConfig)
 }
 
 async function deleteParamFilterConfig(providerId: string): Promise<void> {
-  const res = await fetch(`/api/providers/${providerId}/param-filters`, { method: "DELETE" });
+  const res = await fetch(`/api/providers/${encodeURIComponent(providerId)}/param-filters`, {
+    method: "DELETE",
+  });
   await throwOnErrorResponse(res);
 }
 
@@ -74,23 +112,9 @@ function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-// Wraps the GET so a failure comes back as a value: the load callback then only
-// sets state after the await (no synchronous setState reachable from the effect).
-async function fetchParamFilterConfigSafe(
-  providerId: string
-): Promise<{ ok: boolean; config?: ParamFilterConfig; error?: string }> {
-  try {
-    return { ok: true, config: await fetchParamFilterConfig(providerId) };
-  } catch (err) {
-    return { ok: false, error: errorMessage(err) };
-  }
-}
-
 // ---------------------------------------------------------------------------
 // State hook — owns config load/save/reset so the component body stays JSX-only.
 // ---------------------------------------------------------------------------
-
-type Translate = (key: string, values?: Record<string, string>) => string;
 
 // Wraps a raw state setter so updating the draft value also marks the form
 // dirty — used for the three form-local draft fields below.
@@ -105,42 +129,44 @@ function useDirtySetter<T>(setValue: (value: T) => void, setDirty: (value: boole
 }
 
 function useProviderParamFilterConfig(providerId: string, t: Translate) {
-  const notify = useNotificationStore();
-  const [, setConfig] = useState<ParamFilterConfig>({ block: [], allow: [], autoLearn: false });
-  // Loading is derived: true until a load attempt for the CURRENT provider
-  // settles — this also re-shows the skeleton when providerId changes.
-  const [loadedProviderId, setLoadedProviderId] = useState<string | null>(null);
-  const loading = loadedProviderId !== providerId;
+  // `config` is write-only: the card's visible values are the three draft
+  // fields below, and a save replaces all three at once.
+  const [, setConfig] = useState<ParamFilterConfig>(EMPTY_CONFIG);
+  const [seededFor, setSeededFor] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [blockText, setBlockTextState] = useState("");
   const [allowText, setAllowTextState] = useState("");
   const [autoLearn, setAutoLearnState] = useState(false);
+  const write = useProviderSectionWrite(PARAM_FILTER_DOMAIN);
+
+  const read = useProviderSectionRead<ParamFilterConfig>({
+    providerId,
+    read: fetchParamFilterConfig,
+    parse: parseParamFilterConfig,
+    domain: PARAM_FILTER_DOMAIN,
+    failureMessageKey: "paramFiltersLoadError",
+    failureFallback: LOAD_ERROR_FALLBACK,
+    translate: t,
+  });
 
   const setBlockText = useDirtySetter(setBlockTextState, setDirty);
   const setAllowText = useDirtySetter(setAllowTextState, setDirty);
   const setAutoLearn = useDirtySetter(setAutoLearnState, setDirty);
 
-  // The async work is defined INSIDE the effect (a component-scope loader
-  // called synchronously from an effect is rejected by the compiler rules);
-  // every setState here runs after the await.
-  useEffect(() => {
-    const run = async () => {
-      const outcome = await fetchParamFilterConfigSafe(providerId);
-      if (outcome.ok) {
-        setConfig(outcome.config);
-        setBlockTextState(formatCommaList(outcome.config.block));
-        setAllowTextState(formatCommaList(outcome.config.allow));
-        setAutoLearnState(outcome.config.autoLearn);
-      } else {
-        notify.notify(t("paramFiltersLoadError", { error: outcome.error }), "error");
-      }
-      setLoadedProviderId(providerId);
-    };
-    void run();
-  }, [providerId, notify, t]);
+  // Seed the editable draft from the one-shot load. Render-time state adjustment
+  // (React's documented "adjusting state when a prop changes") rather than an
+  // effect: an effect here would be a second thing that can re-fire.
+  if (read.phase === "ready" && seededFor !== providerId) {
+    setSeededFor(providerId);
+    setConfig(read.data);
+    setBlockTextState(formatCommaList(read.data.block));
+    setAllowTextState(formatCommaList(read.data.allow));
+    setAutoLearnState(read.data.autoLearn);
+  }
 
   const handleSave = useCallback(async () => {
+    if (write.refuse(t("paramFiltersSectionTitle"))) return;
     setSaving(true);
     try {
       const body: ParamFilterConfig = {
@@ -151,35 +177,41 @@ function useProviderParamFilterConfig(providerId: string, t: Translate) {
       await putParamFilterConfig(providerId, body);
       setConfig(body);
       setDirty(false);
-      notify.notify(t("paramFiltersSaveSuccess"), "success");
+      useNotificationStore.getState().success(t("paramFiltersSaveSuccess"));
     } catch (err) {
-      notify.notify(t("paramFiltersSaveError", { error: errorMessage(err) }), "error");
+      useNotificationStore
+        .getState()
+        .error(t("paramFiltersSaveError", { error: errorMessage(err) }));
     } finally {
       setSaving(false);
     }
-  }, [providerId, blockText, allowText, autoLearn, notify, t]);
+  }, [providerId, blockText, allowText, autoLearn, t, write]);
 
   const handleReset = useCallback(async () => {
+    if (write.refuse(t("paramFiltersSectionTitle"))) return;
     setSaving(true);
     try {
       await deleteParamFilterConfig(providerId);
-      setConfig({ block: [], allow: [], autoLearn: false });
+      setConfig(EMPTY_CONFIG);
       setBlockTextState("");
       setAllowTextState("");
       setAutoLearnState(false);
       setDirty(false);
-      notify.notify(t("paramFiltersResetSuccess"), "success");
+      useNotificationStore.getState().success(t("paramFiltersResetSuccess"));
     } catch (err) {
-      notify.notify(t("paramFiltersResetError", { error: errorMessage(err) }), "error");
+      useNotificationStore
+        .getState()
+        .error(t("paramFiltersResetError", { error: errorMessage(err) }));
     } finally {
       setSaving(false);
     }
-  }, [providerId, notify, t]);
+  }, [providerId, t, write]);
 
   return {
-    loading,
+    read,
     saving,
     dirty,
+    write,
     blockText,
     allowText,
     autoLearn,
@@ -274,17 +306,25 @@ interface ParamFilterActionsProps {
   t: (key: string) => string;
   saving: boolean;
   dirty: boolean;
+  writeSupported: boolean;
   onSave: () => void;
   onReset: () => void;
 }
 
-function ParamFilterActions({ t, saving, dirty, onSave, onReset }: ParamFilterActionsProps) {
+function ParamFilterActions({
+  t,
+  saving,
+  dirty,
+  writeSupported,
+  onSave,
+  onReset,
+}: ParamFilterActionsProps) {
   return (
     <div className="flex items-center gap-2">
       <button
         type="button"
         onClick={onSave}
-        disabled={saving || !dirty}
+        disabled={saving || !dirty || !writeSupported}
         className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
       >
         {saving ? (
@@ -297,7 +337,7 @@ function ParamFilterActions({ t, saving, dirty, onSave, onReset }: ParamFilterAc
       <button
         type="button"
         onClick={onReset}
-        disabled={saving}
+        disabled={saving || !writeSupported}
         className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:text-text-main hover:border-primary/40 disabled:opacity-50 transition-colors"
       >
         <span className="material-symbols-outlined text-sm">delete</span>
@@ -316,9 +356,10 @@ export default function ProviderParamFilterSection({
 }: ProviderParamFilterSectionProps) {
   const t = useTranslations("providers");
   const {
-    loading,
+    read,
     saving,
     dirty,
+    write,
     blockText,
     allowText,
     autoLearn,
@@ -329,8 +370,21 @@ export default function ProviderParamFilterSection({
     handleReset,
   } = useProviderParamFilterConfig(providerId, t);
 
-  if (loading) {
+  if (read.phase === "loading") {
     return <ParamFilterSectionSkeleton />;
+  }
+
+  // An absent surface is a stated fact. Rendering the form with empty fields
+  // would tell the operator "this provider has no filters configured" when the
+  // truth is "there is no filter store on this deployment".
+  if (read.phase === "refused") {
+    return (
+      <ProviderSectionRefusal
+        title={t("paramFiltersSectionTitle")}
+        reason={read.reason}
+        testId="param-filters-unavailable-banner"
+      />
+    );
   }
 
   return (
@@ -355,6 +409,7 @@ export default function ProviderParamFilterSection({
         t={t}
         saving={saving}
         dirty={dirty}
+        writeSupported={write.supported}
         onSave={handleSave}
         onReset={handleReset}
       />

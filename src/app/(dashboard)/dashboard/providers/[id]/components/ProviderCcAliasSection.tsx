@@ -12,12 +12,22 @@
  * "Inherit" clears the DB override (`value: null`) and falls back to the next
  * level down (model → provider → the global EXPOSE_CC_DISCOVERY_ALIASES flag).
  * Off by default at every level — this card is purely opt-in.
+ *
+ * LOAD PATH: the GET is issued through `useProviderSectionRead`, which refuses
+ * before requesting on a deployment that has no such surface and otherwise
+ * settles a 404 after ONE attempt. This card used to own a private effect that
+ * re-issued its GET whenever the notification store's identity changed — and
+ * that effect itself pushed a toast, so a 404 re-armed the read which produced
+ * it. See the hook for the measured consequence.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useNotificationStore } from "@/store/notificationStore";
+import { fetchAisixJson, resolveAisixRequestUrl } from "@/shared/utils/aisixEndpoints";
 import { providerText, type ProviderMessageTranslator } from "../providerPageHelpers";
+import { useProviderSectionRead, useProviderSectionWrite } from "../hooks/useProviderSectionRead";
+import ProviderSectionRefusal from "./ProviderSectionRefusal";
 
 export type CcAliasSettingValue = "on" | "off" | null;
 
@@ -32,12 +42,27 @@ interface CcAliasState {
 
 const DEFAULT_STATE: CcAliasState = { provider: null, models: {} };
 
-async function fetchCcAliasState(providerId: string): Promise<CcAliasState> {
-  const res = await fetch(`/api/providers/${providerId}/cc-alias`);
-  const data = await res.json();
+/** The unsupported family this card's rule rows belong to. */
+const CC_ALIAS_DOMAIN = "providerRules" as const;
+
+const LOAD_ERROR_FALLBACK = "Failed to load discovery-alias settings: {error}";
+const SAVE_ERROR_FALLBACK = "Failed to save discovery-alias setting: {error}";
+
+/** Module-level: the load effect depends on it, so it must not be a closure. */
+async function fetchCcAliasState(providerId: string) {
+  return fetchAisixJson(
+    resolveAisixRequestUrl(`/api/providers/${encodeURIComponent(providerId)}/cc-alias`)
+  );
+}
+
+function parseCcAliasState(raw: unknown): CcAliasState {
+  const data = (raw ?? {}) as { provider?: unknown; models?: unknown };
   return {
     provider: data?.provider === "on" || data?.provider === "off" ? data.provider : null,
-    models: data?.models && typeof data.models === "object" ? data.models : {},
+    models:
+      data?.models && typeof data.models === "object"
+        ? (data.models as CcAliasState["models"])
+        : {},
   };
 }
 
@@ -77,78 +102,77 @@ function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-// Wraps the GET so a failure comes back as a value: the load callback then only
-// sets state after the await (no synchronous setState reachable from the effect).
-async function fetchCcAliasStateSafe(
-  providerId: string
-): Promise<{ ok: boolean; state?: CcAliasState; error?: string }> {
-  try {
-    return { ok: true, state: await fetchCcAliasState(providerId) };
-  } catch (err) {
-    return { ok: false, error: errorMessage(err) };
-  }
-}
-
-/** Loads the provider's alias settings once and reports a load failure to the operator. */
+/** Loads the provider's alias settings once, under a ceiling, and refuses honestly. */
 function useCcAliasData(providerId: string, t: ProviderMessageTranslator) {
-  const notify = useNotificationStore();
   const [state, setState] = useState<CcAliasState>(DEFAULT_STATE);
-  // Loading is derived: true until a load attempt for the CURRENT provider
-  // settles — this also re-shows the skeleton when providerId changes.
-  const [loadedProviderId, setLoadedProviderId] = useState<string | null>(null);
-  const loading = loadedProviderId !== providerId;
+  const [seededFor, setSeededFor] = useState<string | null>(null);
+  const write = useProviderSectionWrite(CC_ALIAS_DOMAIN);
 
-  // The async work is defined INSIDE the effect (a component-scope loader
-  // called synchronously from an effect is rejected by the compiler rules);
-  // every setState here runs after the await.
-  useEffect(() => {
-    const run = async () => {
-      const outcome = await fetchCcAliasStateSafe(providerId);
-      if (outcome.ok) {
-        setState(outcome.state);
-      } else {
-        notify.error(
-          providerText(t, "ccAliasLoadError", "Failed to load discovery-alias settings: {error}", {
-            error: outcome.error,
-          })
-        );
-      }
-      setLoadedProviderId(providerId);
-    };
-    void run();
-  }, [providerId, notify, t]);
+  const read = useProviderSectionRead<CcAliasState>({
+    providerId,
+    read: fetchCcAliasState,
+    parse: parseCcAliasState,
+    domain: CC_ALIAS_DOMAIN,
+    failureMessageKey: "ccAliasLoadError",
+    failureFallback: LOAD_ERROR_FALLBACK,
+    translate: t,
+  });
 
-  return { state, setState, loading };
+  // Seed the editable copy from the one-shot load. Render-time state adjustment
+  // (React's documented "adjusting state when a prop changes") rather than an
+  // effect: an effect here would be a second thing that can re-fire.
+  if (read.phase === "ready" && seededFor !== providerId) {
+    setSeededFor(providerId);
+    setState(read.data);
+  }
+
+  return { state, setState, read, write };
 }
 
 function useProviderCcAliasState(providerId: string, t: ProviderMessageTranslator) {
-  const notify = useNotificationStore();
-  const { state, setState, loading } = useCcAliasData(providerId, t);
+  const { state, setState, read, write } = useCcAliasData(providerId, t);
   const [savingProvider, setSavingProvider] = useState(false);
   const [savingModelId, setSavingModelId] = useState<string | null>(null);
   const [newModelId, setNewModelId] = useState("");
 
+  const reportSaveError = useCallback(
+    (err: unknown) => {
+      useNotificationStore
+        .getState()
+        .error(
+          providerText(t, "ccAliasSaveError", SAVE_ERROR_FALLBACK, { error: errorMessage(err) })
+        );
+    },
+    [t]
+  );
+
   const handleProviderChange = useCallback(
     async (value: CcAliasSettingValue) => {
+      if (
+        write.refuse(providerText(t, "ccAliasSectionTitle", "Expose in Claude Code (claude/…)"))
+      ) {
+        return;
+      }
       setSavingProvider(true);
       try {
         await putProviderSetting(providerId, value);
         setState((prev) => ({ ...prev, provider: value }));
       } catch (err) {
-        notify.error(
-          providerText(t, "ccAliasSaveError", "Failed to save discovery-alias setting: {error}", {
-            error: errorMessage(err),
-          })
-        );
+        reportSaveError(err);
       } finally {
         setSavingProvider(false);
       }
     },
-    [providerId, notify, t, setState]
+    [providerId, t, write, reportSaveError, setState]
   );
 
   const handleModelChange = useCallback(
     async (modelId: string, value: CcAliasSettingValue) => {
+      if (
+        write.refuse(providerText(t, "ccAliasSectionTitle", "Expose in Claude Code (claude/…)"))
+      ) {
+        return;
+      }
       setSavingModelId(modelId);
       try {
         await putModelSetting(providerId, modelId, value);
@@ -159,16 +183,12 @@ function useProviderCcAliasState(providerId: string, t: ProviderMessageTranslato
           return { ...prev, models };
         });
       } catch (err) {
-        notify.error(
-          providerText(t, "ccAliasSaveError", "Failed to save discovery-alias setting: {error}", {
-            error: errorMessage(err),
-          })
-        );
+        reportSaveError(err);
       } finally {
         setSavingModelId(null);
       }
     },
-    [providerId, notify, t, setState]
+    [providerId, t, write, reportSaveError, setState]
   );
 
   const handleAddModelOverride = useCallback(async () => {
@@ -180,7 +200,8 @@ function useProviderCcAliasState(providerId: string, t: ProviderMessageTranslato
 
   return {
     state,
-    loading,
+    read,
+    write,
     savingProvider,
     savingModelId,
     newModelId,
@@ -241,7 +262,8 @@ export default function ProviderCcAliasSection({ providerId }: ProviderCcAliasSe
   const t = useTranslations("providers");
   const {
     state,
-    loading,
+    read,
+    write,
     savingProvider,
     savingModelId,
     newModelId,
@@ -251,8 +273,20 @@ export default function ProviderCcAliasSection({ providerId }: ProviderCcAliasSe
     handleAddModelOverride,
   } = useProviderCcAliasState(providerId, t);
 
-  if (loading) {
+  if (read.phase === "loading") {
     return <CcAliasSectionSkeleton />;
+  }
+
+  // An absent surface is a stated fact, not "every model is Inherit" — which is
+  // what this card used to show whenever its read failed.
+  if (read.phase === "refused") {
+    return (
+      <ProviderSectionRefusal
+        title={providerText(t, "ccAliasSectionTitle", "Expose in Claude Code (claude/…)")}
+        reason={read.reason}
+        testId="cc-alias-unavailable-banner"
+      />
+    );
   }
 
   const modelEntries = Object.entries(state.models);
@@ -277,7 +311,7 @@ export default function ProviderCcAliasSection({ providerId }: ProviderCcAliasSe
         <TriStateSelect
           t={t}
           value={state.provider}
-          disabled={savingProvider}
+          disabled={savingProvider || !write.supported}
           onChange={handleProviderChange}
           ariaLabel={providerText(t, "ccAliasProviderLevelLabel", "Provider default")}
         />
@@ -287,6 +321,7 @@ export default function ProviderCcAliasSection({ providerId }: ProviderCcAliasSe
         t={t}
         entries={modelEntries}
         savingModelId={savingModelId}
+        writeSupported={write.supported}
         onChange={handleModelChange}
       />
 
@@ -295,7 +330,7 @@ export default function ProviderCcAliasSection({ providerId }: ProviderCcAliasSe
         value={newModelId}
         onValueChange={setNewModelId}
         onSubmit={handleAddModelOverride}
-        disabled={savingModelId !== null}
+        disabled={savingModelId !== null || !write.supported}
       />
     </div>
   );
@@ -305,11 +340,13 @@ function ModelOverrideList({
   t,
   entries,
   savingModelId,
+  writeSupported,
   onChange,
 }: {
   t: ProviderMessageTranslator;
   entries: Array<[string, CcAliasSettingValue]>;
   savingModelId: string | null;
+  writeSupported: boolean;
   onChange: (modelId: string, value: CcAliasSettingValue) => void;
 }) {
   if (entries.length === 0) return null;
@@ -326,7 +363,7 @@ function ModelOverrideList({
           <TriStateSelect
             t={t}
             value={value}
-            disabled={savingModelId === modelId}
+            disabled={savingModelId === modelId || !writeSupported}
             onChange={(v) => onChange(modelId, v)}
             ariaLabel={providerText(t, "ccAliasModelOverrideAriaLabel", "Override for {modelId}", {
               modelId,
