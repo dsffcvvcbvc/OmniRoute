@@ -35,6 +35,8 @@ const {
   aisixAdminFetch,
   exchangeAdminKeyForSession,
   requestAdminLogin,
+  getAisixSessionState,
+  isAisixSignedOut,
 } = await import("@/shared/utils/aisixAdminAuth");
 const { getAisixAdminBase } = await import("@/shared/utils/aisixTransportBase");
 
@@ -129,12 +131,40 @@ describe("AdminSessionGate — a refusal is only an ended session if there was o
     expect(endedNote()).toBeNull();
   });
 
-  it("shows no dialog at all while the session is working", async () => {
+  it("shows no dialog while the session is working, and never lies about it", async () => {
     await readAs(200);
     renderGate();
 
-    expect(dialog()).toBeNull();
-    expect(endedNote()).toBeNull();
+    // The precondition, asserted rather than assumed. This case is about the
+    // `active` state and about nothing else, and a 2xx admin read is the ONLY
+    // thing that produces it (aisixAdminAuth.ts:413-415). Without these two
+    // lines the case cannot tell `active` from `anonymous`: deleting that
+    // assignment leaves a 200-reading browser `anonymous`, every assertion
+    // below still passes, and the case becomes a second copy of the
+    // never-signed-in one wearing this one's name.
+    expect(
+      getAisixSessionState(),
+      "a 2xx admin read is the only surviving evidence a credential existed"
+    ).toBe("active");
+    expect(isAisixSignedOut(), "a session that is working is not a signed-out one").toBe(false);
+
+    expect(dialog(), "a working session must not be interrupted by a prompt").toBeNull();
+    expect(endedNote(), "and nothing may claim a session ended while it is working").toBeNull();
+
+    // The positive half, and the one thing this case did not have. A prompt is
+    // still the way in from here, and it must not carry the note — for the
+    // operator who really is signed in that sentence is the precise claim this
+    // file exists to keep off the screen, and it is a far more plausible place
+    // for it to reappear than on the anonymous path the case above covers.
+    act(() => {
+      requestAdminLogin();
+    });
+
+    expect(dialog(), "the prompt is still reachable from a working session").not.toBeNull();
+    expect(
+      endedNote(),
+      "an operator who is signed in must never be told their session ended"
+    ).toBeNull();
   });
 });
 
