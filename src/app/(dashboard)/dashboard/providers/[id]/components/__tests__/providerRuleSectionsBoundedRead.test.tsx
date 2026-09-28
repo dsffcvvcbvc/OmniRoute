@@ -91,11 +91,24 @@ function networkDown(): Promise<Response> {
   return Promise.reject(new TypeError("Failed to fetch"));
 }
 
-function mount(node: React.ReactElement, respond: () => Promise<Response>): Harness {
+/**
+ * `respond` receives the URL the card actually requested. That argument is the
+ * only way a test can tell two providers apart, and the helper used to drop it:
+ * `respond()` was called with no arguments while the factory's own parameter
+ * was named `url`, so `String(url)` was the string `"undefined"` and a factory
+ * that picked its payload from the URL served the SAME body for every provider.
+ * The switching case below therefore asserted a payload the mock could never
+ * produce, and no implementation of the hook could have made it green — the
+ * assertion was unreachable, not falsified.
+ *
+ * Every other case passes a `respond` that ignores its parameter, so widening
+ * the signature is inert for them.
+ */
+function mount(node: React.ReactElement, respond: (url: unknown) => Promise<Response>): Harness {
   const calls: string[] = [];
   const fetchMock = vi.fn((url: unknown) => {
     calls.push(String(url));
-    return calls.length > FEED_CALLS ? never : respond();
+    return calls.length > FEED_CALLS ? never : respond(url);
   });
   vi.stubGlobal("fetch", fetchMock);
   const container = document.createElement("div");
